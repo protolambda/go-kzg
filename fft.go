@@ -233,17 +233,17 @@ func mulPolys(a []Big, b []Big, modulus Big, rootOfUnity Big) []Big {
 
 // Calculates modular inverses [1/values[0], 1/values[1] ...]
 func multiInv(values []Big, modulus Big) []Big {
-	partials := make([]Big, len(values), len(values))
+	partials := make([]Big, len(values)+1, len(values)+1)
 	partials[0] = values[0]
-	for i := 1; i < len(values); i++ {
-		partials[i] = mulModBig(partials[i-1], values[i], modulus)
+	for i := 0; i < len(values); i++ {
+		partials[i+1] = mulModBig(partials[i], values[i], modulus)
 	}
 	exp := subModBigSimple(modulus, 2, modulus)
 	inv := powModBig(partials[len(partials)-1], exp, modulus)
 	outputs := make([]Big, len(values), len(values))
-	for i := len(values) - 1; i >= 0; i-- {
-		outputs[i] = mulModBig(partials[i], inv, modulus)
-		inv = mulModBig(inv, values[i], modulus)
+	for i := len(values); i > 0; i-- {
+		outputs[i-1] = mulModBig(partials[i-1], inv, modulus)
+		inv = mulModBig(inv, values[i-1], modulus)
 	}
 	return outputs
 }
@@ -288,8 +288,8 @@ func _zPoly(positions []uint, modulus Big, rootsOfUnity []Big, rootsOfUnityStrid
 		root := make([]Big, len(positions)+1, len(positions)+1)
 		root[0] = ONE
 		i := 1
-		for pos := range positions {
-			x := rootsOfUnity[uint(pos)*rootsOfUnityStride]
+		for _, pos := range positions {
+			x := rootsOfUnity[pos*rootsOfUnityStride]
 			root[i] = ZERO
 			for j := i; j >= 1; j-- {
 				v := mulModBig(root[j-1], x, modulus)
@@ -342,8 +342,7 @@ func zPoly(positions []uint, modulus Big, rootOfUnity Big) []Big {
 	return _zPoly(positions, modulus, rootz, 1)
 }
 
-// TODO test unhappy case, set max-tries to limit CPU on accidental incorrect inputs
-
+// TODO test unhappy case
 const maxRecoverAttempts = 10
 
 func ErasureCodeRecover(vals []Big, modulus Big, rootOfUnity Big) []Big {
@@ -377,7 +376,7 @@ func ErasureCodeRecover(vals []Big, modulus Big, rootOfUnity Big) []Big {
 	expMin1 := subModBigSimple(modulus, 1, modulus)
 	expMin1Div2 := rshBig(expMin1, 1)
 
-	expMin2 := subModBigSimple(modulus, 1, modulus)
+	expMin2 := subModBigSimple(modulus, 2, modulus)
 
 	attempts := 0
 	for k := asBig(2); cmpBig(k, modulus) < 0; k = incrementBig(k) {
@@ -418,8 +417,7 @@ func ErasureCodeRecover(vals []Big, modulus Big, rootOfUnity Big) []Big {
 				break
 			}
 		}
-		debugBigs("input", vals)
-		debugBigs("output", output)
+
 		if !success {
 			attempts += 1
 			if attempts >= maxRecoverAttempts {

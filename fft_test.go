@@ -104,16 +104,14 @@ func TestErasureCodeRecover(t *testing.T) {
 	// Get coefficients for polynomial P
 	coeffs := FFT(data, MODULUS, ROOT_OF_UNITY2, false)
 	debugBigs("coeffs", coeffs)
-	// Extend to 2N values by evaluating the polynomial for 2N values
-	values := evalPolyRange(coeffs, bigRange(0, WIDTH*2))
 
-	debugBigs("values", values)
+	debugBigs("values", coeffs)
 
 	// Util to pick a random subnet of the values
-	randomSubset := func(known uint64, rngSeed int64) []Big {
+	randomSubset := func(known uint64, rngSeed uint64) []Big {
 		withMissingValues := make([]Big, WIDTH*2, WIDTH*2)
-		copy(withMissingValues, values)
-		rng := rand.New(rand.NewSource(rngSeed))
+		copy(withMissingValues, coeffs)
+		rng := rand.New(rand.NewSource(int64(rngSeed)))
 		missing := WIDTH*2 - known
 		pruned := rng.Perm(WIDTH * 2)[:missing]
 		for _, i := range pruned {
@@ -122,17 +120,18 @@ func TestErasureCodeRecover(t *testing.T) {
 		return withMissingValues
 	}
 
-	// Try different emounts of known indices, and try it in multiple random ways
-	for known := uint64(30); known < 2*WIDTH; known++ {
+	// Try different amounts of known indices, and try it in multiple random ways
+	for known := uint64(28); known < 2*WIDTH; known++ {
 		for i := 0; i < 20; i++ {
 			t.Run(fmt.Sprintf("random_subset_%d_known_%d", i, known), func(t *testing.T) {
-				subset := randomSubset(known, int64(i))
+				subset := randomSubset(known, uint64(i))
+
 				debugBigs("subset", subset)
 				recovered := ErasureCodeRecover(subset, MODULUS, ROOT_OF_UNITY2)
 				debugBigs("recovered", recovered)
 				for i, got := range recovered {
-					if cmpBig(got, values[i]) != 0 {
-						t.Errorf("recovery at index %d got %s but expected %s", i, bigStr(got), bigStr(values[i]))
+					if cmpBig(got, coeffs[i]) != 0 {
+						t.Errorf("recovery at index %d got %s but expected %s", i, bigStr(got), bigStr(coeffs[i]))
 					}
 				}
 				// And recover the original data for good measure

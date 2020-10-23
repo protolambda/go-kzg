@@ -10,6 +10,9 @@ and building proofs for the output data.
 Part of a low-latency data-availability sampling network prototype for Phase1.
 See https://github.com/protolambda/eth2-das
 
+Also see:
+- https://ethresear.ch/t/reed-solomon-erasure-code-recovery-in-n-log-2-n-time-with-ffts/3039
+- https://vitalik.ca/general/2019/05/12/fft.html
 
 
 ## License
