@@ -11,10 +11,10 @@ func TestFFTRoundtrip(t *testing.T) {
 	for i := uint64(0); i < WIDTH; i++ {
 		data[i] = asBig(i)
 	}
-	coeffs := FFT(data, MODULUS, ROOT_OF_UNITY, false)
-	res := FFT(coeffs, MODULUS, ROOT_OF_UNITY, true)
+	coeffs := FFT(data, ROOT_OF_UNITY, false)
+	res := FFT(coeffs, ROOT_OF_UNITY, true)
 	for i, got := range res {
-		if cmpBig(got, data[i]) != 0 {
+		if !equalBig(got, data[i]) {
 			t.Errorf("difference: %d: got: %s  expected: %s", i, bigStr(got), bigStr(data[i]))
 		}
 	}
@@ -26,7 +26,7 @@ func TestInvFFT(t *testing.T) {
 		data[i] = asBig(i)
 	}
 	debugBigs("input data", data)
-	res := FFT(data, MODULUS, ROOT_OF_UNITY, true)
+	res := FFT(data, ROOT_OF_UNITY, true)
 	debugBigs("result", res)
 	expected := []Big{
 		bigNum("26217937587563095239723870254092982918845276250263818911301829349969290592264"),
@@ -47,7 +47,7 @@ func TestInvFFT(t *testing.T) {
 		bigNum("11530387084567584791128103695970713619748716782049385982276732334852076679447"),
 	}
 	for i, got := range res {
-		if cmpBig(got, expected[i]) != 0 {
+		if !equalBig(got, expected[i]) {
 			t.Errorf("difference: %d: got: %s  expected: %s", i, bigStr(got), bigStr(expected[i]))
 		}
 	}
@@ -74,9 +74,9 @@ func evalPolyAt(coeffs []Big, x Big) Big {
 	var out = ZERO
 	var powerOfX = ONE
 	for _, c := range coeffs {
-		v := mulModBig(c, powerOfX, MODULUS)
-		out = addModBig(out, v, MODULUS)
-		powerOfX = mulModBig(powerOfX, x, MODULUS)
+		v := mulModBig(c, powerOfX)
+		out = addModBig(out, v)
+		powerOfX = mulModBig(powerOfX, x)
 	}
 	return out
 }
@@ -86,7 +86,7 @@ func TestPolyRange(t *testing.T) {
 	coeffs := bigRange(4, 8)
 	out := evalPolyAt(coeffs, asBig(3))
 	// 4*(3^0) + 5*(3^1) + 6*(3^2) + 7*(3^3) = 262
-	if cmpBig(out, asBig(262)) != 0 {
+	if !equalBig(out, asBig(262)) {
 		t.Fatalf("bad result: %s", bigStr(out))
 	}
 }
@@ -102,7 +102,7 @@ func TestErasureCodeRecover(t *testing.T) {
 	}
 	debugBigs("data", data)
 	// Get coefficients for polynomial P
-	coeffs := FFT(data, MODULUS, ROOT_OF_UNITY2, false)
+	coeffs := FFT(data, ROOT_OF_UNITY2, false)
 	debugBigs("coeffs", coeffs)
 
 	debugBigs("values", coeffs)
@@ -127,18 +127,18 @@ func TestErasureCodeRecover(t *testing.T) {
 				subset := randomSubset(known, uint64(i))
 
 				debugBigs("subset", subset)
-				recovered := ErasureCodeRecover(subset, MODULUS, ROOT_OF_UNITY2)
+				recovered := ErasureCodeRecover(subset, ROOT_OF_UNITY2)
 				debugBigs("recovered", recovered)
 				for i, got := range recovered {
-					if cmpBig(got, coeffs[i]) != 0 {
+					if !equalBig(got, coeffs[i]) {
 						t.Errorf("recovery at index %d got %s but expected %s", i, bigStr(got), bigStr(coeffs[i]))
 					}
 				}
 				// And recover the original data for good measure
-				back := FFT(recovered, MODULUS, ROOT_OF_UNITY2, true)
+				back := FFT(recovered, ROOT_OF_UNITY2, true)
 				debugBigs("back", back)
 				for i, got := range back[:WIDTH] {
-					if cmpBig(got, data[i]) != 0 {
+					if !equalBig(got, data[i]) {
 						t.Errorf("data at index %d got %s but expected %s", i, bigStr(got), bigStr(data[i]))
 					}
 				}

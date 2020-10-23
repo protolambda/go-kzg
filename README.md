@@ -14,6 +14,10 @@ Also see:
 - https://ethresear.ch/t/reed-solomon-erasure-code-recovery-in-n-log-2-n-time-with-ffts/3039
 - https://vitalik.ca/general/2019/05/12/fft.html
 
+## Bignums
+
+The BLS curve order is used for the modulo math, the Herumi BLS `F_p` type is can be used as `Big` with the `bignum_hbls` build tag.
+By default, Go `big.Int` are used instead.
 
 ## License
 

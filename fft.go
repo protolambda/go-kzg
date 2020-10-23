@@ -7,20 +7,10 @@ package go_verkle
 
 import (
 	"fmt"
-	"math/big"
 	"strings"
 )
 
 // TODO big int or F_p type
-type Big *big.Int
-
-func bigNum(v string) Big {
-	var b big.Int
-	if err := b.UnmarshalText([]byte(v)); err != nil {
-		panic(err)
-	}
-	return Big(&b)
-}
 
 var rootOfUnityCandidates = map[int]Big{
 	512: bigNum("12531186154666751577774347439625638674013361494693625348921624593362229945844"),
@@ -33,63 +23,12 @@ var rootOfUnityCandidates = map[int]Big{
 
 const WIDTH = 16
 
-var MODULUS Big = bigNum("52435875175126190479447740508185965837690552500527637822603658699938581184513")
 var ROOT_OF_UNITY Big = rootOfUnityCandidates[WIDTH]
 var ROOT_OF_UNITY2 Big = rootOfUnityCandidates[WIDTH*2]
 
-var ZERO = Big(big.NewInt(0))
-var ONE = Big(big.NewInt(1))
-
-func asBig(i uint64) Big {
-	return big.NewInt(int64(i))
-}
-
-func bigStr(b Big) string {
-	return (*big.Int)(b).String()
-}
-
-func cmpBig(a Big, b Big) int {
-	return (*big.Int)(a).Cmp(b)
-}
-
-func subModBigSimple(a Big, b uint8, mod Big) Big {
-	var out big.Int
-	out.Sub(a, big.NewInt(int64(b)))
-	return out.Mod(&out, mod)
-}
-
-func subModBig(a, b Big, mod Big) Big {
-	var out big.Int
-	out.Sub(a, b)
-	return out.Mod(&out, mod)
-}
-
-func incrementBig(v Big) Big {
-	x := (*big.Int)(v)
-	return x.Add(x, asBig(1))
-}
-
-func addModBig(a, b Big, mod Big) Big {
-	var out big.Int
-	out.Add(a, b)
-	return out.Mod(&out, mod)
-}
-
-func rshBig(v Big, sh uint) Big {
-	var out big.Int
-	return out.Rsh(v, sh)
-}
-
-func mulModBig(a, b Big, mod Big) Big {
-	var out big.Int
-	out.Mul(a, b)
-	return out.Mod(&out, mod)
-}
-
-func powModBig(a, b Big, mod Big) Big {
-	var out big.Int
-	return out.Exp(a, b, mod)
-}
+var ZERO = asBig(0)
+var ONE = asBig(1)
+var TWO = asBig(2)
 
 func debugBigs(msg string, values []Big) {
 	var out strings.Builder
@@ -97,7 +36,7 @@ func debugBigs(msg string, values []Big) {
 	out.WriteString(msg)
 	out.WriteString("---\n")
 	for i, v := range values {
-		out.WriteString(fmt.Sprintf("#%4d: %s\n", i, (*big.Int)(v).String()))
+		out.WriteString(fmt.Sprintf("#%4d: %s\n", i, bigStr(v)))
 	}
 	fmt.Println(out.String())
 }
@@ -109,7 +48,7 @@ func debugBigsOffsetStride(msg string, values []Big, offset uint, stride uint) {
 	out.WriteString("---\n")
 	j := uint(0)
 	for i := offset; i < uint(len(values)); i += stride {
-		out.WriteString(fmt.Sprintf("#%4d: %s\n", j, (*big.Int)(values[i]).String()))
+		out.WriteString(fmt.Sprintf("#%4d: %s\n", j, bigStr(values[i])))
 		j++
 	}
 	fmt.Println(out.String())
@@ -119,54 +58,54 @@ type Config struct {
 	WIDTH int
 }
 
-func simpleFT(vals []Big, valsOffset uint, valsStride uint, modulus Big, rootsOfUnity []Big, rootsOfUnityStride uint, out []Big) {
+func simpleFT(vals []Big, valsOffset uint, valsStride uint, rootsOfUnity []Big, rootsOfUnityStride uint, out []Big) {
 	l := uint(len(out))
 	for i := uint(0); i < l; i++ {
 		last := ZERO
 		for j := uint(0); j < l; j++ {
 			jv := vals[valsOffset+j*valsStride]
 			r := rootsOfUnity[((i*j)%l)*rootsOfUnityStride]
-			v := mulModBig(jv, r, modulus) // TODO lookup could be optimized
-			last = addModBig(last, v, modulus)
+			v := mulModBig(jv, r) // TODO lookup could be optimized
+			last = addModBig(last, v)
 		}
 		out[i] = last
 	}
 }
 
-func _fft(vals []Big, valsOffset uint, valsStride uint, modulus Big, rootsOfUnity []Big, rootsOfUnityStride uint, out []Big) {
+func _fft(vals []Big, valsOffset uint, valsStride uint, rootsOfUnity []Big, rootsOfUnityStride uint, out []Big) {
 	if len(out) <= 4 { // if the value count is small, run the unoptimized version instead. // TODO tune threshold.
-		simpleFT(vals, valsOffset, valsStride, modulus, rootsOfUnity, rootsOfUnityStride, out)
+		simpleFT(vals, valsOffset, valsStride, rootsOfUnity, rootsOfUnityStride, out)
 		return
 	}
 
 	half := uint(len(out)) >> 1
 	// L will be the left half of out
-	_fft(vals, valsOffset, valsStride<<1, modulus, rootsOfUnity, rootsOfUnityStride<<1, out[:half])
+	_fft(vals, valsOffset, valsStride<<1, rootsOfUnity, rootsOfUnityStride<<1, out[:half])
 	// R will be the right half of out
-	_fft(vals, valsOffset+valsStride, valsStride<<1, modulus, rootsOfUnity, rootsOfUnityStride<<1, out[half:]) // just take even again
+	_fft(vals, valsOffset+valsStride, valsStride<<1, rootsOfUnity, rootsOfUnityStride<<1, out[half:]) // just take even again
 
 	for i := uint(0); i < half; i++ {
 		x := out[i]
 		y := out[i+half]
 		root := rootsOfUnity[i*rootsOfUnityStride]
-		yTimesRoot := mulModBig(y, root, modulus)
-		out[i] = addModBig(x, yTimesRoot, modulus)
-		out[i+half] = subModBig(x, yTimesRoot, modulus)
+		yTimesRoot := mulModBig(y, root)
+		out[i] = addModBig(x, yTimesRoot)
+		out[i+half] = subModBig(x, yTimesRoot)
 	}
 }
 
-func expandRootOfUnity(rootOfUnity Big, modulus Big) []Big {
-	rootz := make([]Big, 2, 10) // TODO initial capacity
+func expandRootOfUnity(rootOfUnity Big) []Big {
+	rootz := make([]Big, 2, 32) // TODO initial capacity
 	rootz[0] = ONE              // some unused number in py code
 	rootz[1] = rootOfUnity
-	for i := 1; (*big.Int)(rootz[i]).Cmp(ONE) != 0; i++ {
-		rootz = append(rootz, mulModBig(rootz[i], rootOfUnity, modulus))
+	for i := 1; !equalOne(rootz[i]); i++ {
+		rootz = append(rootz, mulModBig(rootz[i], rootOfUnity))
 	}
 	return rootz
 }
 
-func FFT(vals []Big, modulus Big, rootOfUnity Big, inv bool) []Big {
-	rootz := expandRootOfUnity(rootOfUnity, modulus)
+func FFT(vals []Big, rootOfUnity Big, inv bool) []Big {
+	rootz := expandRootOfUnity(rootOfUnity)
 	// We make a copy so we can mutate it during the work.
 	valsCopy := make([]Big, len(rootz)-1, len(rootz)-1)
 	copy(valsCopy, vals)
@@ -175,8 +114,8 @@ func FFT(vals []Big, modulus Big, rootOfUnity Big, inv bool) []Big {
 		valsCopy[i] = ZERO
 	}
 	if inv {
-		exp := subModBigSimple(modulus, 2, modulus)
-		invLen := powModBig(asBig(uint64(len(vals))), exp, modulus)
+		exp := subModBigSimple(MODULUS, 2)
+		invLen := powModBig(asBig(uint64(len(vals))), exp)
 		// reverse roots of unity
 		for i, j := 0, len(rootz)-1; i < j; i, j = i+1, j-1 {
 			rootz[i], rootz[j] = rootz[j], rootz[i]
@@ -185,22 +124,22 @@ func FFT(vals []Big, modulus Big, rootOfUnity Big, inv bool) []Big {
 		//debugBigs("reversed roots of unity", rootz)
 		// TODO: currently only FFT regular numbers
 		out := make([]Big, len(rootz), len(rootz))
-		_fft(valsCopy, 0, 1, modulus, rootz, 1, out)
+		_fft(valsCopy, 0, 1, rootz, 1, out)
 		for i := 0; i < len(out); i++ {
-			out[i] = mulModBig(out[i], invLen, modulus)
+			out[i] = mulModBig(out[i], invLen)
 		}
 		return out
 	} else {
 		rootz = rootz[:len(rootz)-1]
 		out := make([]Big, len(rootz), len(rootz))
 		// Regular FFT
-		_fft(valsCopy, 0, 1, modulus, rootz, 1, out)
+		_fft(valsCopy, 0, 1, rootz, 1, out)
 		return out
 	}
 }
 
-func mulPolys(a []Big, b []Big, modulus Big, rootOfUnity Big) []Big {
-	rootz := expandRootOfUnity(rootOfUnity, modulus)
+func mulPolys(a []Big, b []Big, rootOfUnity Big) []Big {
+	rootz := expandRootOfUnity(rootOfUnity)
 	rootz = rootz[:len(rootz)-1]
 	// pad a and b to match roots of unity
 	aVals := make([]Big, len(rootz), len(rootz))
@@ -219,42 +158,42 @@ func mulPolys(a []Big, b []Big, modulus Big, rootOfUnity Big) []Big {
 	}
 	// Get FFT of a and b
 	x1 := make([]Big, len(aVals), len(aVals))
-	_fft(aVals, 0, 1, modulus, rootz, 1, x1)
+	_fft(aVals, 0, 1, rootz, 1, x1)
 	x2 := make([]Big, len(bVals), len(bVals))
-	_fft(bVals, 0, 1, modulus, rootz, 1, x2)
+	_fft(bVals, 0, 1, rootz, 1, x2)
 	// multiply the two. Hack: store results in x1
 	for i := 0; i < len(x1); i++ {
-		x1[i] = mulModBig(x1[i], x2[i], modulus)
+		x1[i] = mulModBig(x1[i], x2[i])
 	}
 	// compute the FFT of the multiplied values. Hack: store results in x2
-	_fft(x1, 0, 1, modulus, rootz, 1, x2)
+	_fft(x1, 0, 1, rootz, 1, x2)
 	return x2
 }
 
 // Calculates modular inverses [1/values[0], 1/values[1] ...]
-func multiInv(values []Big, modulus Big) []Big {
+func multiInv(values []Big) []Big {
 	partials := make([]Big, len(values)+1, len(values)+1)
 	partials[0] = values[0]
 	for i := 0; i < len(values); i++ {
-		partials[i+1] = mulModBig(partials[i], values[i], modulus)
+		partials[i+1] = mulModBig(partials[i], values[i])
 	}
-	exp := subModBigSimple(modulus, 2, modulus)
-	inv := powModBig(partials[len(partials)-1], exp, modulus)
+	exp := subModBigSimple(MODULUS, 2)
+	inv := powModBig(partials[len(partials)-1], exp)
 	outputs := make([]Big, len(values), len(values))
 	for i := len(values); i > 0; i-- {
-		outputs[i-1] = mulModBig(partials[i-1], inv, modulus)
-		inv = mulModBig(inv, values[i-1], modulus)
+		outputs[i-1] = mulModBig(partials[i-1], inv)
+		inv = mulModBig(inv, values[i-1])
 	}
 	return outputs
 }
 
 // Generates q(x) = poly(k * x)
-func pOfKX(poly []Big, modulus Big, k Big) []Big {
+func pOfKX(poly []Big, k Big) []Big {
 	out := make([]Big, len(poly), len(poly))
 	powerOfK := ONE
 	for i, x := range poly {
-		out[i] = mulModBig(x, powerOfK, modulus)
-		powerOfK = mulModBig(powerOfK, k, modulus)
+		out[i] = mulModBig(x, powerOfK)
+		powerOfK = mulModBig(powerOfK, k)
 	}
 	return out
 }
@@ -272,7 +211,7 @@ func inefficientOddEvenDiv2(positions []uint) (even []uint, odd []uint) { // TOD
 
 // Return (x - root**positions[0]) * (x - root**positions[1]) * ...
 // possibly with a constant factor offset
-func _zPoly(positions []uint, modulus Big, rootsOfUnity []Big, rootsOfUnityStride uint) []Big {
+func _zPoly(positions []uint, rootsOfUnity []Big, rootsOfUnityStride uint) []Big {
 	// If there are not more than 4 positions, use the naive
 	// O(n^2) algorithm as it is faster
 	if len(positions) <= 4 {
@@ -292,8 +231,8 @@ func _zPoly(positions []uint, modulus Big, rootsOfUnity []Big, rootsOfUnityStrid
 			x := rootsOfUnity[pos*rootsOfUnityStride]
 			root[i] = ZERO
 			for j := i; j >= 1; j-- {
-				v := mulModBig(root[j-1], x, modulus)
-				root[j] = subModBig(root[j], v, modulus)
+				v := mulModBig(root[j-1], x)
+				root[j] = subModBig(root[j], v)
 			}
 			i++
 		}
@@ -307,16 +246,16 @@ func _zPoly(positions []uint, modulus Big, rootsOfUnity []Big, rootsOfUnityStrid
 	// Recursively find the zpoly for even indices and odd
 	// indices, operating over a half-size subgroup in each case
 	evenPositions, oddPositions := inefficientOddEvenDiv2(positions)
-	left := _zPoly(evenPositions, modulus, rootsOfUnity, rootsOfUnityStride<<1)
-	right := _zPoly(oddPositions, modulus, rootsOfUnity, rootsOfUnityStride<<1)
+	left := _zPoly(evenPositions, rootsOfUnity, rootsOfUnityStride<<1)
+	right := _zPoly(oddPositions, rootsOfUnity, rootsOfUnityStride<<1)
 	invRoot := rootsOfUnity[uint(len(rootsOfUnity))-rootsOfUnityStride]
 	// Offset the result for the odd indices, and combine the two
-	out := mulPolys(left, pOfKX(right, modulus, invRoot), modulus, rootsOfUnity[1])
+	out := mulPolys(left, pOfKX(right, invRoot), rootsOfUnity[1])
 	// Deal with the special case where mul_polys returns zero
 	// when it should return x ^ (2 ** k) - 1
 	isZero := true
 	for _, o := range out {
-		if cmpBig(o, ZERO) != 0 {
+		if !equalZero(o) {
 			isZero = false
 			break
 		}
@@ -327,7 +266,7 @@ func _zPoly(positions []uint, modulus Big, rootsOfUnity []Big, rootsOfUnityStrid
 		for i := 1; i < len(out); i++ {
 			out[i] = ZERO
 		}
-		last := subModBigSimple(modulus, 1, modulus)
+		last := subModBigSimple(MODULUS, 1)
 		out = append(out, last)
 		return out
 	} else {
@@ -335,17 +274,17 @@ func _zPoly(positions []uint, modulus Big, rootsOfUnity []Big, rootsOfUnityStrid
 	}
 }
 
-func zPoly(positions []uint, modulus Big, rootOfUnity Big) []Big {
+func zPoly(positions []uint, rootOfUnity Big) []Big {
 	// Precompute roots of unity
-	rootz := expandRootOfUnity(rootOfUnity, modulus)
+	rootz := expandRootOfUnity(rootOfUnity)
 	rootz = rootz[:len(rootz)-1]
-	return _zPoly(positions, modulus, rootz, 1)
+	return _zPoly(positions, rootz, 1)
 }
 
 // TODO test unhappy case
 const maxRecoverAttempts = 10
 
-func ErasureCodeRecover(vals []Big, modulus Big, rootOfUnity Big) []Big {
+func ErasureCodeRecover(vals []Big, rootOfUnity Big) []Big {
 	// Generate the polynomial that is zero at the roots of unity
 	// corresponding to the indices where vals[i] is None
 	positions := make([]uint, 0, len(vals))
@@ -354,8 +293,8 @@ func ErasureCodeRecover(vals []Big, modulus Big, rootOfUnity Big) []Big {
 			positions = append(positions, i)
 		}
 	}
-	z := zPoly(positions, modulus, rootOfUnity)
-	zVals := FFT(z, modulus, rootOfUnity, false)
+	z := zPoly(positions, rootOfUnity)
+	zVals := FFT(z, rootOfUnity, false)
 
 	// Pointwise-multiply (vals filling in zero at missing spots) * z
 	// By construction, this equals vals * z
@@ -365,46 +304,48 @@ func ErasureCodeRecover(vals []Big, modulus Big, rootOfUnity Big) []Big {
 			// 0 * zVals[i] == 0
 			pTimesZVals[i] = ZERO
 		} else {
-			pTimesZVals[i] = mulModBig(vals[i], zVals[i], modulus)
+			pTimesZVals[i] = mulModBig(vals[i], zVals[i])
 		}
 	}
-	pTimesZ := FFT(pTimesZVals, modulus, rootOfUnity, true)
+	pTimesZ := FFT(pTimesZVals, rootOfUnity, true)
 
 	// Keep choosing k values until the algorithm does not fail
 	// Check only with primitive roots of unity
 
-	expMin1 := subModBigSimple(modulus, 1, modulus)
-	expMin1Div2 := rshBig(expMin1, 1)
+	// TODO precompute this
+	expMin1 := subModBigSimple(MODULUS, 1)
+	expMin1Div2 := divModBig(expMin1, TWO)
 
-	expMin2 := subModBigSimple(modulus, 2, modulus)
+	expMin2 := subModBigSimple(MODULUS, 2)
 
 	attempts := 0
-	for k := asBig(2); cmpBig(k, modulus) < 0; k = incrementBig(k) {
-		if cmpBig(powModBig(k, expMin1Div2, modulus), ONE) == 0 {
+	for k := uint64(2); attempts < maxRecoverAttempts; k++ {
+		kBig := asBig(k)
+		if equalOne(powModBig(kBig, expMin1Div2)) {
 			continue
 		}
-		invk := powModBig(k, expMin2, modulus)
+		invk := powModBig(kBig, expMin2)
 		// Convert p_times_z(x) and z(x) into new polynomials
 		// q1(x) = p_times_z(k*x) and q2(x) = z(k*x)
 		// These are likely to not be 0 at any of the evaluation points.
-		pTimesZOfKX := pOfKX(pTimesZ, modulus, k)
-		pTimesZOfKXVals := FFT(pTimesZOfKX, modulus, rootOfUnity, false)
-		zOfKX := pOfKX(z, modulus, k)
-		zOfKXVals := FFT(zOfKX, modulus, rootOfUnity, false)
+		pTimesZOfKX := pOfKX(pTimesZ, kBig)
+		pTimesZOfKXVals := FFT(pTimesZOfKX, rootOfUnity, false)
+		zOfKX := pOfKX(z, kBig)
+		zOfKXVals := FFT(zOfKX, rootOfUnity, false)
 		// Compute q1(x) / q2(x) = p(k*x)
-		invZOfKXVals := multiInv(zOfKXVals, modulus)
+		invZOfKXVals := multiInv(zOfKXVals)
 		pOfKxVals := make([]Big, len(pTimesZOfKXVals), len(pTimesZOfKXVals))
 		for i := 0; i < len(pOfKxVals); i++ {
-			pOfKxVals[i] = mulModBig(pTimesZOfKXVals[i], invZOfKXVals[i], modulus)
+			pOfKxVals[i] = mulModBig(pTimesZOfKXVals[i], invZOfKXVals[i])
 		}
-		pOfKx := FFT(pOfKxVals, modulus, rootOfUnity, true)
+		pOfKx := FFT(pOfKxVals, rootOfUnity, true)
 
 		// Given q3(x) = p(k*x), recover p(x)
 		pOfX := make([]Big, len(pOfKx), len(pOfKx))
 		for i, x := range pOfKx {
-			pOfX[i] = mulModBig(x, powModBig(invk, asBig(uint64(i)), modulus), modulus)
+			pOfX[i] = mulModBig(x, powModBig(invk, asBig(uint64(i))))
 		}
-		output := FFT(pOfX, modulus, rootOfUnity, false)
+		output := FFT(pOfX, rootOfUnity, false)
 
 		// Check that the output matches the input
 		success := true
@@ -412,7 +353,7 @@ func ErasureCodeRecover(vals []Big, modulus Big, rootOfUnity Big) []Big {
 			if inpd == nil {
 				continue
 			}
-			if cmpBig(inpd, output[i]) != 0 {
+			if !equalBig(inpd, output[i]) {
 				success = false
 				break
 			}
@@ -420,9 +361,6 @@ func ErasureCodeRecover(vals []Big, modulus Big, rootOfUnity Big) []Big {
 
 		if !success {
 			attempts += 1
-			if attempts >= maxRecoverAttempts {
-				panic("bad inputs")
-			}
 			continue
 		}
 		// Output the evaluations if all good

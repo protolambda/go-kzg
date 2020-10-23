@@ -15,7 +15,7 @@ func semiToeplitzFFT(toeplitzCoeffs []Big, x []Big) []Big {
 	//for i := 0; i < len(xext); i++ {
 	//	xext[len(x)+i] = ZERO
 	//}
-	//xextHat = fft(xext, MODULUS, ROOT_OF_UNITY, false)
+	//xextHat = fft(xext, ROOT_OF_UNITY, false)
 
 	text := make([]Big, 1+len(toeplitzCoeffs)+len(toeplitzCoeffs)-1)
 	text[0] = toeplitzCoeffs[0]
@@ -24,15 +24,15 @@ func semiToeplitzFFT(toeplitzCoeffs []Big, x []Big) []Big {
 	}
 	copy(text[len(toeplitzCoeffs)+1:], toeplitzCoeffs[1:])
 
-	textHat := FFT(text, MODULUS, ROOT_OF_UNITY2, false)
+	textHat := FFT(text, ROOT_OF_UNITY2, false)
 	yextHat := make([]Big, 2*len(x))
 	for i := 0; i < len(x); i++ {
 		//if type(xext_hat[0]) == tuple:
 		//	yext_hat[i] = b.multiply(xext_hat[i], text_hat[i])
 		//else:
-		yextHat[i] = mulModBig(yextHat[i], textHat[i], MODULUS)
+		yextHat[i] = mulModBig(yextHat[i], textHat[i])
 	}
-	return FFT(yextHat, MODULUS, ROOT_OF_UNITY2, true)[:len(x)]
+	return FFT(yextHat, ROOT_OF_UNITY2, true)[:len(x)]
 }
 
 // TODO
@@ -51,7 +51,7 @@ func generateAllProofs(values []Big, setup *Setup) []Big {
 		panic("bad values")
 	}
 	// Generate polynomial coefficients
-	coeffs := FFT(values, MODULUS, ROOT_OF_UNITY, true)
+	coeffs := FFT(values, ROOT_OF_UNITY, true)
 
 	// Toeplitz matrix multiplication
 	var h []Big
@@ -68,7 +68,7 @@ func generateAllProofs(values []Big, setup *Setup) []Big {
 	}
 
 	// final FFT
-	return FFT(h, MODULUS, ROOT_OF_UNITY, false)
+	return FFT(h, ROOT_OF_UNITY, false)
 }
 
 // TODO
