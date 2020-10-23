@@ -1,5 +1,10 @@
 package go_verkle
-import "math/big"
+
+import (
+	"fmt"
+	"math/big"
+	"strings"
+)
 
 // TODO big int or F_p type
 type Big *big.Int
@@ -34,6 +39,14 @@ func asBig(i uint64) Big {
 	return big.NewInt(int64(i))
 }
 
+func bigStr(b Big) string {
+	return (*big.Int)(b).String()
+}
+
+func cmpBig(a Big, b Big) int {
+	return (*big.Int)(a).Cmp(b)
+}
+
 func subModBigSimple(a Big, b uint8, mod Big) Big {
 	var out big.Int
 	out.Sub(a, big.NewInt(int64(b)))
@@ -63,64 +76,62 @@ func powModBig(a, b Big, mod Big) Big {
 	return out.Exp(a, b, mod)
 }
 
+func debugBigs(msg string, values []Big) {
+	var out strings.Builder
+	out.WriteString("---")
+	out.WriteString(msg)
+	out.WriteString("---\n")
+	for i, v := range values {
+		out.WriteString(fmt.Sprintf("#%4d: %s\n", i, (*big.Int)(v).String()))
+	}
+	fmt.Println(out.String())
+}
+
+func debugBigsOffsetStride(msg string, values []Big, offset uint, stride uint) {
+	var out strings.Builder
+	out.WriteString("---")
+	out.WriteString(msg)
+	out.WriteString("---\n")
+	j := uint(0)
+	for i := offset; i < uint(len(values)); i += stride {
+		out.WriteString(fmt.Sprintf("#%4d: %s\n", j, (*big.Int)(values[i]).String()))
+		j++
+	}
+	fmt.Println(out.String())
+}
+
 type Config struct {
 	WIDTH int
 }
 
-func simpleFT(vals []Big, modulus Big, rootsOfUnity []Big, out []Big) {
-	l := len(rootsOfUnity)
-	for i := 0; i < l; i++ {
+func simpleFT(vals []Big, valsOffset uint, valsStride uint, modulus Big, rootsOfUnity []Big, rootsOfUnityStride uint, out []Big) {
+	l := uint(len(out))
+	for i := uint(0); i < l; i++ {
 		last := ZERO
-		for j := 0; j < l; j++ {
-			v := mulModBig(vals[j], rootsOfUnity[(i*j)%l], modulus)  // TODO lookup could be optimized
+		for j := uint(0); j < l; j++ {
+			v := mulModBig(vals[valsOffset+j*valsStride], rootsOfUnity[((i*j)%l)*rootsOfUnityStride], modulus) // TODO lookup could be optimized
 			last = addModBig(last, v, modulus)
 		}
 		out[i] = last
 	}
 }
 
-// in-place move all even values to the left, all odd values to the right
-func reorgValues(vals []Big) (l, r []Big) {
-	// all even indices to L
-	// all odd indices to R
-	l = vals[:len(vals)/2]
-	r = vals[:len(vals)-len(l)]
-	for i := 0; i < len(vals); {
-		l[i >> 1] = vals[i]
-		i++
-		if i < len(vals) {
-			r[i>>1] = vals[i]
-			i++
-		} else {
-			panic("unexpected odd count of vals")
-		}
-	}
-	return l, r
-}
-
-func _fft(vals []Big, modulus Big, rootsOfUnity []Big, out []Big) {
-	if len(vals) <= 4 {  // if the value count is small, run the unoptimized version instead. // TODO tune threshold.
-		simpleFT(vals, modulus, rootsOfUnity, out)
+func _fft(vals []Big, valsOffset uint, valsStride uint, modulus Big, rootsOfUnity []Big, rootsOfUnityStride uint, out []Big) {
+	if len(out) <= 4 { // if the value count is small, run the unoptimized version instead. // TODO tune threshold.
+		simpleFT(vals, valsOffset, valsStride, modulus, rootsOfUnity, rootsOfUnityStride, out) // TODO apply stride
 		return
 	}
 
-	oldRoots := make([]Big, len(rootsOfUnity), len(rootsOfUnity))
-	copy(oldRoots, rootsOfUnity)
-
-	lVals, rVals := reorgValues(vals)
-	lROU, rROU := reorgValues(rootsOfUnity)
-
-	half := len(lROU)
-
+	half := uint(len(out)) >> 1
 	// L will be the left half of out
-	_fft(lVals, modulus, lROU, out[:half])
+	_fft(vals, valsOffset, valsStride<<1, modulus, rootsOfUnity, rootsOfUnityStride<<1, out[:half])
 	// R will be the right half of out
-	_fft(rVals, modulus, rROU, out[half:]) // TODO: this is lROU in python code?
+	_fft(vals, valsOffset+valsStride, valsStride<<1, modulus, rootsOfUnity, rootsOfUnityStride<<1, out[half:]) // just take even again
 
-	for i := 0; i < half; i++ {
+	for i := uint(0); i < half; i++ {
 		x := out[i]
 		y := out[i+half]
-		root := oldRoots[i] // TODO how does this work, it only accesses half?
+		root := rootsOfUnity[i*rootsOfUnityStride]
 		yTimesRoot := mulModBig(y, root, modulus)
 		out[i] = addModBig(x, yTimesRoot, modulus)
 		out[i+half] = subModBig(x, yTimesRoot, modulus)
@@ -129,16 +140,15 @@ func _fft(vals []Big, modulus Big, rootsOfUnity []Big, out []Big) {
 
 func expandRootOfUnity(rootOfUnity Big, modulus Big) []Big {
 	rootz := make([]Big, 2, 10) // TODO initial capacity
-	rootz[0] = ONE  // some unused number in py code
+	rootz[0] = ONE              // some unused number in py code
 	rootz[1] = rootOfUnity
-	for i := 1; rootz[i] != ONE; i++ {
+	for i := 1; (*big.Int)(rootz[i]).Cmp(ONE) != 0; i++ {
 		rootz = append(rootz, mulModBig(rootz[i], rootOfUnity, modulus))
 	}
 	return rootz
 }
 
-
-func fft(vals []Big, modulus Big, rootOfUnity Big, inv bool) []Big {
+func FFT(vals []Big, modulus Big, rootOfUnity Big, inv bool) []Big {
 	rootz := expandRootOfUnity(rootOfUnity, modulus)
 	// We make a copy so we can mutate it during the work.
 	valsCopy := make([]Big, len(rootz), len(rootz))
@@ -149,25 +159,27 @@ func fft(vals []Big, modulus Big, rootOfUnity Big, inv bool) []Big {
 	for i := len(vals); i < len(rootz); i++ {
 		valsCopy[i] = ZERO
 	}
-	// reverse roots
-	for i, j := 0, len(rootz)-1; i < j; i, j = i+1, j-1 {
-		rootz[i], rootz[j] = rootz[j], rootz[i]
-	}
 	if inv {
 		exp := subModBigSimple(modulus, 2, modulus)
 		invLen := powModBig(asBig(uint64(len(vals))), exp, modulus)
-		// Everything except last. The py code does rootz[:0:-1], excluding the last index of reversed slice
+		// reverse roots of unity
+		for i, j := 0, len(rootz)-1; i < j; i, j = i+1, j-1 {
+			rootz[i], rootz[j] = rootz[j], rootz[i]
+		}
+		rootz = rootz[:len(rootz)-1]
+		//debugBigs("reversed roots of unity", rootz)
 		// TODO: currently only FFT regular numbers
 		out := make([]Big, len(rootz), len(rootz))
-		_fft(vals, modulus, rootz[:len(rootz)-1], out)
+		_fft(vals, 0, 1, modulus, rootz, 1, out)
 		for i := 0; i < len(out); i++ {
 			out[i] = mulModBig(out[i], invLen, modulus)
 		}
 		return out
 	} else {
+		rootz = rootz[:len(rootz)-1]
 		out := make([]Big, len(rootz), len(rootz))
 		// Regular FFT
-		_fft(vals, modulus, rootz, out)
+		_fft(vals, 0, 1, modulus, rootz, 1, out)
 		return out
 	}
 }

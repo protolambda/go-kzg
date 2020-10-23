@@ -1,6 +1,5 @@
 package go_verkle
 
-
 func semiToeplitzFFT(toeplitzCoeffs []Big, x []Big) []Big {
 	if len(toeplitzCoeffs) == 0 {
 		panic("no coeffs")
@@ -18,14 +17,14 @@ func semiToeplitzFFT(toeplitzCoeffs []Big, x []Big) []Big {
 	//}
 	//xextHat = fft(xext, MODULUS, ROOT_OF_UNITY, false)
 
-	text := make([]Big, 1 + len(toeplitzCoeffs) + len(toeplitzCoeffs)-1)
+	text := make([]Big, 1+len(toeplitzCoeffs)+len(toeplitzCoeffs)-1)
 	text[0] = toeplitzCoeffs[0]
 	for i := 1; i <= len(toeplitzCoeffs); i++ {
 		text[i] = ZERO
 	}
 	copy(text[len(toeplitzCoeffs)+1:], toeplitzCoeffs[1:])
 
-	textHat := fft(text, MODULUS, ROOT_OF_UNITY2, false)
+	textHat := FFT(text, MODULUS, ROOT_OF_UNITY2, false)
 	yextHat := make([]Big, 2*len(x))
 	for i := 0; i < len(x); i++ {
 		//if type(xext_hat[0]) == tuple:
@@ -33,15 +32,15 @@ func semiToeplitzFFT(toeplitzCoeffs []Big, x []Big) []Big {
 		//else:
 		yextHat[i] = mulModBig(yextHat[i], textHat[i], MODULUS)
 	}
-	return fft(yextHat, MODULUS, ROOT_OF_UNITY2, true)[:len(x)]
+	return FFT(yextHat, MODULUS, ROOT_OF_UNITY2, true)[:len(x)]
 }
 
 // TODO
-type Point struct {}
+type Point struct{}
 
 type Setup struct {
-	seriesG1 []Point
-	seriesG2 []Point
+	seriesG1   []Point
+	seriesG2   []Point
 	lagrangeG1 []Point
 	lagrangeG2 []Point
 }
@@ -52,7 +51,7 @@ func generateAllProofs(values []Big, setup *Setup) []Big {
 		panic("bad values")
 	}
 	// Generate polynomial coefficients
-	coeffs := fft(values, MODULUS, ROOT_OF_UNITY, true)
+	coeffs := FFT(values, MODULUS, ROOT_OF_UNITY, true)
 
 	// Toeplitz matrix multiplication
 	var h []Big
@@ -69,11 +68,10 @@ func generateAllProofs(values []Big, setup *Setup) []Big {
 	}
 
 	// final FFT
-	return fft(h, MODULUS, ROOT_OF_UNITY, false)
+	return FFT(h, MODULUS, ROOT_OF_UNITY, false)
 }
 
 // TODO
 //# Generates the data and commitent tree for a piece of data
 //# as well as the precomputed proofs
 //def generate_tree(data, setup):
-
