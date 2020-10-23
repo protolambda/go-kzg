@@ -1,6 +1,8 @@
 package go_verkle
 
 import (
+	"fmt"
+	"math/rand"
 	"testing"
 )
 
@@ -86,5 +88,62 @@ func TestPolyRange(t *testing.T) {
 	// 4*(3^0) + 5*(3^1) + 6*(3^2) + 7*(3^3) = 262
 	if cmpBig(out, asBig(262)) != 0 {
 		t.Fatalf("bad result: %s", bigStr(out))
+	}
+}
+
+func TestErasureCodeRecover(t *testing.T) {
+	// Create some random data...
+	data := make([]Big, 2*WIDTH, 2*WIDTH)
+	for i := uint64(0); i < WIDTH; i++ {
+		data[i] = asBig(i)
+	}
+	for i := uint64(WIDTH); i < 2*WIDTH; i++ {
+		data[i] = ZERO
+	}
+	debugBigs("data", data)
+	// Get coefficients for polynomial P
+	coeffs := FFT(data, MODULUS, ROOT_OF_UNITY2, false)
+	debugBigs("coeffs", coeffs)
+	// Extend to 2N values by evaluating the polynomial for 2N values
+	values := evalPolyRange(coeffs, bigRange(0, WIDTH*2))
+
+	debugBigs("values", values)
+
+	// Util to pick a random subnet of the values
+	randomSubset := func(known uint64, rngSeed int64) []Big {
+		withMissingValues := make([]Big, WIDTH*2, WIDTH*2)
+		copy(withMissingValues, values)
+		rng := rand.New(rand.NewSource(rngSeed))
+		missing := WIDTH*2 - known
+		pruned := rng.Perm(WIDTH * 2)[:missing]
+		for _, i := range pruned {
+			withMissingValues[i] = nil
+		}
+		return withMissingValues
+	}
+
+	// Try different emounts of known indices, and try it in multiple random ways
+	for known := uint64(30); known < 2*WIDTH; known++ {
+		for i := 0; i < 20; i++ {
+			t.Run(fmt.Sprintf("random_subset_%d_known_%d", i, known), func(t *testing.T) {
+				subset := randomSubset(known, int64(i))
+				debugBigs("subset", subset)
+				recovered := ErasureCodeRecover(subset, MODULUS, ROOT_OF_UNITY2)
+				debugBigs("recovered", recovered)
+				for i, got := range recovered {
+					if cmpBig(got, values[i]) != 0 {
+						t.Errorf("recovery at index %d got %s but expected %s", i, bigStr(got), bigStr(values[i]))
+					}
+				}
+				// And recover the original data for good measure
+				back := FFT(recovered, MODULUS, ROOT_OF_UNITY2, true)
+				debugBigs("back", back)
+				for i, got := range back[:WIDTH] {
+					if cmpBig(got, data[i]) != 0 {
+						t.Errorf("data at index %d got %s but expected %s", i, bigStr(got), bigStr(data[i]))
+					}
+				}
+			})
+		}
 	}
 }
