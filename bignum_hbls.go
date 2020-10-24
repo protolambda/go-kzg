@@ -3,7 +3,6 @@
 package go_verkle
 
 import (
-	"fmt"
 	hbls "github.com/herumi/bls-eth-go-binary/bls"
 	"math/big"
 )
@@ -95,26 +94,8 @@ func invModBig(v Big) Big {
 	return &p
 }
 
-// Hacky work around, need to see what's the best way to do a**b in F_p
-func powModBig(a, b Big) Big {
-	aBytes := (*hbls.Fr)(a).Serialize()
-	bBytes := (*hbls.Fr)(b).Serialize()
-	var aBig big.Int
-	aBig.SetBytes(aBytes)
-	fmt.Printf("a HBLS: %s\na Big;\n %s\n", bigStr(a), aBig.String())
-	var bBig big.Int
-	bBig.SetBytes(bBytes)
-	var out big.Int
-	out.Exp(&aBig, &bBig, goMODULUS)
-	var outFr hbls.Fr
-	buf := out.Bytes()
-	// endianness, super ugly hack
-	for i, j := 0, len(buf)-1; i < j; i, j = i+1, j-1 {
-		buf[i], buf[j] = buf[j], buf[i]
-	}
-	if err := outFr.SetLittleEndianMod(buf); err != nil {
-		fmt.Printf("out %s\nbig %s\n", bigStr(&outFr), out.String())
-		panic(err)
-	}
-	return &outFr
+func sqrModBig(v Big) Big {
+	var p hbls.Fr
+	hbls.FrSqr(&p, v)
+	return &p
 }

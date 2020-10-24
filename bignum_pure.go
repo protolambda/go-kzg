@@ -81,3 +81,8 @@ func invModBig(v Big) Big {
 	var out big.Int
 	return out.ModInverse(v, _modulus)
 }
+
+func sqrModBig(v Big) Big {
+	var out big.Int
+	return out.ModSqrt(v, _modulus)
+}

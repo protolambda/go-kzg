@@ -168,7 +168,7 @@ func (fs *FFTSettings) FFT(vals []Big, inv bool) ([]Big, error) {
 		valsCopy[i] = ZERO
 	}
 	if inv {
-		invLen := powModBig(asBig(uint64(len(vals))), MODULUS_MINUS2)
+		invLen := invModBig(asBig(uint64(len(vals))))
 		rootz := fs.reverseRootsOfUnity
 
 		out := make([]Big, fs.width, fs.width)
@@ -225,8 +225,7 @@ func multiInv(values []Big) []Big {
 	for i := 0; i < len(values); i++ {
 		partials[i+1] = mulModBig(partials[i], values[i])
 	}
-	exp := MODULUS_MINUS2
-	inv := powModBig(partials[len(partials)-1], exp)
+	inv := invModBig(partials[len(partials)-1])
 	outputs := make([]Big, len(values), len(values))
 	for i := len(values); i > 0; i-- {
 		outputs[i-1] = mulModBig(partials[i-1], inv)
@@ -368,7 +367,8 @@ func (fs *FFTSettings) ErasureCodeRecover(vals []Big) ([]Big, error) {
 	attempts := 0
 	for k := uint64(2); attempts < maxRecoverAttempts; k++ {
 		kBig := asBig(k)
-		if equalOne(powModBig(kBig, MODULUS_MINUS1_DIV2)) {
+		// // TODO: check this, translation of 'if pow(k, (modulus - 1) // 2, modulus) == 1:'
+		if equalOne(sqrModBig(kBig)) {
 			continue
 		}
 		invk := invModBig(kBig)
@@ -406,8 +406,16 @@ func (fs *FFTSettings) ErasureCodeRecover(vals []Big) ([]Big, error) {
 
 		// Given q3(x) = p(k*x), recover p(x)
 		pOfX := make([]Big, len(pOfKx), len(pOfKx))
-		for i, x := range pOfKx {
-			pOfX[i] = mulModBig(x, powModBig(invk, asBig(uint64(i))))
+		if len(pOfKx) >= 1 {
+			pOfX[0] = pOfKx[0]
+		}
+		if len(pOfKx) >= 2 {
+			pOfX[1] = mulModBig(pOfKx[1], invk)
+			invKPowI := invk
+			for i := 2; i < len(pOfKx); i++ {
+				invKPowI = mulModBig(invKPowI, invk)
+				pOfX[i] = mulModBig(pOfKx[i], invKPowI)
+			}
 		}
 		output, err := fs.FFT(pOfX, false)
 		if err != nil {

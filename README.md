@@ -26,22 +26,37 @@ By default, Go `big.Int` are used instead.
 Operation: Do `FFT` with `2**scale` values, then do the inverse, and compare all results with the inputs.
 
 With Herumi BLS `F_p`:
+```
+BenchmarkFFTSettings_FFT
+BenchmarkFFTSettings_FFT/scale_4
+BenchmarkFFTSettings_FFT/scale_4-8         	   25705	     45747 ns/op
+BenchmarkFFTSettings_FFT/scale_5
+BenchmarkFFTSettings_FFT/scale_5-8         	   10000	    100307 ns/op
+BenchmarkFFTSettings_FFT/scale_6
+BenchmarkFFTSettings_FFT/scale_6-8         	    5529	    213935 ns/op
+BenchmarkFFTSettings_FFT/scale_7
+BenchmarkFFTSettings_FFT/scale_7-8         	    2584	    468012 ns/op
+BenchmarkFFTSettings_FFT/scale_8
+BenchmarkFFTSettings_FFT/scale_8-8         	    1131	   1068310 ns/op
+BenchmarkFFTSettings_FFT/scale_9
+BenchmarkFFTSettings_FFT/scale_9-8         	     420	   2413618 ns/op
+```
 
 Go `big.Int`:
 ```
 BenchmarkFFTSettings_FFT
 BenchmarkFFTSettings_FFT/scale_4
-BenchmarkFFTSettings_FFT/scale_4-8         	    8472	    141630 ns/op
+BenchmarkFFTSettings_FFT/scale_4-8         	   11064	    105990 ns/op
 BenchmarkFFTSettings_FFT/scale_5
-BenchmarkFFTSettings_FFT/scale_5-8         	    4375	    309654 ns/op
+BenchmarkFFTSettings_FFT/scale_5-8         	    4988	    254316 ns/op
 BenchmarkFFTSettings_FFT/scale_6
-BenchmarkFFTSettings_FFT/scale_6-8         	    1976	    622838 ns/op
+BenchmarkFFTSettings_FFT/scale_6-8         	    2142	    558080 ns/op
 BenchmarkFFTSettings_FFT/scale_7
-BenchmarkFFTSettings_FFT/scale_7-8         	     928	   1299832 ns/op
+BenchmarkFFTSettings_FFT/scale_7-8         	     964	   1254543 ns/op
 BenchmarkFFTSettings_FFT/scale_8
-BenchmarkFFTSettings_FFT/scale_8-8         	     427	   2842466 ns/op
+BenchmarkFFTSettings_FFT/scale_8-8         	     433	   2784433 ns/op
 BenchmarkFFTSettings_FFT/scale_9
-BenchmarkFFTSettings_FFT/scale_9-8         	     189	   6689181 ns/op
+BenchmarkFFTSettings_FFT/scale_9-8         	     198	   6058485 ns/op
 ```
 
 ## License
