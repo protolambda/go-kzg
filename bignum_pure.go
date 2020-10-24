@@ -6,7 +6,11 @@ import (
 	"math/big"
 )
 
-var MODULUS Big = bigNum("52435875175126190479447740508185965837690552500527637822603658699938581184513")
+var _modulus Big = bigNum("52435875175126190479447740508185965837690552500527637822603658699938581184513")
+
+func init() {
+	initGlobals()
+}
 
 type Big *big.Int
 
@@ -41,34 +45,39 @@ func equalBig(a Big, b Big) bool {
 func subModBigSimple(a Big, b uint8) Big {
 	var out big.Int
 	out.Sub(a, big.NewInt(int64(b)))
-	return out.Mod(&out, MODULUS)
+	return out.Mod(&out, _modulus)
 }
 
 func subModBig(a, b Big) Big {
 	var out big.Int
 	out.Sub(a, b)
-	return out.Mod(&out, MODULUS)
+	return out.Mod(&out, _modulus)
 }
 
 func addModBig(a, b Big) Big {
 	var out big.Int
 	out.Add(a, b)
-	return out.Mod(&out, MODULUS)
+	return out.Mod(&out, _modulus)
 }
 
 func divModBig(a, b Big) Big {
 	var out big.Int
 	out.Div(a, b)
-	return out.Mod(&out, MODULUS)
+	return out.Mod(&out, _modulus)
 }
 
 func mulModBig(a, b Big) Big {
 	var out big.Int
 	out.Mul(a, b)
-	return out.Mod(&out, MODULUS)
+	return out.Mod(&out, _modulus)
 }
 
 func powModBig(a, b Big) Big {
 	var out big.Int
-	return out.Exp(a, b, MODULUS)
+	return out.Exp(a, b, _modulus)
+}
+
+func invModBig(v Big) Big {
+	var out big.Int
+	return out.ModInverse(v, _modulus)
 }
