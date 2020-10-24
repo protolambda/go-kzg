@@ -31,58 +31,58 @@ With Herumi BLS `F_p`:
 ```
 BenchmarkFFTSettings_FFT
 BenchmarkFFTSettings_FFT/scale_4
-BenchmarkFFTSettings_FFT/scale_4-8         	  301101	     39035 ns/op
+BenchmarkFFTSettings_FFT/scale_4-8         	  314210	     36656 ns/op
 BenchmarkFFTSettings_FFT/scale_5
-BenchmarkFFTSettings_FFT/scale_5-8         	  141576	     85532 ns/op
+BenchmarkFFTSettings_FFT/scale_5-8         	  146878	     80245 ns/op
 BenchmarkFFTSettings_FFT/scale_6
-BenchmarkFFTSettings_FFT/scale_6-8         	   62918	    197170 ns/op
+BenchmarkFFTSettings_FFT/scale_6-8         	   68470	    175622 ns/op
 BenchmarkFFTSettings_FFT/scale_7
-BenchmarkFFTSettings_FFT/scale_7-8         	   28546	    414928 ns/op
+BenchmarkFFTSettings_FFT/scale_7-8         	   31270	    388467 ns/op
 BenchmarkFFTSettings_FFT/scale_8
-BenchmarkFFTSettings_FFT/scale_8-8         	   13293	    911724 ns/op
+BenchmarkFFTSettings_FFT/scale_8-8         	   14319	    826379 ns/op
 BenchmarkFFTSettings_FFT/scale_9
-BenchmarkFFTSettings_FFT/scale_9-8         	    5558	   2021055 ns/op
+BenchmarkFFTSettings_FFT/scale_9-8         	    6648	   1773182 ns/op
 BenchmarkFFTSettings_FFT/scale_10
-BenchmarkFFTSettings_FFT/scale_10-8        	    2761	   4240929 ns/op
+BenchmarkFFTSettings_FFT/scale_10-8        	    3196	   3825345 ns/op
 BenchmarkFFTSettings_FFT/scale_11
-BenchmarkFFTSettings_FFT/scale_11-8        	    1323	   9137313 ns/op
+BenchmarkFFTSettings_FFT/scale_11-8        	    1484	   8079814 ns/op
 BenchmarkFFTSettings_FFT/scale_12
-BenchmarkFFTSettings_FFT/scale_12-8        	     609	  19611052 ns/op
+BenchmarkFFTSettings_FFT/scale_12-8        	     694	  17279690 ns/op
 BenchmarkFFTSettings_FFT/scale_13
-BenchmarkFFTSettings_FFT/scale_13-8        	     286	  41877902 ns/op
+BenchmarkFFTSettings_FFT/scale_13-8        	     320	  36955078 ns/op
 BenchmarkFFTSettings_FFT/scale_14
-BenchmarkFFTSettings_FFT/scale_14-8        	     134	  89225843 ns/op
+BenchmarkFFTSettings_FFT/scale_14-8        	     152	  78407904 ns/op
 BenchmarkFFTSettings_FFT/scale_15
-BenchmarkFFTSettings_FFT/scale_15-8        	      61	 190170178 ns/op
+BenchmarkFFTSettings_FFT/scale_15-8        	      73	 166327867 ns/op
 ```
 
 With Go `big.Int`:
 ```
 BenchmarkFFTSettings_FFT
 BenchmarkFFTSettings_FFT/scale_4
-BenchmarkFFTSettings_FFT/scale_4-8         	  167884	     71236 ns/op
+BenchmarkFFTSettings_FFT/scale_4-8         	  148371	     79721 ns/op
 BenchmarkFFTSettings_FFT/scale_5
-BenchmarkFFTSettings_FFT/scale_5-8         	   72451	    162501 ns/op
+BenchmarkFFTSettings_FFT/scale_5-8         	   66244	    183889 ns/op
 BenchmarkFFTSettings_FFT/scale_6
-BenchmarkFFTSettings_FFT/scale_6-8         	   32625	    366703 ns/op
+BenchmarkFFTSettings_FFT/scale_6-8         	   28401	    418033 ns/op
 BenchmarkFFTSettings_FFT/scale_7
-BenchmarkFFTSettings_FFT/scale_7-8         	   14629	    820555 ns/op
+BenchmarkFFTSettings_FFT/scale_7-8         	   12727	    942062 ns/op
 BenchmarkFFTSettings_FFT/scale_8
-BenchmarkFFTSettings_FFT/scale_8-8         	    6410	   1810186 ns/op
+BenchmarkFFTSettings_FFT/scale_8-8         	    5839	   2062949 ns/op
 BenchmarkFFTSettings_FFT/scale_9
-BenchmarkFFTSettings_FFT/scale_9-8         	    3060	   3952192 ns/op
+BenchmarkFFTSettings_FFT/scale_9-8         	    2634	   4561437 ns/op
 BenchmarkFFTSettings_FFT/scale_10
-BenchmarkFFTSettings_FFT/scale_10-8        	    1395	   8558782 ns/op
+BenchmarkFFTSettings_FFT/scale_10-8        	    1192	  10118087 ns/op
 BenchmarkFFTSettings_FFT/scale_11
-BenchmarkFFTSettings_FFT/scale_11-8        	     643	  18657967 ns/op
+BenchmarkFFTSettings_FFT/scale_11-8        	     552	  21667105 ns/op
 BenchmarkFFTSettings_FFT/scale_12
-BenchmarkFFTSettings_FFT/scale_12-8        	     294	  40827669 ns/op
+BenchmarkFFTSettings_FFT/scale_12-8        	     252	  47501651 ns/op
 BenchmarkFFTSettings_FFT/scale_13
-BenchmarkFFTSettings_FFT/scale_13-8        	     134	  88518052 ns/op
+BenchmarkFFTSettings_FFT/scale_13-8        	     100	 103291006 ns/op
 BenchmarkFFTSettings_FFT/scale_14
-BenchmarkFFTSettings_FFT/scale_14-8        	      62	 189773925 ns/op
+BenchmarkFFTSettings_FFT/scale_14-8        	      54	 221584268 ns/op
 BenchmarkFFTSettings_FFT/scale_15
-BenchmarkFFTSettings_FFT/scale_15-8        	      30	 401412330 ns/op
+BenchmarkFFTSettings_FFT/scale_15-8        	      25	 468244617 ns/op
 ```
 
 ## License
