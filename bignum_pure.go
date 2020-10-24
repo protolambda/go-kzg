@@ -6,83 +6,72 @@ import (
 	"math/big"
 )
 
-var _modulus Big = bigNum("52435875175126190479447740508185965837690552500527637822603658699938581184513")
+var _modulus big.Int
 
 func init() {
+	bigNum((*Big)(&_modulus), "52435875175126190479447740508185965837690552500527637822603658699938581184513")
 	initGlobals()
 }
 
-type Big *big.Int
+type Big big.Int
 
-func bigNum(v string) Big {
-	var b big.Int
-	if err := b.UnmarshalText([]byte(v)); err != nil {
+func copyBigNum(dst *Big, v *Big) {
+	(*big.Int)(dst).Set((*big.Int)(v))
+}
+
+func bigNum(dst *Big, v string) {
+	if err := (*big.Int)(dst).UnmarshalText([]byte(v)); err != nil {
 		panic(err)
 	}
-	return &b
 }
 
-func asBig(i uint64) Big {
-	return big.NewInt(int64(i))
+func asBig(dst *Big, i uint64) {
+	(*big.Int)(dst).SetInt64(int64(i))
 }
 
-func bigStr(b Big) string {
+func bigStr(b *Big) string {
 	return (*big.Int)(b).String()
 }
 
-func equalOne(v Big) bool {
-	return (*big.Int)(v).Cmp(ONE) == 0
+func equalOne(v *Big) bool {
+	return (*big.Int)(v).Cmp((*big.Int)(&ONE)) == 0
 }
 
-func equalZero(v Big) bool {
-	return (*big.Int)(v).Cmp(ZERO) == 0
+func equalZero(v *Big) bool {
+	return (*big.Int)(v).Cmp((*big.Int)(&ZERO)) == 0
 }
 
-func equalBig(a Big, b Big) bool {
-	return (*big.Int)(a).Cmp(b) == 0
+func equalBig(a *Big, b *Big) bool {
+	return (*big.Int)(a).Cmp((*big.Int)(b)) == 0
 }
 
-func subModBigSimple(a Big, b uint8) Big {
-	var out big.Int
-	out.Sub(a, big.NewInt(int64(b)))
-	return out.Mod(&out, _modulus)
+func subModBig(dst *Big, a, b *Big) {
+	(*big.Int)(dst).Sub((*big.Int)(a), (*big.Int)(b))
+	(*big.Int)(dst).Mod((*big.Int)(dst), &_modulus)
 }
 
-func subModBig(a, b Big) Big {
-	var out big.Int
-	out.Sub(a, b)
-	return out.Mod(&out, _modulus)
+func addModBig(dst *Big, a, b *Big) {
+	(*big.Int)(dst).Add((*big.Int)(a), (*big.Int)(b))
+	(*big.Int)(dst).Mod((*big.Int)(dst), &_modulus)
 }
 
-func addModBig(a, b Big) Big {
-	var out big.Int
-	out.Add(a, b)
-	return out.Mod(&out, _modulus)
+func divModBig(dst *Big, a, b *Big) {
+	(*big.Int)(dst).Div((*big.Int)(a), (*big.Int)(b))
 }
 
-func divModBig(a, b Big) Big {
-	var out big.Int
-	out.Div(a, b)
-	return out.Mod(&out, _modulus)
+func mulModBig(dst *Big, a, b *Big) {
+	(*big.Int)(dst).Mul((*big.Int)(a), (*big.Int)(b))
+	(*big.Int)(dst).Mod((*big.Int)(dst), &_modulus)
 }
 
-func mulModBig(a, b Big) Big {
-	var out big.Int
-	out.Mul(a, b)
-	return out.Mod(&out, _modulus)
+func powModBig(dst *Big, a, b *Big) {
+	(*big.Int)(dst).Exp((*big.Int)(a), (*big.Int)(b), &_modulus)
 }
 
-func powModBig(a, b Big) Big {
-	var out big.Int
-	return out.Exp(a, b, _modulus)
+func invModBig(dst *Big, v *Big) {
+	(*big.Int)(dst).ModInverse((*big.Int)(v), &_modulus)
 }
 
-func invModBig(v Big) Big {
-	var out big.Int
-	return out.ModInverse(v, _modulus)
-}
-
-func sqrModBig(v Big) Big {
-	var out big.Int
-	return out.ModSqrt(v, _modulus)
+func sqrModBig(dst *Big, v *Big) {
+	(*big.Int)(dst).ModSqrt((*big.Int)(v), &_modulus)
 }
