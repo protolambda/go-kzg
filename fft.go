@@ -10,21 +10,81 @@ import (
 	"strings"
 )
 
-// TODO big int or F_p type
+var MODULUS_MINUS1, MODULUS_MINUS1_DIV2, MODULUS_MINUS2 Big
 
-var rootOfUnityCandidates = map[int]Big{
-	512: bigNum("12531186154666751577774347439625638674013361494693625348921624593362229945844"),
-	256: bigNum("21071158244812412064791010377580296085971058123779034548857891862303448703672"),
-	128: bigNum("3535074550574477753284711575859241084625659976293648650204577841347885064712"),
-	64:  bigNum("6460039226971164073848821215333189185736442942708452192605981749202491651199"),
-	32:  bigNum("32311457133713125762627935188100354218453688428796477340173861531654182464166"),
-	16:  bigNum("35811073542294463015946892559272836998938171743018714161809767624935956676211"),
+func init() {
+	MODULUS_MINUS1 = subModBigSimple(MODULUS, 1)
+	MODULUS_MINUS1_DIV2 = divModBig(MODULUS_MINUS1, TWO)
+
+	MODULUS_MINUS2 = subModBigSimple(MODULUS, 2)
 }
 
-const WIDTH = 16
+var scale2RootOfUnity = []Big{
+	/* k=0          r=1          */ bigNum("1"),
+	/* k=1          r=2          */ bigNum("52435875175126190479447740508185965837690552500527637822603658699938581184512"),
+	/* k=2          r=4          */ bigNum("3465144826073652318776269530687742778270252468765361963008"),
+	/* k=3          r=8          */ bigNum("23674694431658770659612952115660802947967373701506253797663184111817857449850"),
+	/* k=4          r=16         */ bigNum("14788168760825820622209131888203028446852016562542525606630160374691593895118"),
+	/* k=5          r=32         */ bigNum("36581797046584068049060372878520385032448812009597153775348195406694427778894"),
+	/* k=6          r=64         */ bigNum("31519469946562159605140591558550197856588417350474800936898404023113662197331"),
+	/* k=7          r=128        */ bigNum("47309214877430199588914062438791732591241783999377560080318349803002842391998"),
+	/* k=8          r=256        */ bigNum("36007022166693598376559747923784822035233416720563672082740011604939309541707"),
+	/* k=9          r=512        */ bigNum("4214636447306890335450803789410475782380792963881561516561680164772024173390"),
+	/* k=10         r=1024       */ bigNum("22781213702924172180523978385542388841346373992886390990881355510284839737428"),
+	/* k=11         r=2048       */ bigNum("49307615728544765012166121802278658070711169839041683575071795236746050763237"),
+	/* k=12         r=4096       */ bigNum("39033254847818212395286706435128746857159659164139250548781411570340225835782"),
+	/* k=13         r=8192       */ bigNum("32731401973776920074999878620293785439674386180695720638377027142500196583783"),
+	/* k=14         r=16384      */ bigNum("39072540533732477250409069030641316533649120504872707460480262653418090977761"),
+	/* k=15         r=32768      */ bigNum("22872204467218851938836547481240843888453165451755431061227190987689039608686"),
+	/* k=16         r=65536      */ bigNum("15076889834420168339092859836519192632846122361203618639585008852351569017005"),
+	/* k=17         r=131072     */ bigNum("15495926509001846844474268026226183818445427694968626800913907911890390421264"),
+	/* k=18         r=262144     */ bigNum("20439484849038267462774237595151440867617792718791690563928621375157525968123"),
+	/* k=19         r=524288     */ bigNum("37115000097562964541269718788523040559386243094666416358585267518228781043101"),
+}
 
-var ROOT_OF_UNITY Big = rootOfUnityCandidates[WIDTH]
-var ROOT_OF_UNITY2 Big = rootOfUnityCandidates[WIDTH*2]
+// Expands the power circle for a given root of unity to WIDTH+1 values.
+// The first entry will be 1, the last entry won't be 1 (omitted, unlike the python implementation)
+func expandRootOfUnity(rootOfUnity Big) []Big {
+	rootz := make([]Big, 2)
+	rootz[0] = ONE // some unused number in py code
+	rootz[1] = rootOfUnity
+	for i := 1; !equalOne(rootz[i]); i++ {
+		rootz = append(rootz, mulModBig(rootz[i], rootOfUnity))
+	}
+	return rootz
+}
+
+type FFTSettings struct {
+	scale uint8
+	width uint64
+	// the generator used to get all roots of unity
+	rootOfUnity          Big
+	expandedRootsOfUnity []Big
+	reverseRootsOfUnity  []Big
+}
+
+func NewFFTSettings(scale uint8) *FFTSettings {
+	width := uint64(1) << scale
+	root := scale2RootOfUnity[scale]
+	rootz := expandRootOfUnity(scale2RootOfUnity[scale])
+	// reverse roots of unity
+	rootzReverse := make([]Big, len(rootz), len(rootz))
+	copy(rootzReverse, rootz)
+	for i, j := uint64(0), uint64(len(rootz)-1); i < j; i, j = i+1, j-1 {
+		rootzReverse[i], rootzReverse[j] = rootzReverse[j], rootzReverse[i]
+	}
+	return &FFTSettings{
+		scale:                scale,
+		width:                width,
+		rootOfUnity:          root,
+		expandedRootsOfUnity: rootz,
+		reverseRootsOfUnity:  rootzReverse,
+	}
+}
+
+func (fs *FFTSettings) zPoly(positions []uint) []Big {
+	return fs._zPoly(positions, 1)
+}
 
 var ZERO = asBig(0)
 var ONE = asBig(1)
@@ -58,7 +118,7 @@ type Config struct {
 	WIDTH int
 }
 
-func simpleFT(vals []Big, valsOffset uint, valsStride uint, rootsOfUnity []Big, rootsOfUnityStride uint, out []Big) {
+func (fs *FFTSettings) simpleFT(vals []Big, valsOffset uint, valsStride uint, rootsOfUnity []Big, rootsOfUnityStride uint, out []Big) {
 	l := uint(len(out))
 	for i := uint(0); i < l; i++ {
 		last := ZERO
@@ -72,17 +132,17 @@ func simpleFT(vals []Big, valsOffset uint, valsStride uint, rootsOfUnity []Big, 
 	}
 }
 
-func _fft(vals []Big, valsOffset uint, valsStride uint, rootsOfUnity []Big, rootsOfUnityStride uint, out []Big) {
+func (fs *FFTSettings) _fft(vals []Big, valsOffset uint, valsStride uint, rootsOfUnity []Big, rootsOfUnityStride uint, out []Big) {
 	if len(out) <= 4 { // if the value count is small, run the unoptimized version instead. // TODO tune threshold.
-		simpleFT(vals, valsOffset, valsStride, rootsOfUnity, rootsOfUnityStride, out)
+		fs.simpleFT(vals, valsOffset, valsStride, rootsOfUnity, rootsOfUnityStride, out)
 		return
 	}
 
 	half := uint(len(out)) >> 1
 	// L will be the left half of out
-	_fft(vals, valsOffset, valsStride<<1, rootsOfUnity, rootsOfUnityStride<<1, out[:half])
+	fs._fft(vals, valsOffset, valsStride<<1, rootsOfUnity, rootsOfUnityStride<<1, out[:half])
 	// R will be the right half of out
-	_fft(vals, valsOffset+valsStride, valsStride<<1, rootsOfUnity, rootsOfUnityStride<<1, out[half:]) // just take even again
+	fs._fft(vals, valsOffset+valsStride, valsStride<<1, rootsOfUnity, rootsOfUnityStride<<1, out[half:]) // just take even again
 
 	for i := uint(0); i < half; i++ {
 		x := out[i]
@@ -94,56 +154,40 @@ func _fft(vals []Big, valsOffset uint, valsStride uint, rootsOfUnity []Big, root
 	}
 }
 
-func expandRootOfUnity(rootOfUnity Big) []Big {
-	rootz := make([]Big, 2, 32) // TODO initial capacity
-	rootz[0] = ONE              // some unused number in py code
-	rootz[1] = rootOfUnity
-	for i := 1; !equalOne(rootz[i]); i++ {
-		rootz = append(rootz, mulModBig(rootz[i], rootOfUnity))
+func (fs *FFTSettings) FFT(vals []Big, inv bool) ([]Big, error) {
+	if len(fs.expandedRootsOfUnity) < len(vals) {
+		return nil, fmt.Errorf("got %d values but only have %d roots of unity", len(vals), len(fs.expandedRootsOfUnity))
 	}
-	return rootz
-}
-
-func FFT(vals []Big, rootOfUnity Big, inv bool) []Big {
-	rootz := expandRootOfUnity(rootOfUnity)
 	// We make a copy so we can mutate it during the work.
-	valsCopy := make([]Big, len(rootz)-1, len(rootz)-1)
+	valsCopy := make([]Big, fs.width, fs.width)
 	copy(valsCopy, vals)
 	// Fill in vals with zeroes if needed
-	for i := len(vals); i < len(rootz)-1; i++ {
+	for i := uint64(len(vals)); i < fs.width; i++ {
 		valsCopy[i] = ZERO
 	}
 	if inv {
-		exp := subModBigSimple(MODULUS, 2)
-		invLen := powModBig(asBig(uint64(len(vals))), exp)
-		// reverse roots of unity
-		for i, j := 0, len(rootz)-1; i < j; i, j = i+1, j-1 {
-			rootz[i], rootz[j] = rootz[j], rootz[i]
-		}
-		rootz = rootz[:len(rootz)-1]
-		//debugBigs("reversed roots of unity", rootz)
-		// TODO: currently only FFT regular numbers
-		out := make([]Big, len(rootz), len(rootz))
-		_fft(valsCopy, 0, 1, rootz, 1, out)
+		invLen := powModBig(asBig(uint64(len(vals))), MODULUS_MINUS2)
+		rootz := fs.reverseRootsOfUnity
+
+		out := make([]Big, fs.width, fs.width)
+		fs._fft(valsCopy, 0, 1, rootz[:len(rootz)-1], 1, out)
 		for i := 0; i < len(out); i++ {
 			out[i] = mulModBig(out[i], invLen)
 		}
-		return out
+		return out, nil
 	} else {
-		rootz = rootz[:len(rootz)-1]
-		out := make([]Big, len(rootz), len(rootz))
+		out := make([]Big, fs.width, fs.width)
+		rootz := fs.expandedRootsOfUnity
 		// Regular FFT
-		_fft(valsCopy, 0, 1, rootz, 1, out)
-		return out
+		fs._fft(valsCopy, 0, 1, rootz[:len(rootz)-1], 1, out)
+		return out, nil
 	}
 }
 
-func mulPolys(a []Big, b []Big, rootOfUnity Big) []Big {
-	rootz := expandRootOfUnity(rootOfUnity)
-	rootz = rootz[:len(rootz)-1]
+func (fs *FFTSettings) mulPolys(a []Big, b []Big) []Big {
 	// pad a and b to match roots of unity
-	aVals := make([]Big, len(rootz), len(rootz))
-	bVals := make([]Big, len(rootz), len(rootz))
+	aVals := make([]Big, fs.width, fs.width)
+	bVals := make([]Big, fs.width, fs.width)
 	for i := 0; i < len(a); i++ {
 		aVals[i] = a[i]
 	}
@@ -156,17 +200,19 @@ func mulPolys(a []Big, b []Big, rootOfUnity Big) []Big {
 	for i := len(b); i < len(bVals); i++ {
 		bVals[i] = ZERO
 	}
+	rootz := fs.expandedRootsOfUnity
 	// Get FFT of a and b
 	x1 := make([]Big, len(aVals), len(aVals))
-	_fft(aVals, 0, 1, rootz, 1, x1)
+	fs._fft(aVals, 0, 1, rootz[:len(rootz)-1], 1, x1)
 	x2 := make([]Big, len(bVals), len(bVals))
-	_fft(bVals, 0, 1, rootz, 1, x2)
+	fs._fft(bVals, 0, 1, rootz[:len(rootz)-1], 1, x2)
 	// multiply the two. Hack: store results in x1
 	for i := 0; i < len(x1); i++ {
 		x1[i] = mulModBig(x1[i], x2[i])
 	}
+	revRootz := fs.reverseRootsOfUnity
 	// compute the FFT of the multiplied values. Hack: store results in x2
-	_fft(x1, 0, 1, rootz, 1, x2)
+	fs._fft(x1, 0, 1, revRootz[:len(revRootz)-1], 1, x2)
 	return x2
 }
 
@@ -211,7 +257,7 @@ func inefficientOddEvenDiv2(positions []uint) (even []uint, odd []uint) { // TOD
 
 // Return (x - root**positions[0]) * (x - root**positions[1]) * ...
 // possibly with a constant factor offset
-func _zPoly(positions []uint, rootsOfUnity []Big, rootsOfUnityStride uint) []Big {
+func (fs *FFTSettings) _zPoly(positions []uint, rootsOfUnityStride uint) []Big {
 	// If there are not more than 4 positions, use the naive
 	// O(n^2) algorithm as it is faster
 	if len(positions) <= 4 {
@@ -228,7 +274,7 @@ func _zPoly(positions []uint, rootsOfUnity []Big, rootsOfUnityStride uint) []Big
 		root[0] = ONE
 		i := 1
 		for _, pos := range positions {
-			x := rootsOfUnity[pos*rootsOfUnityStride]
+			x := fs.expandedRootsOfUnity[pos*rootsOfUnityStride]
 			root[i] = ZERO
 			for j := i; j >= 1; j-- {
 				v := mulModBig(root[j-1], x)
@@ -241,16 +287,17 @@ func _zPoly(positions []uint, rootsOfUnity []Big, rootsOfUnityStride uint) []Big
 		for i, j := 0, len(root)-1; i < j; i, j = i+1, j-1 {
 			root[i], root[j] = root[j], root[i]
 		}
+		//debugBigs("_zpoly small out", root)
 		return root
 	}
 	// Recursively find the zpoly for even indices and odd
 	// indices, operating over a half-size subgroup in each case
 	evenPositions, oddPositions := inefficientOddEvenDiv2(positions)
-	left := _zPoly(evenPositions, rootsOfUnity, rootsOfUnityStride<<1)
-	right := _zPoly(oddPositions, rootsOfUnity, rootsOfUnityStride<<1)
-	invRoot := rootsOfUnity[uint(len(rootsOfUnity))-rootsOfUnityStride]
+	left := fs._zPoly(evenPositions, rootsOfUnityStride<<1)
+	right := fs._zPoly(oddPositions, rootsOfUnityStride<<1)
+	invRoot := fs.expandedRootsOfUnity[uint(len(fs.expandedRootsOfUnity))-1-rootsOfUnityStride]
 	// Offset the result for the odd indices, and combine the two
-	out := mulPolys(left, pOfKX(right, invRoot), rootsOfUnity[1])
+	out := fs.mulPolys(left, pOfKX(right, invRoot))
 	// Deal with the special case where mul_polys returns zero
 	// when it should return x ^ (2 ** k) - 1
 	isZero := true
@@ -261,6 +308,7 @@ func _zPoly(positions []uint, rootsOfUnity []Big, rootsOfUnityStride uint) []Big
 		}
 	}
 	if isZero {
+		//debugBigs("_zpoly zero out", out)
 		// TODO: it's [1] + [0] * (len(out) - 1) + [modulus - 1] in python, but strange it's 1 larger than out
 		out[0] = ONE
 		for i := 1; i < len(out); i++ {
@@ -270,21 +318,15 @@ func _zPoly(positions []uint, rootsOfUnity []Big, rootsOfUnityStride uint) []Big
 		out = append(out, last)
 		return out
 	} else {
+		//debugBigs("_zpoly out", out)
 		return out
 	}
-}
-
-func zPoly(positions []uint, rootOfUnity Big) []Big {
-	// Precompute roots of unity
-	rootz := expandRootOfUnity(rootOfUnity)
-	rootz = rootz[:len(rootz)-1]
-	return _zPoly(positions, rootz, 1)
 }
 
 // TODO test unhappy case
 const maxRecoverAttempts = 10
 
-func ErasureCodeRecover(vals []Big, rootOfUnity Big) []Big {
+func (fs *FFTSettings) ErasureCodeRecover(vals []Big) ([]Big, error) {
 	// Generate the polynomial that is zero at the roots of unity
 	// corresponding to the indices where vals[i] is None
 	positions := make([]uint, 0, len(vals))
@@ -293,8 +335,13 @@ func ErasureCodeRecover(vals []Big, rootOfUnity Big) []Big {
 			positions = append(positions, i)
 		}
 	}
-	z := zPoly(positions, rootOfUnity)
-	zVals := FFT(z, rootOfUnity, false)
+	z := fs.zPoly(positions)
+	//debugBigs("z", z)
+	zVals, err := fs.FFT(z, false)
+	if err != nil {
+		return nil, err
+	}
+	//debugBigs("zvals", zVals)
 
 	// Pointwise-multiply (vals filling in zero at missing spots) * z
 	// By construction, this equals vals * z
@@ -307,45 +354,63 @@ func ErasureCodeRecover(vals []Big, rootOfUnity Big) []Big {
 			pTimesZVals[i] = mulModBig(vals[i], zVals[i])
 		}
 	}
-	pTimesZ := FFT(pTimesZVals, rootOfUnity, true)
+	//debugBigs("p_times_z_vals", pTimesZVals)
+	pTimesZ, err := fs.FFT(pTimesZVals, true)
+	if err != nil {
+		return nil, err
+	}
+	//debugBigs("p_times_z", pTimesZ)
 
 	// Keep choosing k values until the algorithm does not fail
 	// Check only with primitive roots of unity
-
-	// TODO precompute this
-	expMin1 := subModBigSimple(MODULUS, 1)
-	expMin1Div2 := divModBig(expMin1, TWO)
-
-	expMin2 := subModBigSimple(MODULUS, 2)
-
 	attempts := 0
 	for k := uint64(2); attempts < maxRecoverAttempts; k++ {
 		kBig := asBig(k)
-		if equalOne(powModBig(kBig, expMin1Div2)) {
+		if equalOne(powModBig(kBig, MODULUS_MINUS1_DIV2)) {
 			continue
 		}
-		invk := powModBig(kBig, expMin2)
+		invk := powModBig(kBig, MODULUS_MINUS2)
 		// Convert p_times_z(x) and z(x) into new polynomials
 		// q1(x) = p_times_z(k*x) and q2(x) = z(k*x)
 		// These are likely to not be 0 at any of the evaluation points.
 		pTimesZOfKX := pOfKX(pTimesZ, kBig)
-		pTimesZOfKXVals := FFT(pTimesZOfKX, rootOfUnity, false)
+		//debugBigs("p_times_z_of_kx", pTimesZOfKX)
+		pTimesZOfKXVals, err := fs.FFT(pTimesZOfKX, false)
+		if err != nil {
+			return nil, err
+		}
+		//debugBigs("p_times_z_of_kx_vals", pTimesZOfKXVals)
 		zOfKX := pOfKX(z, kBig)
-		zOfKXVals := FFT(zOfKX, rootOfUnity, false)
+		//debugBigs("z_of_kx", zOfKX)
+		zOfKXVals, err := fs.FFT(zOfKX, false)
+		if err != nil {
+			return nil, err
+		}
+		//debugBigs("z_of_kx_vals", zOfKXVals)
+
 		// Compute q1(x) / q2(x) = p(k*x)
 		invZOfKXVals := multiInv(zOfKXVals)
+		//debugBigs("inv_z_of_kv_vals", invZOfKXVals)
 		pOfKxVals := make([]Big, len(pTimesZOfKXVals), len(pTimesZOfKXVals))
 		for i := 0; i < len(pOfKxVals); i++ {
 			pOfKxVals[i] = mulModBig(pTimesZOfKXVals[i], invZOfKXVals[i])
 		}
-		pOfKx := FFT(pOfKxVals, rootOfUnity, true)
+		//debugBigs("p_of_kx_vals", pOfKxVals)
+		pOfKx, err := fs.FFT(pOfKxVals, true)
+		if err != nil {
+			return nil, err
+		}
+		//debugBigs("p_of_kx", pOfKx)
 
 		// Given q3(x) = p(k*x), recover p(x)
 		pOfX := make([]Big, len(pOfKx), len(pOfKx))
 		for i, x := range pOfKx {
 			pOfX[i] = mulModBig(x, powModBig(invk, asBig(uint64(i))))
 		}
-		output := FFT(pOfX, rootOfUnity, false)
+		output, err := fs.FFT(pOfX, false)
+		if err != nil {
+			return nil, err
+		}
 
 		// Check that the output matches the input
 		success := true
@@ -364,7 +429,7 @@ func ErasureCodeRecover(vals []Big, rootOfUnity Big) []Big {
 			continue
 		}
 		// Output the evaluations if all good
-		return output
+		return output, nil
 	}
-	panic("unreachable")
+	return nil, fmt.Errorf("max attempts reached: %d", attempts)
 }
