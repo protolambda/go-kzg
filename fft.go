@@ -408,11 +408,11 @@ func (fs *FFTSettings) ErasureCodeRecover(vals []*Big) ([]Big, error) {
 	var tmp Big
 	for k := uint64(2); attempts < maxRecoverAttempts; k++ {
 		asBig(&kBig, k)
-		// // TODO: check this, translation of 'if pow(k, (modulus - 1) // 2, modulus) == 1:'
-		sqrModBig(&tmp, &kBig)
-		if equalOne(&tmp) {
-			continue
-		}
+		// // TODO: implement this, translation of 'if pow(k, (modulus - 1) // 2, modulus) == 1:'
+		//someOp(&tmp, &kBig)
+		//if equalOne(&tmp) {
+		//	continue
+		//}
 		var invk Big
 		invModBig(&invk, &kBig)
 		// Convert p_times_z(x) and z(x) into new polynomials
