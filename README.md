@@ -31,58 +31,58 @@ With Herumi BLS `F_p`:
 ```
 BenchmarkFFTSettings_FFT
 BenchmarkFFTSettings_FFT/scale_4
-BenchmarkFFTSettings_FFT/scale_4-8         	  314210	     36656 ns/op
+BenchmarkFFTSettings_FFT/scale_4-8         	  361527	     33671 ns/op
 BenchmarkFFTSettings_FFT/scale_5
-BenchmarkFFTSettings_FFT/scale_5-8         	  146878	     80245 ns/op
+BenchmarkFFTSettings_FFT/scale_5-8         	  159710	     73936 ns/op
 BenchmarkFFTSettings_FFT/scale_6
-BenchmarkFFTSettings_FFT/scale_6-8         	   68470	    175622 ns/op
+BenchmarkFFTSettings_FFT/scale_6-8         	   72572	    163174 ns/op
 BenchmarkFFTSettings_FFT/scale_7
-BenchmarkFFTSettings_FFT/scale_7-8         	   31270	    388467 ns/op
+BenchmarkFFTSettings_FFT/scale_7-8         	   33448	    358415 ns/op
 BenchmarkFFTSettings_FFT/scale_8
-BenchmarkFFTSettings_FFT/scale_8-8         	   14319	    826379 ns/op
+BenchmarkFFTSettings_FFT/scale_8-8         	   15434	    785780 ns/op
 BenchmarkFFTSettings_FFT/scale_9
-BenchmarkFFTSettings_FFT/scale_9-8         	    6648	   1773182 ns/op
+BenchmarkFFTSettings_FFT/scale_9-8         	    6999	   1696328 ns/op
 BenchmarkFFTSettings_FFT/scale_10
-BenchmarkFFTSettings_FFT/scale_10-8        	    3196	   3825345 ns/op
+BenchmarkFFTSettings_FFT/scale_10-8        	    3296	   3622118 ns/op
 BenchmarkFFTSettings_FFT/scale_11
-BenchmarkFFTSettings_FFT/scale_11-8        	    1484	   8079814 ns/op
+BenchmarkFFTSettings_FFT/scale_11-8        	    1518	   7761719 ns/op
 BenchmarkFFTSettings_FFT/scale_12
-BenchmarkFFTSettings_FFT/scale_12-8        	     694	  17279690 ns/op
+BenchmarkFFTSettings_FFT/scale_12-8        	     712	  16653418 ns/op
 BenchmarkFFTSettings_FFT/scale_13
-BenchmarkFFTSettings_FFT/scale_13-8        	     320	  36955078 ns/op
+BenchmarkFFTSettings_FFT/scale_13-8        	     334	  35652441 ns/op
 BenchmarkFFTSettings_FFT/scale_14
-BenchmarkFFTSettings_FFT/scale_14-8        	     152	  78407904 ns/op
+BenchmarkFFTSettings_FFT/scale_14-8        	     157	  75955756 ns/op
 BenchmarkFFTSettings_FFT/scale_15
-BenchmarkFFTSettings_FFT/scale_15-8        	      73	 166327867 ns/op
+BenchmarkFFTSettings_FFT/scale_15-8        	      75	 161703563 ns/op
 ```
 
 With Go `big.Int`:
 ```
 BenchmarkFFTSettings_FFT
 BenchmarkFFTSettings_FFT/scale_4
-BenchmarkFFTSettings_FFT/scale_4-8         	  148371	     79721 ns/op
+BenchmarkFFTSettings_FFT/scale_4-8         	  150244	     81521 ns/op
 BenchmarkFFTSettings_FFT/scale_5
-BenchmarkFFTSettings_FFT/scale_5-8         	   66244	    183889 ns/op
+BenchmarkFFTSettings_FFT/scale_5-8         	   59360	    205111 ns/op
 BenchmarkFFTSettings_FFT/scale_6
-BenchmarkFFTSettings_FFT/scale_6-8         	   28401	    418033 ns/op
+BenchmarkFFTSettings_FFT/scale_6-8         	   26980	    436960 ns/op
 BenchmarkFFTSettings_FFT/scale_7
-BenchmarkFFTSettings_FFT/scale_7-8         	   12727	    942062 ns/op
+BenchmarkFFTSettings_FFT/scale_7-8         	   12319	    972553 ns/op
 BenchmarkFFTSettings_FFT/scale_8
-BenchmarkFFTSettings_FFT/scale_8-8         	    5839	   2062949 ns/op
+BenchmarkFFTSettings_FFT/scale_8-8         	    5661	   2128780 ns/op
 BenchmarkFFTSettings_FFT/scale_9
-BenchmarkFFTSettings_FFT/scale_9-8         	    2634	   4561437 ns/op
+BenchmarkFFTSettings_FFT/scale_9-8         	    2554	   4695178 ns/op
 BenchmarkFFTSettings_FFT/scale_10
-BenchmarkFFTSettings_FFT/scale_10-8        	    1192	  10118087 ns/op
+BenchmarkFFTSettings_FFT/scale_10-8        	    1174	  10349451 ns/op
 BenchmarkFFTSettings_FFT/scale_11
-BenchmarkFFTSettings_FFT/scale_11-8        	     552	  21667105 ns/op
+BenchmarkFFTSettings_FFT/scale_11-8        	     535	  22469941 ns/op
 BenchmarkFFTSettings_FFT/scale_12
-BenchmarkFFTSettings_FFT/scale_12-8        	     252	  47501651 ns/op
+BenchmarkFFTSettings_FFT/scale_12-8        	     243	  49311291 ns/op
 BenchmarkFFTSettings_FFT/scale_13
-BenchmarkFFTSettings_FFT/scale_13-8        	     100	 103291006 ns/op
+BenchmarkFFTSettings_FFT/scale_13-8        	     100	 108367278 ns/op
 BenchmarkFFTSettings_FFT/scale_14
-BenchmarkFFTSettings_FFT/scale_14-8        	      54	 221584268 ns/op
+BenchmarkFFTSettings_FFT/scale_14-8        	      51	 231137653 ns/op
 BenchmarkFFTSettings_FFT/scale_15
-BenchmarkFFTSettings_FFT/scale_15-8        	      25	 468244617 ns/op
+BenchmarkFFTSettings_FFT/scale_15-8        	      24	 490071871 ns/op
 ```
 
 And a quick naive benchmark of the unoptimized python code:
@@ -97,7 +97,7 @@ scale_10           200 ops        15122420 ns/op
 scale_11           200 ops        32552731 ns/op
 ``` 
 
-For scale 11 (i.e. width `2**11=2048 bignums`), the difference is: `32552731 / 8079814 = ~ 4`.
+For scale 11 (i.e. width `2**11=2048 bignums`), the difference is: `32552731 / 7761719 = ~ 4`.
 So HBLS is about 4 times faster than the Python code. 
 
 ## License

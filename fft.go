@@ -134,23 +134,25 @@ func debugBigsOffsetStride(msg string, values []Big, offset uint, stride uint) {
 	fmt.Println(out.String())
 }
 
-type Config struct {
-	WIDTH int
-}
-
 func (fs *FFTSettings) simpleFT(vals []Big, valsOffset uint, valsStride uint, rootsOfUnity []Big, rootsOfUnityStride uint, out []Big) {
 	l := uint(len(out))
 	var v Big
+	var tmp Big
+	var last Big
 	for i := uint(0); i < l; i++ {
-		last := ZERO
+		jv := &vals[valsOffset]
+		r := &rootsOfUnity[0]
+		mulModBig(&v, jv, r)
+		copyBigNum(&last, &v)
 
-		for j := uint(0); j < l; j++ {
+		for j := uint(1); j < l; j++ {
 			jv := &vals[valsOffset+j*valsStride]
 			r := &rootsOfUnity[((i*j)%l)*rootsOfUnityStride]
-			mulModBig(&v, jv, r) // TODO lookup could be optimized
-			addModBig(&last, &last, &v)
+			mulModBig(&v, jv, r)
+			copyBigNum(&tmp, &last)
+			addModBig(&last, &tmp, &v)
 		}
-		out[i] = last
+		copyBigNum(&out[i], &last)
 	}
 }
 
