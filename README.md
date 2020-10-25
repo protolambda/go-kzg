@@ -85,6 +85,21 @@ BenchmarkFFTSettings_FFT/scale_15
 BenchmarkFFTSettings_FFT/scale_15-8        	      25	 468244617 ns/op
 ```
 
+And a quick naive benchmark of the unoptimized python code:
+```
+scale_4            200 ops          276574 ns/op
+scale_5            200 ops          413917 ns/op
+scale_6            200 ops          772979 ns/op
+scale_7            200 ops         1701269 ns/op
+scale_8            200 ops         3290780 ns/op
+scale_9            200 ops         7027640 ns/op
+scale_10           200 ops        15122420 ns/op
+scale_11           200 ops        32552731 ns/op
+``` 
+
+For scale 11 (i.e. width `2**11=2048 bignums`), the difference is: `32552731 / 8079814 = ~ 4`.
+So HBLS is about 4 times faster than the Python code. 
+
 ## License
 
 MIT, see [`LICENSE`](./LICENSE) file.
