@@ -98,7 +98,69 @@ scale_11           200 ops        32552731 ns/op
 ``` 
 
 For scale 11 (i.e. width `2**11=2048 bignums`), the difference is: `32552731 / 7761719 = ~ 4`.
-So HBLS is about 4 times faster than the Python code. 
+So HBLS is about 4 times faster than the Python code.
+
+#### Extension
+
+Operation: do an extension of even values to odd values (even values are half the domain of the total).
+Then next round apply the same function again, but to the odd values.
+
+With Herumi BLS `F_p`:
+```
+BenchmarkFFTExtension/scale_4
+BenchmarkFFTExtension/scale_4-8         	 1646263	      7287 ns/op
+BenchmarkFFTExtension/scale_5
+BenchmarkFFTExtension/scale_5-8         	  588529	     19247 ns/op
+BenchmarkFFTExtension/scale_6
+BenchmarkFFTExtension/scale_6-8         	  250412	     47733 ns/op
+BenchmarkFFTExtension/scale_7
+BenchmarkFFTExtension/scale_7-8         	  105211	    114526 ns/op
+BenchmarkFFTExtension/scale_8
+BenchmarkFFTExtension/scale_8-8         	   45291	    267046 ns/op
+BenchmarkFFTExtension/scale_9
+BenchmarkFFTExtension/scale_9-8         	   19873	    608291 ns/op
+BenchmarkFFTExtension/scale_10
+BenchmarkFFTExtension/scale_10-8        	    8538	   1373925 ns/op
+BenchmarkFFTExtension/scale_11
+BenchmarkFFTExtension/scale_11-8        	    3877	   3020615 ns/op
+BenchmarkFFTExtension/scale_12
+BenchmarkFFTExtension/scale_12-8        	    1816	   6736797 ns/op
+BenchmarkFFTExtension/scale_13
+BenchmarkFFTExtension/scale_13-8        	     806	  14644598 ns/op
+BenchmarkFFTExtension/scale_14
+BenchmarkFFTExtension/scale_14-8        	     376	  31621359 ns/op
+BenchmarkFFTExtension/scale_15
+BenchmarkFFTExtension/scale_15-8        	     176	  67786045 ns/op
+```
+
+With Go `big.Int`:
+```
+BenchmarkFFTExtension
+BenchmarkFFTExtension/scale_4
+BenchmarkFFTExtension/scale_4-8         	  575293	     20007 ns/op
+BenchmarkFFTExtension/scale_5
+BenchmarkFFTExtension/scale_5-8         	  210736	     56757 ns/op
+BenchmarkFFTExtension/scale_6
+BenchmarkFFTExtension/scale_6-8         	   81622	    147382 ns/op
+BenchmarkFFTExtension/scale_7
+BenchmarkFFTExtension/scale_7-8         	   32914	    365113 ns/op
+BenchmarkFFTExtension/scale_8
+BenchmarkFFTExtension/scale_8-8         	   13926	    861853 ns/op
+BenchmarkFFTExtension/scale_9
+BenchmarkFFTExtension/scale_9-8         	    5916	   1997615 ns/op
+BenchmarkFFTExtension/scale_10
+BenchmarkFFTExtension/scale_10-8        	    2451	   4555595 ns/op
+BenchmarkFFTExtension/scale_11
+BenchmarkFFTExtension/scale_11-8        	    1162	  10188049 ns/op
+BenchmarkFFTExtension/scale_12
+BenchmarkFFTExtension/scale_12-8        	     524	  22792625 ns/op
+BenchmarkFFTExtension/scale_13
+BenchmarkFFTExtension/scale_13-8        	     232	  51342911 ns/op
+BenchmarkFFTExtension/scale_14
+BenchmarkFFTExtension/scale_14-8        	     100	 111619251 ns/op
+BenchmarkFFTExtension/scale_15
+BenchmarkFFTExtension/scale_15-8        	      50	 235745595 ns/op
+```
 
 ## License
 
