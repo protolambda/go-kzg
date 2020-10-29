@@ -26,7 +26,7 @@ func bigNum(dst *Big, v string) {
 }
 
 func asBig(dst *Big, i uint64) {
-	(*big.Int)(dst).SetInt64(int64(i))
+	(*big.Int)(dst).SetUint64(i)
 }
 
 func bigStr(b *Big) string {

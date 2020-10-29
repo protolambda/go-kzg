@@ -14,6 +14,7 @@ var scale2RootOfUnity []Big
 
 var ZERO, ONE, TWO Big
 var MODULUS_MINUS1, MODULUS_MINUS1_DIV2, MODULUS_MINUS2 Big
+var INVERSE_TWO Big
 
 func initGlobals() {
 	bigNumHelper := func(v string) (out Big) {
@@ -50,6 +51,7 @@ func initGlobals() {
 	subModBig(&MODULUS_MINUS1, &ZERO, &ONE)
 	divModBig(&MODULUS_MINUS1_DIV2, &MODULUS_MINUS1, &TWO)
 	subModBig(&MODULUS_MINUS2, &ZERO, &TWO)
+	invModBig(&INVERSE_TWO, &TWO)
 }
 
 // Expands the power circle for a given root of unity to WIDTH+1 values.
@@ -71,9 +73,11 @@ type FFTSettings struct {
 	scale uint8
 	width uint64
 	// the generator used to get all roots of unity
-	rootOfUnity          *Big
+	rootOfUnity *Big
+	// domain, starting and ending with 1 (duplicate!)
 	expandedRootsOfUnity []Big
-	reverseRootsOfUnity  []Big
+	// reverse domain, same as inverse values of domain.
+	reverseRootsOfUnity []Big
 }
 
 func NewFFTSettings(scale uint8) *FFTSettings {
@@ -211,6 +215,83 @@ func (fs *FFTSettings) FFT(vals []Big, inv bool) ([]Big, error) {
 		fs._fft(valsCopy, 0, 1, rootz[:len(rootz)-1], 1, out)
 		return out, nil
 	}
+}
+
+// warning: the values in `a` are modified in-place to become the outputs.
+// Make a deep copy first if you need to use them later.
+func (fs *FFTSettings) dASFFTExtension(ab []Big, domainStride uint) {
+	if len(ab) == 2 {
+		aHalf0 := &ab[0]
+		aHalf1 := &ab[1]
+		var tmp Big
+		addModBig(&tmp, aHalf0, aHalf1)
+		var x Big
+		mulModBig(&x, &tmp, &INVERSE_TWO)
+		// y = (((a_half0 - x) % modulus) * inverse_domain[0]) % modulus     # inverse_domain[0] will always be 1
+		var y Big
+		subModBig(&y, aHalf0, &x)
+		// re-use tmp for y_times_root
+		mulModBig(&tmp, &y, &fs.expandedRootsOfUnity[domainStride])
+		addModBig(&ab[0], &x, &tmp)
+		subModBig(&ab[1], &x, &tmp)
+		return
+	}
+
+	if len(ab) < 2 {
+		panic("bad usage")
+	}
+
+	half := uint(len(ab))
+	halfHalf := half >> 1
+	abHalf0s := ab[:halfHalf]
+	abHalf1s := ab[halfHalf:half]
+	// Instead of allocating L0 and L1, just modify a in-place.
+	//L0[i] = (((a_half0 + a_half1) % modulus) * inv2) % modulus
+	//R0[i] = (((a_half0 - L0[i]) % modulus) * inverse_domain[i * 2]) % modulus
+	var tmp1, tmp2, tmp3 Big
+	for i := uint(0); i < halfHalf; i++ {
+		aHalf0 := &abHalf0s[i]
+		aHalf1 := &abHalf1s[i]
+		addModBig(&tmp1, aHalf0, aHalf1)
+		mulModBig(&tmp2, &tmp1, &INVERSE_TWO) // tmp2 holds later L0[i] result
+		subModBig(&tmp3, aHalf0, &tmp2)
+		mulModBig(aHalf1, &tmp3, &fs.reverseRootsOfUnity[i*2*domainStride])
+		copyBigNum(aHalf0, &tmp2)
+	}
+
+	// L will be the left half of out
+	fs.dASFFTExtension(abHalf0s, domainStride<<1)
+	// R will be the right half of out
+	fs.dASFFTExtension(abHalf1s, domainStride<<1)
+
+	// The odd deduced outputs are written to the output array already, but then updated in-place
+	// L1 = b[:halfHalf]
+	// R1 = b[halfHalf:]
+
+	// Half the work of a regular FFT: only deal with uneven-index outputs
+	var yTimesRoot Big
+	var x, y Big
+	for i := uint(0); i < halfHalf; i++ {
+		// Temporary copies, so that writing to output doesn't conflict with input.
+		// Note that one hand is from L1, the other R1
+		copyBigNum(&x, &abHalf0s[i])
+		copyBigNum(&y, &abHalf1s[i])
+		root := &fs.expandedRootsOfUnity[(1+2*i)*domainStride]
+		mulModBig(&yTimesRoot, &y, root)
+		// write outputs in place, avoid unnecessary list allocations
+		addModBig(&abHalf0s[i], &x, &yTimesRoot)
+		subModBig(&abHalf1s[i], &x, &yTimesRoot)
+	}
+}
+
+// Takes vals as input, the values of the even indices.
+// Then computes the values for the odd indices, which combined would make the right half of coefficients zero.
+// Warning: the odd results are written back to the vals slice.
+func (fs *FFTSettings) DASFFTExtension(vals []Big) {
+	if uint64(len(vals))*2 > fs.width {
+		panic("domain too small for extending requested values")
+	}
+	fs.dASFFTExtension(vals, 1)
 }
 
 func (fs *FFTSettings) mulPolys(a []Big, b []Big, rootsOfUnityStride uint) []Big {
