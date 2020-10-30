@@ -1,4 +1,4 @@
-// +build !bignum_hbls
+// +build !bignum_hbls,!bignum_hol256
 
 package go_verkle
 
@@ -72,6 +72,6 @@ func invModBig(dst *Big, v *Big) {
 	(*big.Int)(dst).ModInverse((*big.Int)(v), &_modulus)
 }
 
-func sqrModBig(dst *Big, v *Big) {
-	(*big.Int)(dst).ModSqrt((*big.Int)(v), &_modulus)
-}
+//func sqrModBig(dst *Big, v *Big) {
+//	(*big.Int)(dst).ModSqrt((*big.Int)(v), &_modulus)
+//}

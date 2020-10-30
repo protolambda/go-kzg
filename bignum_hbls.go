@@ -66,6 +66,6 @@ func invModBig(dst *Big, v *Big) {
 	hbls.FrInv((*hbls.Fr)(dst), (*hbls.Fr)(v))
 }
 
-func sqrModBig(dst *Big, v *Big) {
-	hbls.FrSqr((*hbls.Fr)(dst), (*hbls.Fr)(v))
-}
+//func sqrModBig(dst *Big, v *Big) {
+//	hbls.FrSqr((*hbls.Fr)(dst), (*hbls.Fr)(v))
+//}
