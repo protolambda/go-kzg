@@ -113,7 +113,7 @@ func TestParametrizedDASFFTExtension(t *testing.T) {
 		// we don't want to modify the original input, and the inner function would modify it in-place, so make a copy.
 		oddData := make([]Big, fs.width/2, fs.width/2)
 		for i := 0; i < len(oddData); i++ {
-			copyBigNum(&oddData[i], &evenData[i])
+			CopyBigNum(&oddData[i], &evenData[i])
 		}
 		fs.DASFFTExtension(oddData)
 		debugBigs("output data", oddData)
@@ -121,8 +121,8 @@ func TestParametrizedDASFFTExtension(t *testing.T) {
 		// reconstruct data
 		data := make([]Big, fs.width, fs.width)
 		for i := uint64(0); i < fs.width; i += 2 {
-			copyBigNum(&data[i], &evenData[i>>1])
-			copyBigNum(&data[i+1], &oddData[i>>1])
+			CopyBigNum(&data[i], &evenData[i>>1])
+			CopyBigNum(&data[i+1], &oddData[i>>1])
 		}
 		debugBigs("reconstructed data", data)
 		// get coefficients of reconstructed data with inverse FFT
@@ -167,7 +167,7 @@ func TestErasureCodeRecoverSimple(t *testing.T) {
 		data[i] = ZERO
 	}
 	debugBigs("data", data)
-	// Get coefficients for polynomial P
+	// Get coefficients for polynomial SLOW_INDICES
 	coeffs, err := fs.FFT(data, false)
 	if err != nil {
 		t.Fatal(err)
@@ -221,7 +221,7 @@ func TestErasureCodeRecover(t *testing.T) {
 		data[i] = ZERO
 	}
 	debugBigs("data", data)
-	// Get coefficients for polynomial P
+	// Get coefficients for polynomial SLOW_INDICES
 	coeffs, err := fs.FFT(data, false)
 	if err != nil {
 		t.Fatal(err)

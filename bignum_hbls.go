@@ -19,7 +19,28 @@ func bigNum(dst *Big, v string) {
 	}
 }
 
-func copyBigNum(dst *Big, v *Big) {
+// BigNumFrom31 mutates the big num. The value v is little-endian 31-bytes.
+func BigNumFrom31(dst *Big, v [31]byte) {
+	(*hbls.Fr)(dst).SetLittleEndian(v[:])
+}
+
+// BigNumTo31 serializes a big number to 31 bytes. Any remaining bits after clipped off. Encoded little-endian.
+func BigNumTo31(src *Big) (v [31]byte) {
+	b := (*hbls.Fr)(src).Serialize()
+	if len(b) >= 32 { // clip of bytes beyond 31 bytes (big endian, so from start)
+		b = b[len(b)-31:]
+	}
+	last := len(b) - 1
+	half := last / 2
+	// reverse endianness, u256.Int outputs big-endian bytes
+	for i := 0; i < half; i++ {
+		b[i], b[last-i] = b[last-i], b[i]
+	}
+	copy(v[31-len(b):], b)
+	return
+}
+
+func CopyBigNum(dst *Big, v *Big) {
 	*dst = *v
 }
 

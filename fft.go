@@ -147,16 +147,16 @@ func (fs *FFTSettings) simpleFT(vals []Big, valsOffset uint, valsStride uint, ro
 		jv := &vals[valsOffset]
 		r := &rootsOfUnity[0]
 		mulModBig(&v, jv, r)
-		copyBigNum(&last, &v)
+		CopyBigNum(&last, &v)
 
 		for j := uint(1); j < l; j++ {
 			jv := &vals[valsOffset+j*valsStride]
 			r := &rootsOfUnity[((i*j)%l)*rootsOfUnityStride]
 			mulModBig(&v, jv, r)
-			copyBigNum(&tmp, &last)
+			CopyBigNum(&tmp, &last)
 			addModBig(&last, &tmp, &v)
 		}
-		copyBigNum(&out[i], &last)
+		CopyBigNum(&out[i], &last)
 	}
 }
 
@@ -176,8 +176,8 @@ func (fs *FFTSettings) _fft(vals []Big, valsOffset uint, valsStride uint, rootsO
 	var x, y Big
 	for i := uint(0); i < half; i++ {
 		// temporary copies, so that writing to output doesn't conflict with input
-		copyBigNum(&x, &out[i])
-		copyBigNum(&y, &out[i+half])
+		CopyBigNum(&x, &out[i])
+		CopyBigNum(&y, &out[i+half])
 		root := &rootsOfUnity[i*rootsOfUnityStride]
 		mulModBig(&yTimesRoot, &y, root)
 		addModBig(&out[i], &x, &yTimesRoot)
@@ -256,7 +256,7 @@ func (fs *FFTSettings) dASFFTExtension(ab []Big, domainStride uint) {
 		mulModBig(&tmp2, &tmp1, &INVERSE_TWO) // tmp2 holds later L0[i] result
 		subModBig(&tmp3, aHalf0, &tmp2)
 		mulModBig(aHalf1, &tmp3, &fs.reverseRootsOfUnity[i*2*domainStride])
-		copyBigNum(aHalf0, &tmp2)
+		CopyBigNum(aHalf0, &tmp2)
 	}
 
 	// L will be the left half of out
@@ -274,8 +274,8 @@ func (fs *FFTSettings) dASFFTExtension(ab []Big, domainStride uint) {
 	for i := uint(0); i < halfHalf; i++ {
 		// Temporary copies, so that writing to output doesn't conflict with input.
 		// Note that one hand is from L1, the other R1
-		copyBigNum(&x, &abHalf0s[i])
-		copyBigNum(&y, &abHalf1s[i])
+		CopyBigNum(&x, &abHalf0s[i])
+		CopyBigNum(&y, &abHalf1s[i])
 		root := &fs.expandedRootsOfUnity[(1+2*i)*domainStride]
 		mulModBig(&yTimesRoot, &y, root)
 		// write outputs in place, avoid unnecessary list allocations
@@ -322,7 +322,7 @@ func (fs *FFTSettings) mulPolys(a []Big, b []Big, rootsOfUnityStride uint) []Big
 	// multiply the two. Hack: store results in x1
 	var tmp Big
 	for i := 0; i < len(x1); i++ {
-		copyBigNum(&tmp, &x1[i])
+		CopyBigNum(&tmp, &x1[i])
 		mulModBig(&x1[i], &tmp, &x2[i])
 	}
 	revRootz := fs.reverseRootsOfUnity
@@ -346,7 +346,7 @@ func multiInv(values []Big) []Big {
 	outputs := make([]Big, len(values), len(values))
 	for i := len(values); i > 0; i-- {
 		mulModBig(&outputs[i-1], &partials[i-1], &inv)
-		copyBigNum(&tmp, &inv)
+		CopyBigNum(&tmp, &inv)
 		mulModBig(&inv, &tmp, &values[i-1])
 	}
 	return outputs
@@ -359,7 +359,7 @@ func pOfKX(poly []Big, k *Big) []Big {
 	var tmp Big
 	for i := range poly {
 		mulModBig(&out[i], &poly[i], &powerOfK)
-		copyBigNum(&tmp, &powerOfK)
+		CopyBigNum(&tmp, &powerOfK)
 		mulModBig(&powerOfK, &tmp, k)
 	}
 	return out
@@ -401,7 +401,7 @@ func (fs *FFTSettings) _zPoly(positions []uint, rootsOfUnityStride uint) []Big {
 			root[i] = ZERO
 			for j := i; j >= 1; j-- {
 				mulModBig(&v, &root[j-1], x)
-				copyBigNum(&tmp, &root[j])
+				CopyBigNum(&tmp, &root[j])
 				subModBig(&root[j], &tmp, &v)
 			}
 			i++
@@ -537,7 +537,7 @@ func (fs *FFTSettings) ErasureCodeRecover(vals []*Big) ([]Big, error) {
 			mulModBig(&pOfX[1], &pOfKx[1], &invk)
 			invKPowI := invk
 			for i := 2; i < len(pOfKx); i++ {
-				copyBigNum(&tmp, &invKPowI)
+				CopyBigNum(&tmp, &invKPowI)
 				mulModBig(&invKPowI, &tmp, &invk)
 				mulModBig(&pOfX[i], &pOfKx[i], &invKPowI)
 			}
