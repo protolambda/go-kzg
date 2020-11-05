@@ -15,28 +15,25 @@ func init() {
 
 type Big big.Int
 
-// BigNumFrom31 mutates the big num. The value v is little-endian 31-bytes.
-func BigNumFrom31(dst *Big, v [31]byte) {
+// BigNumFrom32 mutates the big num. The value v is little-endian 32-bytes.
+func BigNumFrom32(dst *Big, v [32]byte) {
 	// reverse endianness, big.Int takes big-endian bytes
-	for i := 0; i < 15; i++ {
-		v[i], v[30-i] = v[30-i], v[i]
+	for i := 0; i < 16; i++ {
+		v[i], v[31-i] = v[31-i], v[i]
 	}
 	(*big.Int)(dst).SetBytes(v[:])
 }
 
-// BigNumTo31 serializes a big number to 31 bytes. Any remaining bits after clipped off. Encoded little-endian.
-func BigNumTo31(src *Big) (v [31]byte) {
+// BigNumTo32 serializes a big number to 32 bytes. Encoded little-endian.
+func BigNumTo32(src *Big) (v [32]byte) {
 	b := (*big.Int)(src).Bytes()
-	if len(b) >= 32 { // clip of bytes beyond 31 bytes (big endian, so from start)
-		b = b[len(b)-31:]
-	}
 	last := len(b) - 1
 	half := last / 2
 	// reverse endianness, u256.Int outputs big-endian bytes
 	for i := 0; i < half; i++ {
 		b[i], b[last-i] = b[last-i], b[i]
 	}
-	copy(v[31-len(b):], b)
+	copy(v[:], b)
 	return
 }
 
