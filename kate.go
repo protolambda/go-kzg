@@ -1,8 +1,6 @@
 package go_verkle
 
-// TODO types file, swap BLS with build args
-type G1 struct {}
-type G2 struct {}
+import "fmt"
 
 func MakeSetup() *G1 {
 	// TODO: setup: for secret point to evaluate polynomials at
@@ -18,13 +16,42 @@ func GetPoly(data []Big) []Big {
 	return nil
 }
 
-func MakeKateCommitment(setup *G1) *G1 {
+func (fs *FFTSettings) MakeKateCommitment(data []Big) (*G1, error) {
 	// TODO: inverse FFT of input data: get polynomial to evaluate for data
 	// TODO: commitment: "C = [p(s)]_1 = [Sum(p_i * s**i)]_1 = Sum(p_i * [s**i]_1)"
 	//    - get coefficients of data -> polynomial representation
 	//    - evaluate at shared secret point -> commitment is "p(s)G", an elliptic curve point,
 	// Attacker can't construct another polynomial that has the same commitment.
-	return nil
+	coeffs, err := fs.FFT(data, true)
+	if err != nil {
+		return nil, fmt.Errorf("could not get polynomial coeffs of data: %v", err)
+	}
+
+	// reverse the coeffs
+	var tmp Big
+	for i, j := 0, len(coeffs)-1; i < j; i, j = i+1, j-1 {
+		CopyBigNum(&tmp, &coeffs[i])
+		CopyBigNum(&coeffs[i], &coeffs[j])
+		CopyBigNum(&coeffs[j], &tmp)
+	}
+	// then zero out the last
+	CopyBigNum(&coeffs[len(coeffs)-1], &ZERO)
+
+
+	fs.secretG1
+
+	h, err := fs.semiToeplitzFFT(coeffs, )
+	if err != nil {
+		return nil, fmt.Errorf("could not compute h for building Kate commitment: %v", err)
+	}
+
+	// r is a list of commitments, one for each value
+	r, err := fs.FFT(h, false)
+	if err != nil {
+		return nil, fmt.Errorf("could not compute commitment from h: %v", err)
+	}
+	// TODO either combine them all, or combine a subset for comitting to a subset?
+	return nil, nil
 }
 
 func VerifyCommitment(setup *G1, commitment G1, values map[uint64]*Big) bool {

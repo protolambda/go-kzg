@@ -12,6 +12,8 @@ import (
 
 var scale2RootOfUnity []Big
 
+var ZERO_G1 G1
+
 var ZERO, ONE, TWO Big
 var MODULUS_MINUS1, MODULUS_MINUS1_DIV2, MODULUS_MINUS2 Big
 var INVERSE_TWO Big
@@ -52,10 +54,13 @@ func initGlobals() {
 	divModBig(&MODULUS_MINUS1_DIV2, &MODULUS_MINUS1, &TWO)
 	subModBig(&MODULUS_MINUS2, &ZERO, &TWO)
 	invModBig(&INVERSE_TWO, &TWO)
+
+	ClearG1(&ZERO_G1)
 }
 
 // Expands the power circle for a given root of unity to WIDTH+1 values.
-// The first entry will be 1, the last entry won't be 1 (omitted, unlike the python implementation)
+// The first entry will be 1, the last entry will also be 1,
+// for convenience when reversing the array (useful for inverses)
 func expandRootOfUnity(rootOfUnity *Big) []Big {
 	rootz := make([]Big, 2)
 	rootz[0] = ONE // some unused number in py code
@@ -69,6 +74,7 @@ func expandRootOfUnity(rootOfUnity *Big) []Big {
 	return rootz
 }
 
+
 type FFTSettings struct {
 	scale uint8
 	width uint64
@@ -78,9 +84,28 @@ type FFTSettings struct {
 	expandedRootsOfUnity []Big
 	// reverse domain, same as inverse values of domain.
 	reverseRootsOfUnity []Big
+
+	// Polynomials that evaluate to [000....010....000] across the evaluation domain,
+	// one for every possible position of the 1
+	// LAGRANGE_POLYS = [
+	//    fft([0]*i + [1] + [0]*(WIDTH-1-i), MODULUS, ROOT_OF_UNITY, inv=True)
+	//    for i in range(WIDTH)
+	//]
+	lagrangePolys [][]Big
+
+	// setup values
+	// [b.multiply(b.G1, pow(s, i, MODULUS)) for i in range(WIDTH+1)],
+	secretG1 []G1
+	extendedSecretG1 []G1
+	// [b.multiply(b.G2, pow(s, i, MODULUS)) for i in range(WIDTH+1)],
+	secretG2 []G2
+	// [b.multiply(b.G1, field.eval_poly_at(l, s)) for l in LAGRANGE_POLYS],
+	zeroG1 []G1
+	// [b.multiply(b.G2, field.eval_poly_at(l, s)) for l in LAGRANGE_POLYS],
+	zeroG2 []G2
 }
 
-func NewFFTSettings(scale uint8) *FFTSettings {
+func NewFFTSettings(scale uint8, secretG1 *G1, secretG2 *G2) *FFTSettings {
 	width := uint64(1) << scale
 	root := &scale2RootOfUnity[scale]
 	rootz := expandRootOfUnity(&scale2RootOfUnity[scale])
@@ -90,6 +115,17 @@ func NewFFTSettings(scale uint8) *FFTSettings {
 	for i, j := uint64(0), uint64(len(rootz)-1); i < j; i, j = i+1, j-1 {
 		rootzReverse[i], rootzReverse[j] = rootzReverse[j], rootzReverse[i]
 	}
+	// TODO init secret power circle from generators (in width/2)
+	
+	
+	// TODO init extended secrets (i.e. 1st half would be the secret vals, 2nd half would be zero points), necessary for Toeplitz trickery
+	// That would be:
+	//xext = x + [b.Z1 for a in x]
+	//xext_hat = fft(xext, MODULUS, ROOT_OF_UNITY2, inv=False)
+	
+	
+	// TODO init zeroing points
+
 	return &FFTSettings{
 		scale:                scale,
 		width:                width,
@@ -160,6 +196,28 @@ func (fs *FFTSettings) simpleFT(vals []Big, valsOffset uint, valsStride uint, ro
 	}
 }
 
+func (fs *FFTSettings) simpleFTG1(vals []G1, valsOffset uint, valsStride uint, rootsOfUnity []Big, rootsOfUnityStride uint, out []G1) {
+	l := uint(len(out))
+	var v G1
+	var tmp G1
+	var last G1
+	for i := uint(0); i < l; i++ {
+		jv := &vals[valsOffset]
+		r := &rootsOfUnity[0]
+		mulG1(&v, jv, r)
+		CopyG1(&last, &v)
+
+		for j := uint(1); j < l; j++ {
+			jv := &vals[valsOffset+j*valsStride]
+			r := &rootsOfUnity[((i*j)%l)*rootsOfUnityStride]
+			mulG1(&v, jv, r)
+			CopyG1(&tmp, &last)
+			addG1(&last, &tmp, &v)
+		}
+		CopyG1(&out[i], &last)
+	}
+}
+
 func (fs *FFTSettings) _fft(vals []Big, valsOffset uint, valsStride uint, rootsOfUnity []Big, rootsOfUnityStride uint, out []Big) {
 	if len(out) <= 4 { // if the value count is small, run the unoptimized version instead. // TODO tune threshold.
 		fs.simpleFT(vals, valsOffset, valsStride, rootsOfUnity, rootsOfUnityStride, out)
@@ -182,6 +240,31 @@ func (fs *FFTSettings) _fft(vals []Big, valsOffset uint, valsStride uint, rootsO
 		mulModBig(&yTimesRoot, &y, root)
 		addModBig(&out[i], &x, &yTimesRoot)
 		subModBig(&out[i+half], &x, &yTimesRoot)
+	}
+}
+
+func (fs *FFTSettings) _fftG1(vals []G1, valsOffset uint, valsStride uint, rootsOfUnity []Big, rootsOfUnityStride uint, out []G1) {
+	if len(out) <= 4 { // if the value count is small, run the unoptimized version instead. // TODO tune threshold. (can be different for G1)
+		fs.simpleFTG1(vals, valsOffset, valsStride, rootsOfUnity, rootsOfUnityStride, out)
+		return
+	}
+
+	half := uint(len(out)) >> 1
+	// L will be the left half of out
+	fs._fftG1(vals, valsOffset, valsStride<<1, rootsOfUnity, rootsOfUnityStride<<1, out[:half])
+	// R will be the right half of out
+	fs._fftG1(vals, valsOffset+valsStride, valsStride<<1, rootsOfUnity, rootsOfUnityStride<<1, out[half:]) // just take even again
+
+	var yTimesRoot G1
+	var x, y G1
+	for i := uint(0); i < half; i++ {
+		// temporary copies, so that writing to output doesn't conflict with input
+		CopyG1(&x, &out[i])
+		CopyG1(&y, &out[i+half])
+		root := &rootsOfUnity[i*rootsOfUnityStride]
+		mulG1(&yTimesRoot, &y, root)
+		addG1(&out[i], &x, &yTimesRoot)
+		subG1(&out[i+half], &x, &yTimesRoot)
 	}
 }
 
@@ -213,6 +296,38 @@ func (fs *FFTSettings) FFT(vals []Big, inv bool) ([]Big, error) {
 		rootz := fs.expandedRootsOfUnity
 		// Regular FFT
 		fs._fft(valsCopy, 0, 1, rootz[:len(rootz)-1], 1, out)
+		return out, nil
+	}
+}
+
+func (fs *FFTSettings) FFTG1(vals []G1, inv bool) ([]G1, error) {
+	if len(fs.expandedRootsOfUnity) < len(vals) {
+		return nil, fmt.Errorf("got %d values but only have %d roots of unity", len(vals), len(fs.expandedRootsOfUnity))
+	}
+	// We make a copy so we can mutate it during the work.
+	valsCopy := make([]G1, fs.width, fs.width)
+	copy(valsCopy, vals)
+	// Fill in vals with zeroes if needed
+	for i := uint64(len(vals)); i < fs.width; i++ {
+		ClearG1(&valsCopy[i])
+	}
+	if inv {
+		var invLen Big
+		asBig(&invLen, uint64(len(vals)))
+		invModBig(&invLen, &invLen)
+		rootz := fs.reverseRootsOfUnity
+
+		out := make([]G1, fs.width, fs.width)
+		fs._fftG1(valsCopy, 0, 1, rootz[:len(rootz)-1], 1, out)
+		for i := 0; i < len(out); i++ {
+			mulG1(&out[i], &out[i], &invLen)
+		}
+		return out, nil
+	} else {
+		out := make([]G1, fs.width, fs.width)
+		rootz := fs.expandedRootsOfUnity
+		// Regular FFT
+		fs._fftG1(valsCopy, 0, 1, rootz[:len(rootz)-1], 1, out)
 		return out, nil
 	}
 }

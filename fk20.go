@@ -1,21 +1,9 @@
 package go_verkle
 
-func semiToeplitzFFT(toeplitzCoeffs []Big, x []Big) []Big {
+func (fs *FFTSettings) semiToeplitzFFT(toeplitzCoeffs []Big) ([]G1, error) {
 	if len(toeplitzCoeffs) == 0 {
 		panic("no coeffs")
 	}
-
-	// TODO
-	//var xextHat []Point
-	//if len(x) != len(xextHat) {
-	//	panic("width must have changed")
-	//}
-	//xext := make([]Big, 2*len(x), 2*len(x))
-	//
-	//for i := 0; i < len(xext); i++ {
-	//	xext[len(x)+i] = ZERO
-	//}
-	//xextHat = fft(xext, ROOT_OF_UNITY, false)
 
 	text := make([]Big, 1+len(toeplitzCoeffs)+len(toeplitzCoeffs)-1)
 	text[0] = toeplitzCoeffs[0]
@@ -25,7 +13,7 @@ func semiToeplitzFFT(toeplitzCoeffs []Big, x []Big) []Big {
 	copy(text[len(toeplitzCoeffs)+1:], toeplitzCoeffs[1:])
 
 	//textHat := FFT(text, ROOT_OF_UNITY2, false)
-	//yextHat := make([]Big, 2*len(x))
+	//yextHat := make([]G1, 2*len(x))
 	//for i := 0; i < len(x); i++ {
 	//	//if type(xext_hat[0]) == tuple:
 	//	//	yext_hat[i] = b.multiply(xext_hat[i], text_hat[i])
@@ -33,7 +21,7 @@ func semiToeplitzFFT(toeplitzCoeffs []Big, x []Big) []Big {
 	//	yextHat[i] = mulModBig(yextHat[i], textHat[i])
 	//}
 	//return FFT(yextHat, ROOT_OF_UNITY2, true)[:len(x)]
-	return nil
+	return nil, nil
 }
 
 //// TODO
