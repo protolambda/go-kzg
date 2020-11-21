@@ -1,66 +1,64 @@
 package go_verkle
 
+import "fmt"
+
 func (fs *FFTSettings) semiToeplitzFFT(toeplitzCoeffs []Big) ([]G1, error) {
-	if len(toeplitzCoeffs) == 0 {
-		panic("no coeffs")
+	if uint64(len(toeplitzCoeffs)) != fs.width/2 {
+		return nil, fmt.Errorf("unexpected toeplitzCoeffs count: %d, expected half FFT width: %d",
+			len(toeplitzCoeffs), fs.width)
 	}
 
-	text := make([]Big, 1+len(toeplitzCoeffs)+len(toeplitzCoeffs)-1)
-	text[0] = toeplitzCoeffs[0]
-	for i := 1; i <= len(toeplitzCoeffs); i++ {
-		text[i] = ZERO
+	// h = A * [S]
+	// In A, the diagonal and top right of diagonal is filled with values of interest, staggered.
+	// The bottom left of diagonal is filled with zeroes.
+	// To create this shape in a Toeplitz matrix, pad the input as:
+	//  values:  [a_0, 0, 0, 0, ...,   0, a_n-1, a_n-2, ..., a_n-(n-1)]
+	//  indices: [  0, 1, 2, 3, ..., n/2, n/2+1, n/2+2, ..., n-1      ]
+	//
+	// This creates a circulant matrix C (half of the row filled, staggered each row),
+	//  diagonalized by the FFT of the padded a values.
+	//
+	// I.e. C = IFFT(diagonal(FFT(pad(a)))
+	//  And now to multiply C with x, it can be done efficiently by doing so in between the FFT steps.
+	//
+	// input:   a: t
+	//     pad(a): text
+	//          s: x
+	//     pad(s): xext
+	//      xext^: FFT(xext)
+	//      text^: FFT(text)
+	//      yext^: xext^ * text^
+	//       yext: IFFT(yext^)
+    //
+	//  x* = FFT(a)
+	//
+	//  IFFT(y)
+	text := make([]Big, fs.width, fs.width)
+	// first coefficient stays first
+	CopyBigNum(&text[0], &toeplitzCoeffs[0])
+	halfWidth := fs.width/2
+	for i := uint64(1); i <= halfWidth; i++ {
+		CopyBigNum(&text[i], &ZERO)
 	}
-	copy(text[len(toeplitzCoeffs)+1:], toeplitzCoeffs[1:])
+	// then, in reverse order, the rest follows
+	for i, dst := halfWidth-1, halfWidth+1; i > 0; i, dst = i-1, dst+1 {
+		CopyBigNum(&text[dst], &toeplitzCoeffs[i])
+	}
 
-	//textHat := FFT(text, ROOT_OF_UNITY2, false)
-	//yextHat := make([]G1, 2*len(x))
-	//for i := 0; i < len(x); i++ {
-	//	//if type(xext_hat[0]) == tuple:
-	//	//	yext_hat[i] = b.multiply(xext_hat[i], text_hat[i])
-	//	//else:
-	//	yextHat[i] = mulModBig(yextHat[i], textHat[i])
-	//}
-	//return FFT(yextHat, ROOT_OF_UNITY2, true)[:len(x)]
-	return nil, nil
+	textHat, err := fs.FFT(text, false)
+	if err != nil {
+		return nil, fmt.Errorf("failed to compute FFT of extended toeplitz coeffs")
+	}
+
+	// now multiply all toeplitz values corresponding secret domain values
+	yextHat := make([]G1, fs.width, fs.width)
+	for i := uint64(0); i < fs.width; i++ {
+		mulG1(&yextHat[i], &fs.extendedSecretG1[i], &textHat[i])
+	}
+	// now take the IFFT  // TODO
+	out, err := fs.FFTG1(yextHat, true)
+	if err != nil {
+		return nil, fmt.Errorf("failed to compute FFT of yextHat: %v", err)
+	}
+	return out, nil
 }
-
-//// TODO
-//type Point struct{}
-//
-//type Setup struct {
-//	seriesG1   []Point
-//	seriesG2   []Point
-//	lagrangeG1 []Point
-//	lagrangeG2 []Point
-//}
-
-// Get polynomial coefficients using IFFT
-//func generateAllProofs(values []Big, setup *Setup) []Big {
-//	if len(values) != WIDTH {
-//		panic("bad values")
-//	}
-//	// Generate polynomial coefficients
-//	coeffs := FFT(values, ROOT_OF_UNITY, true)
-//
-//	// Toeplitz matrix multiplication
-//	var h []Big
-//	{
-//		coeffs = append(coeffs, ZERO)
-//		x := make([]Point, len(values)-2, len(values)-2)
-//		setupG1 := setup.seriesG1
-//		for i := 0; i < len(setupG1)-2; i++ {
-//			x[len(x)-1-i] = setupG1[i]
-//		}
-//
-//		// TODO not with big ints
-//		//h = semiToeplitzFFT(coeffs, x)
-//	}
-//
-//	// final FFT
-//	return FFT(h, ROOT_OF_UNITY, false)
-//}
-
-// TODO
-//# Generates the data and commitent tree for a piece of data
-//# as well as the precomputed proofs
-//def generate_tree(data, setup):

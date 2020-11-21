@@ -105,6 +105,10 @@ type FFTSettings struct {
 	zeroG2 []G2
 }
 
+// TODO: generate some setup G1, G2 for testing purposes
+// Secret point to evaluate polynomials at.
+// Setup values are defined as [g * s**i for i in range(m)]  (correct?)
+
 func NewFFTSettings(scale uint8, secretG1 *G1, secretG2 *G2) *FFTSettings {
 	width := uint64(1) << scale
 	root := &scale2RootOfUnity[scale]

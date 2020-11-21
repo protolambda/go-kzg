@@ -5,7 +5,7 @@ Based on research implementation by @dankrad and @vbuterin here: https://github.
 This repo is *super experimental*.
 
 This is an implementation in Go, initially aimed at chunkification and extension of data, 
-and building proofs for the output data. 
+and building/verifying Kate proofs for the output data. 
 
 Part of a low-latency data-availability sampling network prototype for Phase1.
 See https://github.com/protolambda/eth2-das
