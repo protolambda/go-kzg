@@ -1,4 +1,4 @@
-module github.com/protolambda/go-verkle
+module github.com/protolambda/go-kate
 
 go 1.15
 
