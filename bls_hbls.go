@@ -48,5 +48,3 @@ func addG2(dst *G2, a *G2, b *G2) {
 func subG2(dst *G2, a *G2, b *G2) {
 	hbls.G2Sub((*hbls.G2)(dst), (*hbls.G2)(a), (*hbls.G2)(b))
 }
-
-

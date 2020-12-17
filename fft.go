@@ -74,7 +74,6 @@ func expandRootOfUnity(rootOfUnity *Big) []Big {
 	return rootz
 }
 
-
 type FFTSettings struct {
 	scale uint8
 	width uint64
@@ -84,32 +83,13 @@ type FFTSettings struct {
 	expandedRootsOfUnity []Big
 	// reverse domain, same as inverse values of domain.
 	reverseRootsOfUnity []Big
-
-	// Polynomials that evaluate to [000....010....000] across the evaluation domain,
-	// one for every possible position of the 1
-	// LAGRANGE_POLYS = [
-	//    fft([0]*i + [1] + [0]*(WIDTH-1-i), MODULUS, ROOT_OF_UNITY, inv=True)
-	//    for i in range(WIDTH)
-	//]
-	lagrangePolys [][]Big
-
-	// setup values
-	// [b.multiply(b.G1, pow(s, i, MODULUS)) for i in range(WIDTH+1)],
-	secretG1 []G1
-	extendedSecretG1 []G1
-	// [b.multiply(b.G2, pow(s, i, MODULUS)) for i in range(WIDTH+1)],
-	secretG2 []G2
-	// [b.multiply(b.G1, field.eval_poly_at(l, s)) for l in LAGRANGE_POLYS],
-	zeroG1 []G1
-	// [b.multiply(b.G2, field.eval_poly_at(l, s)) for l in LAGRANGE_POLYS],
-	zeroG2 []G2
 }
 
 // TODO: generate some setup G1, G2 for testing purposes
 // Secret point to evaluate polynomials at.
 // Setup values are defined as [g * s**i for i in range(m)]  (correct?)
 
-func NewFFTSettings(scale uint8, secretG1 *G1, secretG2 *G2) *FFTSettings {
+func NewFFTSettings(scale uint8) *FFTSettings {
 	width := uint64(1) << scale
 	root := &scale2RootOfUnity[scale]
 	rootz := expandRootOfUnity(&scale2RootOfUnity[scale])
@@ -119,16 +99,6 @@ func NewFFTSettings(scale uint8, secretG1 *G1, secretG2 *G2) *FFTSettings {
 	for i, j := uint64(0), uint64(len(rootz)-1); i < j; i, j = i+1, j-1 {
 		rootzReverse[i], rootzReverse[j] = rootzReverse[j], rootzReverse[i]
 	}
-	// TODO init secret power circle from generators (in width/2)
-	
-	
-	// TODO init extended secrets (i.e. 1st half would be the secret vals, 2nd half would be zero points), necessary for Toeplitz trickery
-	// That would be:
-	//xext = x + [b.Z1 for a in x]
-	//xext_hat = fft(xext, MODULUS, ROOT_OF_UNITY2, inv=False)
-	
-	
-	// TODO init zeroing points
 
 	return &FFTSettings{
 		scale:                scale,
