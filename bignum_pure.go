@@ -1,6 +1,6 @@
 // +build !bignum_hbls,!bignum_hol256
 
-package go_verkle
+package kate
 
 import (
 	"math/big"

@@ -1,6 +1,6 @@
 // +build bignum_hol256
 
-package go_verkle
+package kate
 
 import (
 	u256 "github.com/holiman/uint256"

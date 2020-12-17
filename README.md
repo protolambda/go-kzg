@@ -9,6 +9,7 @@ Part of a low-latency data-availability sampling network prototype for Eth2 Phas
 See https://github.com/protolambda/eth2-das
 
 Code is based on:
+- [KZG Data availability code by Dankrad](https://github.com/ethereum/research/tree/master/kzg_data_availability)
 - [Verkle and FFT code by Dankrad and Vitalik](https://github.com/ethereum/research/tree/master/verkle)
 - [Reed solomon erasure code recovery with FFTs by Vitalik](https://ethresear.ch/t/reed-solomon-erasure-code-recovery-in-n-log-2-n-time-with-ffts/3039)
 - [FFT explainer by Vitalik](https://vitalik.ca/general/2019/05/12/fft.html)

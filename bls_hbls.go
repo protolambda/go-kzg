@@ -1,6 +1,6 @@
 // +build bignum_hbls
 
-package go_verkle
+package kate
 
 import hbls "github.com/herumi/bls-eth-go-binary/bls"
 

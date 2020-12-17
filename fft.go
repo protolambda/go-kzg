@@ -3,7 +3,7 @@
 // - https://github.com/ethereum/research/blob/master/mimc_stark/fft.py
 // - https://github.com/ethereum/research/blob/master/mimc_stark/recovery.py
 
-package go_verkle
+package kate
 
 import (
 	"fmt"

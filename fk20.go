@@ -1,4 +1,4 @@
-package go_verkle
+package kate
 
 import "fmt"
 

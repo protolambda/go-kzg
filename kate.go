@@ -1,4 +1,4 @@
-package go_verkle
+package kate
 
 import (
 	"fmt"
@@ -93,17 +93,11 @@ func (fs *FFTSettings) Verify(commit *G1, proof *G1, value Big, index uint64, sG
 	return left.IsEqual(&right)
 }
 
-// TODO
-func (fs *FFTSettings) MakeMultiProof(coeffs []Big, indices []uint64) *G1 {
-	// TODO:
-	return nil
-}
-
 func (fs *FFTSettings) VerifyMultiProof(commit *G1, proof *G1, values []Big, indices []uint64) bool {
 	return false // TODO
 }
 
-func (fs *FFTSettings) MakeKateCommitments(data []Big) ([]G1, error) {
+func (fs *FFTSettings) MakeKateProofs(data []Big) ([]G1, error) {
 	// TODO: inverse FFT of input data: get polynomial to evaluate for data
 	// TODO: commitment: "C = [p(s)]_1 = [Sum(p_i * s**i)]_1 = Sum(p_i * [s**i]_1)"
 	//    - get coefficients of data -> polynomial representation
