@@ -9,6 +9,7 @@ import (
 func init() {
 	hbls.Init(hbls.BLS12_381)
 	initGlobals()
+	initG1G2()
 }
 
 type Big hbls.Fr

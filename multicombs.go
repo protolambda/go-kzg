@@ -26,12 +26,12 @@ func MultiSubset2G1(numbers []G1, subsets []Big) {
 
 // Reduces a linear combination `numbers[0] * factors[0] + numbers[1] * factors[1] + ...`
 // into a multi-subset problem, and computes the result efficiently
-func LinCombBig(numbers []Big, factors []Big) *Big {
+func LinCombBigWithSubsets(numbers []Big, factors []Big) *Big {
 	// TODO nil
 	return nil
 }
 
-func LinCombG1(numbers []G1, factors []Big) *G1 {
+func LinCombG1WithSubsets(numbers []G1, factors []Big) *G1 {
 	// TODO
 	return nil
 }
