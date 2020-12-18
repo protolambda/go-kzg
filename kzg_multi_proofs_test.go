@@ -1,6 +1,9 @@
 package kate
 
-import "testing"
+import (
+	"fmt"
+	"testing"
+)
 
 func TestKateSettings_ComputeProofMulti(t *testing.T) {
 	// TODO
@@ -25,19 +28,23 @@ func TestKateSettings_CheckProofMulti(t *testing.T) {
 	x := uint64(5431)
 	var xBig Big
 	asBig(&xBig, x)
-	cosetScale := 3
+	cosetScale := uint8(3)
 	coset := make([]Big, 1<<cosetScale, 1<<cosetScale)
-	root := &scale2RootOfUnity[cosetScale]
-	rootz := expandRootOfUnity(root)
+	s1, s2 = generateSetup("1927409816240961209460912649124", 8+1)
+	ks = NewKateSettings(NewFFTSettings(cosetScale), s1, s2)
 	for i := 0; i < len(coset); i++ {
-		mulModBig(&coset[i], &xBig, &rootz[i])
+		fmt.Printf("rootz %d: %s\n", i, bigStr(&ks.expandedRootsOfUnity[i]))
+		mulModBig(&coset[i], &xBig, &ks.expandedRootsOfUnity[i])
+		fmt.Printf("coset %d: %s\n", i, bigStr(&coset[i]))
 	}
 	ys := make([]Big, len(coset), len(coset))
 	for i := 0; i < len(coset); i++ {
 		EvalPolyAt(&ys[i], polynomial, &coset[i])
+		fmt.Printf("ys %d: %s\n", i, bigStr(&ys[i]))
 	}
 
 	proof := ks.ComputeProofMulti(polynomial, x, uint64(len(coset)))
+	fmt.Printf("proof: %s\n", strG1(proof))
 	if !ks.CheckProofMulti(commitment, proof, x, ys) {
 		// TODO; test failing
 		t.Fatal("could not verify proof")
