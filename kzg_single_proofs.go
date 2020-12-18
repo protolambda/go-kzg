@@ -1,7 +1,5 @@
 package kate
 
-import "fmt"
-
 // Kate commitment to polynomial in coefficient form
 func (ks *KateSettings) CommitToPoly(coeffs []Big) *G1 {
 	return LinCombG1(ks.secretG1[:len(coeffs)], coeffs)
@@ -29,14 +27,14 @@ func (ks *KateSettings) ComputeProofSingle(poly []Big, x uint64) *G1 {
 	asBig(&tmp, x)
 	subModBig(&divisor[0], &ZERO, &tmp)
 	CopyBigNum(&divisor[1], &ONE)
-	for i := 0; i < 2; i++ {
-		fmt.Printf("div poly %d: %s\n", i, bigStr(&divisor[i]))
-	}
+	//for i := 0; i < 2; i++ {
+	//	fmt.Printf("div poly %d: %s\n", i, bigStr(&divisor[i]))
+	//}
 	// quot = poly / divisor
 	quotientPolynomial := polyLongDiv(poly, divisor[:])
-	for i := 0; i < len(quotientPolynomial); i++ {
-		fmt.Printf("quot poly %d: %s\n", i, bigStr(&quotientPolynomial[i]))
-	}
+	//for i := 0; i < len(quotientPolynomial); i++ {
+	//	fmt.Printf("quot poly %d: %s\n", i, bigStr(&quotientPolynomial[i]))
+	//}
 
 	// evaluate quotient poly at shared secret, in G1
 	return LinCombG1(ks.secretG1[:len(quotientPolynomial)], quotientPolynomial)

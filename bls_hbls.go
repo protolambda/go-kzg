@@ -133,12 +133,23 @@ func PairingsVerify(a1 *G1, a2 *G2, b1 *G1, b2 *G2) bool {
 	//fmt.Println("tmp", tmp.GetString(10))
 	var tmp2 hbls.GT
 	hbls.Pairing(&tmp2, (*hbls.G1)(b1), (*hbls.G2)(b2))
-	//fmt.Println("tmp2", tmp2.GetString(10))
-	return tmp.IsEqual(&tmp2)
-	// TODO: this doesn't work, need pairing API to save that final-exp for the end (?)
-	//var tmp3 hbls.GT
-	//hbls.GTMul(&tmp, &tmp, &tmp2)
-	//var tmp4 hbls.GT
-	//hbls.FinalExp(&tmp4, &tmp3)
-	//return tmp4.IsOne()
+
+	// invert left pairing
+	var tmp3 hbls.GT
+	hbls.GTInv(&tmp3, &tmp)
+
+	// multiply the two
+	var tmp4 hbls.GT
+	hbls.GTMul(&tmp4, &tmp3, &tmp2)
+
+	// final exp.
+	var tmp5 hbls.GT
+	hbls.FinalExp(&tmp5, &tmp4)
+
+	// = 1_T
+	return tmp5.IsOne()
+
+	// TODO, alternatively use the equal check (faster or slower?):
+	////fmt.Println("tmp2", tmp2.GetString(10))
+	//return tmp.IsEqual(&tmp2)
 }
