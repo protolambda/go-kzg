@@ -10,6 +10,9 @@ import (
 var genG1 G1
 var genG2 G2
 
+var zeroG1 G1
+var zeroG2 G2
+
 // Herumi BLS doesn't offer these points to us, so we have to work around it by declaring them ourselves.
 func initG1G2() {
 	genG1.X.SetString("3685416753713387016781088315183077757961620795782546409894578378688607592378376318836054947676345821548104185464507", 10)
@@ -22,6 +25,17 @@ func initG1G2() {
 	genG2.Y.D[1].SetString("927553665492332455747201965776037880757740193453592970025027978793976877002675564980949289727957565575433344219582", 10)
 	genG2.Z.D[0].SetInt64(1)
 	genG2.Z.D[1].Clear()
+
+	zeroG1.X.SetInt64(1)
+	zeroG1.Y.SetInt64(1)
+	zeroG1.Z.SetInt64(0)
+
+	zeroG2.X.D[0].SetInt64(1)
+	zeroG2.X.D[1].SetInt64(0)
+	zeroG2.Y.D[0].SetInt64(1)
+	zeroG2.Y.D[1].SetInt64(0)
+	zeroG2.Z.D[0].SetInt64(0)
+	zeroG2.Z.D[1].SetInt64(0)
 }
 
 // TODO types file, swap BLS with build args
