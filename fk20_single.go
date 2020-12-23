@@ -29,7 +29,7 @@ import "fmt"
 
 // Performs the first part of the Toeplitz matrix multiplication algorithm, which is a Fourier
 // transform of the vector x extended
-func (ks *KateSettings) ToeplitzPart1(x []G1) []G1 {
+func (ks *KateSettings) toeplitzPart1(x []G1) []G1 {
 	half := ks.width / 2
 	if uint64(len(x)) != half {
 		panic(fmt.Errorf("expected width %d (half of settings), got %d", half, len(x)))
@@ -81,28 +81,28 @@ func (ks *KateSettings) ToeplitzPart3(hExtFFT []G1) []G1 {
 	return out[:ks.width/2]
 }
 
+func (ks *KateSettings) toeplitzCoeffsStep(polynomial []Big) []Big {
+	n := ks.width / 2
+	if uint64(len(polynomial)) != n {
+		panic("bad polynomial length")
+	}
+	// [last poly item] + [0]*(n+1) + [poly items except first]
+	toeplitzCoeffs := make([]Big, ks.width+1, ks.width+1)
+	CopyBigNum(&toeplitzCoeffs[0], &polynomial[n-1])
+	for i := uint64(1); i <= n; i++ {
+		CopyBigNum(&toeplitzCoeffs[i], &ZERO)
+	}
+	for i := n + 1; i <= ks.width; i++ {
+		CopyBigNum(&toeplitzCoeffs[i], &polynomial[i-n])
+	}
+	return toeplitzCoeffs
+}
+
 // Compute all n (single) proofs according to FK20 method
 func (ks *KateSettings) FK20Single(polynomial []Big) []G1 {
-	half := ks.width / 2
-	if uint64(len(polynomial)) != half {
-		panic(fmt.Errorf(
-			"expected input of length %d to match half of precomputed settings length %d",
-			len(polynomial), ks.width))
-	}
-	// the inverse domain, but last entry zero
-	x := make([]G1, ks.width, ks.width)
-	for i := uint64(0); i < ks.width-1; i++ {
-		CopyG1(&x[i], &ks.secretG1[ks.width-1-i])
-	}
-	CopyG1(&x[ks.width-1], &zeroG1)
-
-	xExtFFT := ks.ToeplitzPart1(x)
-
-	// [last poly item] + [0]*(half+1) + [poly items except first]
-	toeplitzCoeffs := make([]Big, ks.width+1, ks.width+1)
-
+	toeplitzCoeffs := ks.toeplitzCoeffsStep(polynomial)
 	// Compute the vector h from the paper using a Toeplitz matrix multiplication
-	hExtFFT := ks.ToeplitzPart2(toeplitzCoeffs, xExtFFT)
+	hExtFFT := ks.ToeplitzPart2(toeplitzCoeffs, ks.xExtFFT)
 	h := ks.ToeplitzPart3(hExtFFT)
 
 	out, err := ks.FFTG1(h, false)
@@ -112,12 +112,55 @@ func (ks *KateSettings) FK20Single(polynomial []Big) []G1 {
 	return out
 }
 
+// Special version of the FK20 for the situation of data availability checks:
+// The upper half of the polynomial coefficients is always 0, so we do not need to extend to twice the size
+// for Toeplitz matrix multiplication
 func (ks *KateSettings) FK20SingleDAOptimized(polynomial []Big) []G1 {
-	// TODO
-	return nil
+	if uint64(len(polynomial))*2 != ks.width {
+		panic(fmt.Errorf(
+			"expected input of length %d (excl half of zeroes) to match precomputed settings length %d",
+			len(polynomial), ks.width))
+	}
+	n := ks.width / 2
+	for i := n; i < ks.width; i++ {
+		if !equalZero(&polynomial[i]) {
+			panic("bad input, second half should be zeroed")
+		}
+	}
+	reducedPoly := polynomial[:n]
+	toeplitzCoeffs := ks.toeplitzCoeffsStep(reducedPoly)
+	// Compute the vector h from the paper using a Toeplitz matrix multiplication
+	hExtFFT := ks.ToeplitzPart2(toeplitzCoeffs, ks.xExtFFT)
+	h := ks.ToeplitzPart3(hExtFFT)
+
+	// Now redo the padding before final step.
+	// Instead of copying h into a new extended array, just reuse the old capacity.
+	h = h[:ks.width]
+	for i := n; i < ks.width; i++ {
+		CopyG1(&h[i], &zeroG1)
+	}
+	out, err := ks.FFTG1(h, false)
+	if err != nil {
+		panic(err)
+	}
+	return out
 }
 
+// Computes all the KZG proofs for data availability checks. This involves sampling on the double domain
+// and reordering according to reverse bit order
 func (ks *KateSettings) DAUsingFK20(polynomial []Big) []G1 {
-	// TODO
-	return nil
+	n := uint64(len(polynomial))
+	if n*2 != ks.width {
+		panic("expected poly contents half the size of the Kate settings")
+	}
+	extendedPolynomial := make([]Big, ks.width, ks.width)
+	for i := uint64(0); i < n; i++ {
+		CopyBigNum(&extendedPolynomial[i], &polynomial[i])
+	}
+	for i := n; i < ks.width; i++ {
+		CopyBigNum(&extendedPolynomial[i], &ZERO)
+	}
+	allProofs := ks.FK20SingleDAOptimized(extendedPolynomial)
+	// TODO apply reverse bit order
+	return allProofs
 }

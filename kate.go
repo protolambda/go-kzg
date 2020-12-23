@@ -15,6 +15,9 @@ type KateSettings struct {
 	zeroG1 []G1
 	// [b.multiply(b.G2, field.eval_poly_at(l, s)) for l in LAGRANGE_POLYS],
 	zeroG2 []G2
+
+	// size of width
+	xExtFFT []G1
 }
 
 func NewKateSettings(fs *FFTSettings, secretG1 []G1, secretG2 []G2) *KateSettings {
@@ -27,12 +30,8 @@ func NewKateSettings(fs *FFTSettings, secretG1 []G1, secretG2 []G2) *KateSetting
 
 	// TODO init extended secrets (i.e. 1st half would be the secret vals, 2nd half would be zero points), necessary for Toeplitz trickery
 	// That would be:
-	//xext = x + [b.Z1 for a in x]
-	//xext_hat = fft(xext, MODULUS, ROOT_OF_UNITY2, inv=False)
 
-	// TODO init zeroing points
-
-	return &KateSettings{
+	ks := &KateSettings{
 		FFTSettings:      fs,
 		secretG1:         secretG1,
 		extendedSecretG1: nil,
@@ -40,4 +39,18 @@ func NewKateSettings(fs *FFTSettings, secretG1 []G1, secretG2 []G2) *KateSetting
 		zeroG1:           nil,
 		zeroG2:           nil,
 	}
+
+	//x = setup[0][n - 2::-1] + [b.Z1]
+	//xext_fft = toeplitz_part1(x)
+	n := ks.width / 2
+	x := make([]G1, n, n)
+	for i := uint64(0); i < n-1; i++ {
+		CopyG1(&x[i], &ks.secretG1[n-1-i])
+	}
+	CopyG1(&x[n-1], &zeroG1)
+	ks.xExtFFT = ks.toeplitzPart1(x)
+
+	// TODO init zeroing points
+
+	return ks
 }
