@@ -46,7 +46,6 @@ func TestKateSettings_CheckProofMulti(t *testing.T) {
 	proof := ks.ComputeProofMulti(polynomial, x, uint64(len(coset)))
 	fmt.Printf("proof: %s\n", strG1(proof))
 	if !ks.CheckProofMulti(commitment, proof, x, ys) {
-		// TODO; test failing
 		t.Fatal("could not verify proof")
 	}
 }
