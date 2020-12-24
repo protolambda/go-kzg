@@ -45,7 +45,7 @@ func NewKateSettings(fs *FFTSettings, secretG1 []G1, secretG2 []G2) *KateSetting
 	n := ks.width / 2
 	x := make([]G1, n, n)
 	for i := uint64(0); i < n-1; i++ {
-		CopyG1(&x[i], &ks.secretG1[n-1-i])
+		CopyG1(&x[i], &ks.secretG1[n-2-i]) // only uses the first half - 1
 	}
 	CopyG1(&x[n-1], &zeroG1)
 	ks.xExtFFT = ks.toeplitzPart1(x)
