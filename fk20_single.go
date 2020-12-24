@@ -89,11 +89,11 @@ func (ks *KateSettings) toeplitzCoeffsStep(polynomial []Big) []Big {
 	// [last poly item] + [0]*(n+1) + [poly items except first and last]
 	toeplitzCoeffs := make([]Big, ks.width, ks.width)
 	CopyBigNum(&toeplitzCoeffs[0], &polynomial[n-1])
-	for i := uint64(0); i < n+1; i++ {
-		CopyBigNum(&toeplitzCoeffs[i+1], &ZERO)
+	for i := uint64(1); i <= n+1; i++ {
+		CopyBigNum(&toeplitzCoeffs[i], &ZERO)
 	}
-	for i := n + 1; i < ks.width; i++ {
-		CopyBigNum(&toeplitzCoeffs[i], &polynomial[i-n])
+	for i, j := n+2, 1; i < ks.width; i, j = i+1, j+1 {
+		CopyBigNum(&toeplitzCoeffs[i], &polynomial[j])
 	}
 	return toeplitzCoeffs
 }

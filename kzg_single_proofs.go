@@ -41,12 +41,10 @@ func (ks *KateSettings) ComputeProofSingle(poly []Big, x uint64) *G1 {
 }
 
 // Check a proof for a Kate commitment for an evaluation f(x) = y
-func (ks *KateSettings) CheckProofSingle(commitment *G1, proof *G1, x uint64, y *Big) bool {
+func (ks *KateSettings) CheckProofSingle(commitment *G1, proof *G1, x *Big, y *Big) bool {
 	// Verify the pairing equation
-	var xBig Big
-	asBig(&xBig, x)
 	var xG2 G2
-	mulG2(&xG2, &genG2, &xBig)
+	mulG2(&xG2, &genG2, x)
 	var sMinuxX G2
 	subG2(&sMinuxX, &ks.secretG2[1], &xG2)
 	var yG1 G1

@@ -35,7 +35,7 @@ func TestKateSettings_CheckProofSingle(t *testing.T) {
 	EvalPolyAt(&value, polynomial, &x)
 	t.Log("value\n", bigStr(&value))
 
-	if !ks.CheckProofSingle(commitment, proof, 17, &value) {
+	if !ks.CheckProofSingle(commitment, proof, &x, &value) {
 		t.Fatal("could not verify proof")
 	}
 }
