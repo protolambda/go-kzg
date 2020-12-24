@@ -86,13 +86,13 @@ func (ks *KateSettings) toeplitzCoeffsStep(polynomial []Big) []Big {
 	if uint64(len(polynomial)) != n {
 		panic("bad polynomial length")
 	}
-	// [last poly item] + [0]*(n+1) + [poly items except first]
-	toeplitzCoeffs := make([]Big, ks.width+1, ks.width+1)
+	// [last poly item] + [0]*(n+1) + [poly items except first and last]
+	toeplitzCoeffs := make([]Big, ks.width, ks.width)
 	CopyBigNum(&toeplitzCoeffs[0], &polynomial[n-1])
-	for i := uint64(1); i <= n; i++ {
-		CopyBigNum(&toeplitzCoeffs[i], &ZERO)
+	for i := uint64(0); i < n+1; i++ {
+		CopyBigNum(&toeplitzCoeffs[i+1], &ZERO)
 	}
-	for i := n + 1; i <= ks.width; i++ {
+	for i := n + 1; i < ks.width; i++ {
 		CopyBigNum(&toeplitzCoeffs[i], &polynomial[i-n])
 	}
 	return toeplitzCoeffs
@@ -116,9 +116,9 @@ func (ks *KateSettings) FK20Single(polynomial []Big) []G1 {
 // The upper half of the polynomial coefficients is always 0, so we do not need to extend to twice the size
 // for Toeplitz matrix multiplication
 func (ks *KateSettings) FK20SingleDAOptimized(polynomial []Big) []G1 {
-	if uint64(len(polynomial))*2 != ks.width {
+	if uint64(len(polynomial)) != ks.width {
 		panic(fmt.Errorf(
-			"expected input of length %d (excl half of zeroes) to match precomputed settings length %d",
+			"expected input of length %d (incl half of zeroes) to match precomputed settings length %d",
 			len(polynomial), ks.width))
 	}
 	n := ks.width / 2
@@ -161,6 +161,7 @@ func (ks *KateSettings) DAUsingFK20(polynomial []Big) []G1 {
 		CopyBigNum(&extendedPolynomial[i], &ZERO)
 	}
 	allProofs := ks.FK20SingleDAOptimized(extendedPolynomial)
-	// TODO apply reverse bit order
+	// change to reverse bit order.
+	reverseBitOrderG1(allProofs)
 	return allProofs
 }
