@@ -81,6 +81,24 @@ func (ks *KateSettings) ToeplitzPart3(hExtFFT []G1) []G1 {
 	return out[:ks.width/2]
 }
 
+func (ks *KateSettings) toeplitzCoeffsStepStrided(polynomial []Big, offset uint64, stride uint64) []Big {
+	n := ks.width / 2
+	if uint64(len(polynomial)) != n*stride {
+		panic("bad polynomial length")
+	}
+	// [last poly item] + [0]*(n+1) + [poly items except first and last]
+	toeplitzCoeffs := make([]Big, ks.width, ks.width)
+	CopyBigNum(&toeplitzCoeffs[0], &polynomial[n-offset-stride])
+	for i := uint64(1); i <= n+1; i++ {
+		CopyBigNum(&toeplitzCoeffs[i], &ZERO)
+	}
+	for i, j := n+2, stride+offset; i < ks.width; i, j = i+1, j+stride {
+		CopyBigNum(&toeplitzCoeffs[i], &polynomial[j])
+	}
+	return toeplitzCoeffs
+}
+
+// TODO: call above with offset=0, stride=1
 func (ks *KateSettings) toeplitzCoeffsStep(polynomial []Big) []Big {
 	n := ks.width / 2
 	if uint64(len(polynomial)) != n {
@@ -105,6 +123,7 @@ func (ks *KateSettings) FK20Single(polynomial []Big) []G1 {
 	hExtFFT := ks.ToeplitzPart2(toeplitzCoeffs, ks.xExtFFT)
 	h := ks.ToeplitzPart3(hExtFFT)
 
+	// TODO: correct? It will pad up implicitly again, but
 	out, err := ks.FFTG1(h, false)
 	if err != nil {
 		panic(err)

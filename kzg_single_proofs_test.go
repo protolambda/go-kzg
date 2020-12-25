@@ -13,7 +13,7 @@ func TestKateSettings_ComputeProofSingle(t *testing.T) {
 func TestKateSettings_CheckProofSingle(t *testing.T) {
 	fs := NewFFTSettings(4)
 	s1, s2 := generateSetup("1927409816240961209460912649124", 16+1)
-	ks := NewKateSettings(fs, s1, s2)
+	ks := NewKateSettings(fs, 1, s1, s2)
 	for i := 0; i < len(ks.secretG1); i++ {
 		t.Logf("secret g1 %d: %s", i, strG1(&ks.secretG1[i]))
 	}

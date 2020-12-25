@@ -5,7 +5,7 @@ import "testing"
 func TestKateSettings_DAUsingFK20(t *testing.T) {
 	fs := NewFFTSettings(5)
 	s1, s2 := generateSetup("1927409816240961209460912649124", 32+1)
-	ks := NewKateSettings(fs, s1, s2)
+	ks := NewKateSettings(fs, 1, s1, s2)
 
 	polynomial := testPoly(1, 2, 3, 4, 7, 7, 7, 7, 13, 13, 13, 13, 13, 13, 13, 13)
 
