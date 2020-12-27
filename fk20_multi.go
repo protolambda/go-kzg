@@ -15,15 +15,15 @@ import "fmt"
 // 	   proof[i]: w^(i*l + 0), w^(i*l + 1), ... w^(i*l + l - 1)
 // 	   ...
 func (ks *FK20MultiSettings) FK20Multi(polynomial []Big) []G1 {
-	chunkCount := uint64(len(polynomial)) * 2 / ks.chunkLen
-	if ks.maxWidth != chunkCount {
-		panic(fmt.Errorf("KateSettings are set to maxWidth %d and chunkLen %d,"+
-			" but got chunk count %d mismatching the maxWidth (polynomial len %d)",
-			ks.maxWidth, ks.chunkLen, chunkCount, len(polynomial)))
+	n := uint64(len(polynomial))
+	n2 := n * 2
+	if ks.maxWidth < n2 {
+		panic(fmt.Errorf("KateSettings are set to maxWidth %d but got half polynomial of length %d",
+			ks.maxWidth, n))
 	}
 
-	hExtFFT := make([]G1, ks.maxWidth, ks.maxWidth)
-	for i := uint64(0); i < ks.maxWidth; i++ {
+	hExtFFT := make([]G1, n2, n2)
+	for i := uint64(0); i < n2; i++ {
 		CopyG1(&hExtFFT[i], &zeroG1)
 	}
 
@@ -31,14 +31,13 @@ func (ks *FK20MultiSettings) FK20Multi(polynomial []Big) []G1 {
 	for i := uint64(0); i < ks.chunkLen; i++ {
 		toeplitzCoeffs := ks.toeplitzCoeffsStepStrided(polynomial, i, ks.chunkLen)
 		hExtFFTFile := ks.ToeplitzPart2(toeplitzCoeffs, ks.xExtFFTFiles[i])
-		for j := uint64(0); j < ks.maxWidth; j++ {
+		for j := uint64(0); j < n2; j++ {
 			addG1(&tmp, &hExtFFT[j], &hExtFFTFile[j])
 			CopyG1(&hExtFFT[j], &tmp)
 		}
 	}
 	h := ks.ToeplitzPart3(hExtFFT)
 
-	// TODO: correct? It will pad up implicitly again, but
 	out, err := ks.FFTG1(h, false)
 	if err != nil {
 		panic(err)
@@ -49,21 +48,22 @@ func (ks *FK20MultiSettings) FK20Multi(polynomial []Big) []G1 {
 // FK20 multi-proof method, optimized for dava availability where the top half of polynomial
 // coefficients == 0
 func (ks *FK20MultiSettings) FK20MultiDAOptimized(polynomial []Big) []G1 {
-	chunkCount := uint64(len(polynomial)) / ks.chunkLen
-	if ks.maxWidth != chunkCount {
-		panic(fmt.Errorf("KateSettings are set to maxWidth %d and chunkLen %d,"+
-			" but got chunk count %d mismatching the maxWidth (polynomial len %d)",
-			ks.maxWidth, ks.chunkLen, chunkCount, len(polynomial)))
+	n2 := uint64(len(polynomial))
+	if ks.maxWidth < n2 {
+		panic(fmt.Errorf("KateSettings are set to maxWidth %d but got polynomial of length %d",
+			ks.maxWidth, n2))
 	}
-	n := ks.maxWidth / 2
-	for i := n; i < ks.maxWidth; i++ {
+	n := n2 / 2
+	for i := n; i < n2; i++ {
 		if !equalZero(&polynomial[i]) {
 			panic("bad input, second half should be zeroed")
 		}
 	}
 
-	hExtFFT := make([]G1, ks.maxWidth, ks.maxWidth)
-	for i := uint64(0); i < ks.maxWidth; i++ {
+	k := n / ks.chunkLen
+	k2 := k * 2
+	hExtFFT := make([]G1, k2, k2)
+	for i := uint64(0); i < k2; i++ {
 		CopyG1(&hExtFFT[i], &zeroG1)
 	}
 
@@ -72,7 +72,7 @@ func (ks *FK20MultiSettings) FK20MultiDAOptimized(polynomial []Big) []G1 {
 	for i := uint64(0); i < ks.chunkLen; i++ {
 		toeplitzCoeffs := ks.toeplitzCoeffsStepStrided(reducedPoly, i, ks.chunkLen)
 		hExtFFTFile := ks.ToeplitzPart2(toeplitzCoeffs, ks.xExtFFTFiles[i])
-		for j := uint64(0); j < ks.maxWidth; j++ {
+		for j := uint64(0); j < k2; j++ {
 			addG1(&tmp, &hExtFFT[j], &hExtFFTFile[j])
 			CopyG1(&hExtFFT[j], &tmp)
 		}
@@ -81,8 +81,8 @@ func (ks *FK20MultiSettings) FK20MultiDAOptimized(polynomial []Big) []G1 {
 
 	// Now redo the padding before final step.
 	// Instead of copying h into a new extended array, just reuse the old capacity.
-	h = h[:ks.maxWidth]
-	for i := n; i < ks.maxWidth; i++ {
+	h = h[:k2]
+	for i := n; i < k2; i++ {
 		CopyG1(&h[i], &zeroG1)
 	}
 	out, err := ks.FFTG1(h, false)
@@ -96,14 +96,18 @@ func (ks *FK20MultiSettings) FK20MultiDAOptimized(polynomial []Big) []G1 {
 // and reordering according to reverse bit order
 func (ks *FK20MultiSettings) DAUsingFK20Multi(polynomial []Big) []G1 {
 	n := uint64(len(polynomial))
-	if n*2 != ks.maxWidth {
-		panic("expected poly contents half the size of the Kate settings")
+	if n > ks.maxWidth/2 {
+		panic("expected poly contents not bigger than half the size of the FK20-multi settings")
 	}
-	extendedPolynomial := make([]Big, ks.maxWidth, ks.maxWidth)
+	if !isPowerOfTwo(n) {
+		panic("expected poly length to be power of two")
+	}
+	n2 := n*2
+	extendedPolynomial := make([]Big, n2, n2)
 	for i := uint64(0); i < n; i++ {
 		CopyBigNum(&extendedPolynomial[i], &polynomial[i])
 	}
-	for i := n; i < ks.maxWidth; i++ {
+	for i := n; i < n2; i++ {
 		CopyBigNum(&extendedPolynomial[i], &ZERO)
 	}
 	allProofs := ks.FK20MultiDAOptimized(extendedPolynomial)

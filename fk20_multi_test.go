@@ -3,13 +3,13 @@ package kate
 import "testing"
 
 func TestKateSettings_DAUsingFK20Multi(t *testing.T) {
-	fs := NewFFTSettings(5)
+	fs := NewFFTSettings(4+5+1)
 	chunkLen := uint64(16)
 	chunkCount := uint64(32)
 	n := chunkLen * chunkCount
-	s1, s2 := generateSetup("1927409816240961209460912649124", chunkLen*chunkCount)
+	s1, s2 := generateSetup("1927409816240961209460912649124", chunkLen*chunkCount*2)
 	ks := NewKateSettings(fs, s1, s2)
-	fk := NewFK20MultiSettings(ks, n*2, chunkLen)
+	fk := NewFK20MultiSettings(ks, chunkCount*2, chunkLen)
 
 	// replicate same polynomial as in python test
 	polynomial := make([]Big, n, n)
@@ -47,14 +47,17 @@ func TestKateSettings_DAUsingFK20Multi(t *testing.T) {
 		CopyBigNum(&extendedData[i*2+1], &oddData[i])
 	}
 
+	n2 := n*2
+	domainStride := fk.maxWidth/n2
 	for pos := uint64(0); pos < 2*chunkCount; pos++ {
 		domainPos := reverseBitsLimited(uint32(2*chunkCount), uint32(pos))
 		var x Big
-		CopyBigNum(&x, &ks.expandedRootsOfUnity[domainPos])
+		CopyBigNum(&x, &ks.expandedRootsOfUnity[uint64(domainPos)*domainStride])
 		ys := extendedData[chunkLen*pos : chunkLen*(pos+1)]
+		// ys, but constructed by evaluating the polynomial in the sub-domain range
 		ys2 := make([]Big, chunkLen, chunkLen)
 		// don't recompute the subgroup domain, just select it from the bigger domain by applying a stride
-		stride := (uint64(len(ks.expandedRootsOfUnity)) - 1) / chunkLen
+		stride := domainStride * chunkLen
 		for i := uint64(0); i < chunkLen; i++ {
 			var z Big // a value of the coset list
 			CopyBigNum(&z, &ks.expandedRootsOfUnity[i*stride])
@@ -63,7 +66,7 @@ func TestKateSettings_DAUsingFK20Multi(t *testing.T) {
 		// permanently change order of ys values
 		reverseBitOrderBig(ys)
 		for i := 0; i < len(ys); i++ {
-			if !equalBig(&ys[i], &ys[2]) {
+			if !equalBig(&ys[i], &ys[i]) {
 				t.Fatal("failed to reproduce matching y values for subgroup")
 			}
 		}

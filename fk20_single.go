@@ -75,8 +75,8 @@ func (ks *KateSettings) ToeplitzPart3(hExtFFT []G1) []G1 {
 }
 
 func (ks *KateSettings) toeplitzCoeffsStepStrided(polynomial []Big, offset uint64, stride uint64) []Big {
-	n2 := uint64(len(polynomial)) / stride
-	n := n2 / 2
+	n := uint64(len(polynomial)) / stride
+	n2 := n * 2
 	// [last poly item] + [0]*(n+1) + [poly items except first and last]
 	toeplitzCoeffs := make([]Big, n2, n2)
 	CopyBigNum(&toeplitzCoeffs[0], &polynomial[n-offset-stride])
@@ -163,7 +163,7 @@ func (fk *FK20SingleSettings) FK20SingleDAOptimized(polynomial []Big) []G1 {
 func (fk *FK20SingleSettings) DAUsingFK20(polynomial []Big) []G1 {
 	n := uint64(len(polynomial))
 	if n > fk.maxWidth/2 {
-		panic("expected poly contents not bigger than half the size of the Kate settings")
+		panic("expected poly contents not bigger than half the size of the FK20-single settings")
 	}
 	if !isPowerOfTwo(n) {
 		panic("expected poly length to be power of two")
