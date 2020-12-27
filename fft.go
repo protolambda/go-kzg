@@ -90,13 +90,12 @@ func expandRootOfUnity(rootOfUnity *Big) []Big {
 }
 
 type FFTSettings struct {
-	scale uint8
-	width uint64
+	maxWidth uint64
 	// the generator used to get all roots of unity
 	rootOfUnity *Big
 	// domain, starting and ending with 1 (duplicate!)
 	expandedRootsOfUnity []Big
-	// reverse domain, same as inverse values of domain.
+	// reverse domain, same as inverse values of domain. Also starting and ending with 1.
 	reverseRootsOfUnity []Big
 }
 
@@ -104,10 +103,10 @@ type FFTSettings struct {
 // Secret point to evaluate polynomials at.
 // Setup values are defined as [g * s**i for i in range(m)]  (correct?)
 
-func NewFFTSettings(scale uint8) *FFTSettings {
-	width := uint64(1) << scale
-	root := &scale2RootOfUnity[scale]
-	rootz := expandRootOfUnity(&scale2RootOfUnity[scale])
+func NewFFTSettings(maxScale uint8) *FFTSettings {
+	width := uint64(1) << maxScale
+	root := &scale2RootOfUnity[maxScale]
+	rootz := expandRootOfUnity(&scale2RootOfUnity[maxScale])
 	// reverse roots of unity
 	rootzReverse := make([]Big, len(rootz), len(rootz))
 	copy(rootzReverse, rootz)
@@ -116,16 +115,17 @@ func NewFFTSettings(scale uint8) *FFTSettings {
 	}
 
 	return &FFTSettings{
-		scale:                scale,
-		width:                width,
+		maxWidth:             width,
 		rootOfUnity:          root,
 		expandedRootsOfUnity: rootz,
 		reverseRootsOfUnity:  rootzReverse,
 	}
 }
 
-func (fs *FFTSettings) zPoly(positions []uint) []Big {
-	return fs._zPoly(positions, 1)
+func (fs *FFTSettings) zPoly(positions []uint64) []Big {
+	n := uint64(len(positions))
+	stride := fs.maxWidth / n
+	return fs._zPoly(positions, stride)
 }
 
 func debugBigPtrs(msg string, values []*Big) {
@@ -150,31 +150,31 @@ func debugBigs(msg string, values []Big) {
 	fmt.Println(out.String())
 }
 
-func debugBigsOffsetStride(msg string, values []Big, offset uint, stride uint) {
+func debugBigsOffsetStride(msg string, values []Big, offset uint64, stride uint64) {
 	var out strings.Builder
 	out.WriteString("---")
 	out.WriteString(msg)
 	out.WriteString("---\n")
-	j := uint(0)
-	for i := offset; i < uint(len(values)); i += stride {
+	j := uint64(0)
+	for i := offset; i < uint64(len(values)); i += stride {
 		out.WriteString(fmt.Sprintf("#%4d: %s\n", j, bigStr(&values[i])))
 		j++
 	}
 	fmt.Println(out.String())
 }
 
-func (fs *FFTSettings) simpleFT(vals []Big, valsOffset uint, valsStride uint, rootsOfUnity []Big, rootsOfUnityStride uint, out []Big) {
-	l := uint(len(out))
+func (fs *FFTSettings) simpleFT(vals []Big, valsOffset uint64, valsStride uint64, rootsOfUnity []Big, rootsOfUnityStride uint64, out []Big) {
+	l := uint64(len(out))
 	var v Big
 	var tmp Big
 	var last Big
-	for i := uint(0); i < l; i++ {
+	for i := uint64(0); i < l; i++ {
 		jv := &vals[valsOffset]
 		r := &rootsOfUnity[0]
 		mulModBig(&v, jv, r)
 		CopyBigNum(&last, &v)
 
-		for j := uint(1); j < l; j++ {
+		for j := uint64(1); j < l; j++ {
 			jv := &vals[valsOffset+j*valsStride]
 			r := &rootsOfUnity[((i*j)%l)*rootsOfUnityStride]
 			mulModBig(&v, jv, r)
@@ -185,18 +185,18 @@ func (fs *FFTSettings) simpleFT(vals []Big, valsOffset uint, valsStride uint, ro
 	}
 }
 
-func (fs *FFTSettings) simpleFTG1(vals []G1, valsOffset uint, valsStride uint, rootsOfUnity []Big, rootsOfUnityStride uint, out []G1) {
-	l := uint(len(out))
+func (fs *FFTSettings) simpleFTG1(vals []G1, valsOffset uint64, valsStride uint64, rootsOfUnity []Big, rootsOfUnityStride uint64, out []G1) {
+	l := uint64(len(out))
 	var v G1
 	var tmp G1
 	var last G1
-	for i := uint(0); i < l; i++ {
+	for i := uint64(0); i < l; i++ {
 		jv := &vals[valsOffset]
 		r := &rootsOfUnity[0]
 		mulG1(&v, jv, r)
 		CopyG1(&last, &v)
 
-		for j := uint(1); j < l; j++ {
+		for j := uint64(1); j < l; j++ {
 			jv := &vals[valsOffset+j*valsStride]
 			r := &rootsOfUnity[((i*j)%l)*rootsOfUnityStride]
 			mulG1(&v, jv, r)
@@ -207,13 +207,13 @@ func (fs *FFTSettings) simpleFTG1(vals []G1, valsOffset uint, valsStride uint, r
 	}
 }
 
-func (fs *FFTSettings) _fft(vals []Big, valsOffset uint, valsStride uint, rootsOfUnity []Big, rootsOfUnityStride uint, out []Big) {
+func (fs *FFTSettings) _fft(vals []Big, valsOffset uint64, valsStride uint64, rootsOfUnity []Big, rootsOfUnityStride uint64, out []Big) {
 	if len(out) <= 4 { // if the value count is small, run the unoptimized version instead. // TODO tune threshold.
 		fs.simpleFT(vals, valsOffset, valsStride, rootsOfUnity, rootsOfUnityStride, out)
 		return
 	}
 
-	half := uint(len(out)) >> 1
+	half := uint64(len(out)) >> 1
 	// L will be the left half of out
 	fs._fft(vals, valsOffset, valsStride<<1, rootsOfUnity, rootsOfUnityStride<<1, out[:half])
 	// R will be the right half of out
@@ -221,7 +221,7 @@ func (fs *FFTSettings) _fft(vals []Big, valsOffset uint, valsStride uint, rootsO
 
 	var yTimesRoot Big
 	var x, y Big
-	for i := uint(0); i < half; i++ {
+	for i := uint64(0); i < half; i++ {
 		// temporary copies, so that writing to output doesn't conflict with input
 		CopyBigNum(&x, &out[i])
 		CopyBigNum(&y, &out[i+half])
@@ -232,13 +232,13 @@ func (fs *FFTSettings) _fft(vals []Big, valsOffset uint, valsStride uint, rootsO
 	}
 }
 
-func (fs *FFTSettings) _fftG1(vals []G1, valsOffset uint, valsStride uint, rootsOfUnity []Big, rootsOfUnityStride uint, out []G1) {
+func (fs *FFTSettings) _fftG1(vals []G1, valsOffset uint64, valsStride uint64, rootsOfUnity []Big, rootsOfUnityStride uint64, out []G1) {
 	if len(out) <= 4 { // if the value count is small, run the unoptimized version instead. // TODO tune threshold. (can be different for G1)
 		fs.simpleFTG1(vals, valsOffset, valsStride, rootsOfUnity, rootsOfUnityStride, out)
 		return
 	}
 
-	half := uint(len(out)) >> 1
+	half := uint64(len(out)) >> 1
 	// L will be the left half of out
 	fs._fftG1(vals, valsOffset, valsStride<<1, rootsOfUnity, rootsOfUnityStride<<1, out[:half])
 	// R will be the right half of out
@@ -246,7 +246,7 @@ func (fs *FFTSettings) _fftG1(vals []G1, valsOffset uint, valsStride uint, roots
 
 	var yTimesRoot G1
 	var x, y G1
-	for i := uint(0); i < half; i++ {
+	for i := uint64(0); i < half; i++ {
 		// temporary copies, so that writing to output doesn't conflict with input
 		CopyG1(&x, &out[i])
 		CopyG1(&y, &out[i+half])
@@ -257,78 +257,90 @@ func (fs *FFTSettings) _fftG1(vals []G1, valsOffset uint, valsStride uint, roots
 	}
 }
 
+func isPowerOfTwo(v uint64) bool {
+	return v&(v-1) == 0
+}
+
 func (fs *FFTSettings) FFT(vals []Big, inv bool) ([]Big, error) {
-	if len(fs.expandedRootsOfUnity) < len(vals) {
-		return nil, fmt.Errorf("got %d values but only have %d roots of unity", len(vals), len(fs.expandedRootsOfUnity))
+	n := uint64(len(vals))
+	if n > fs.maxWidth {
+		return nil, fmt.Errorf("got %d values but only have %d roots of unity", n, fs.maxWidth)
+	}
+	if !isPowerOfTwo(n) {
+		return nil, fmt.Errorf("got %d values but not a power of two", n)
 	}
 	// We make a copy so we can mutate it during the work.
-	valsCopy := make([]Big, fs.width, fs.width)
-	copy(valsCopy, vals)
-	// Fill in vals with zeroes if needed
-	for i := uint64(len(vals)); i < fs.width; i++ {
-		valsCopy[i] = ZERO
+	valsCopy := make([]Big, n, n) // TODO: maybe optimize this away, and write back to original input array?
+	for i := uint64(0); i < n; i++ {
+		CopyBigNum(&valsCopy[i], &vals[i])
 	}
 	if inv {
 		var invLen Big
-		asBig(&invLen, uint64(len(vals)))
+		asBig(&invLen, n)
 		invModBig(&invLen, &invLen)
-		rootz := fs.reverseRootsOfUnity
+		rootz := fs.reverseRootsOfUnity[:fs.maxWidth]
+		stride := fs.maxWidth / n
 
-		out := make([]Big, fs.width, fs.width)
-		fs._fft(valsCopy, 0, 1, rootz[:len(rootz)-1], 1, out)
+		out := make([]Big, n, n)
+		fs._fft(valsCopy, 0, 1, rootz, stride, out)
+		debugBigs("inv fft without len invert", out)
+		var tmp Big
 		for i := 0; i < len(out); i++ {
-			mulModBig(&out[i], &out[i], &invLen)
+			mulModBig(&tmp, &out[i], &invLen)
+			CopyBigNum(&out[i], &tmp) // TODO: depending on bignum implementation, allow to directly write back to an input
 		}
 		return out, nil
 	} else {
-		out := make([]Big, fs.width, fs.width)
-		rootz := fs.expandedRootsOfUnity
+		out := make([]Big, n, n)
+		rootz := fs.expandedRootsOfUnity[:fs.maxWidth]
+		stride := fs.maxWidth / n
 		// Regular FFT
-		fs._fft(valsCopy, 0, 1, rootz[:len(rootz)-1], 1, out)
+		fs._fft(valsCopy, 0, 1, rootz, stride, out)
 		return out, nil
 	}
 }
 
 func (fs *FFTSettings) FFTG1(vals []G1, inv bool) ([]G1, error) {
-	if len(fs.expandedRootsOfUnity) < len(vals) {
-		return nil, fmt.Errorf("got %d values but only have %d roots of unity", len(vals), len(fs.expandedRootsOfUnity))
+	n := uint64(len(vals))
+	if n > fs.maxWidth {
+		return nil, fmt.Errorf("got %d values but only have %d roots of unity", n, fs.maxWidth)
+	}
+	if !isPowerOfTwo(n) {
+		return nil, fmt.Errorf("got %d values but not a power of two", n)
 	}
 	// We make a copy so we can mutate it during the work.
-	valsCopy := make([]G1, fs.width, fs.width)
-	for i := 0; i < len(vals); i++ {
+	valsCopy := make([]G1, n, n)
+	for i := 0; i < len(vals); i++ { // TODO: maybe optimize this away, and write back to original input array?
 		CopyG1(&valsCopy[i], &vals[i])
-	}
-	// TODO: maybe just require the user to do padding, i.e. fixed-length input
-	// Then we can avoid this copy (if user wants result in-place into input)
-
-	// Fill in vals with zeroes if needed
-	for i := uint64(len(vals)); i < fs.width; i++ {
-		ClearG1(&valsCopy[i])
 	}
 	if inv {
 		var invLen Big
-		asBig(&invLen, uint64(len(vals)))
+		asBig(&invLen, n)
 		invModBig(&invLen, &invLen)
-		rootz := fs.reverseRootsOfUnity
+		rootz := fs.reverseRootsOfUnity[:fs.maxWidth]
+		stride := fs.maxWidth / n
 
-		out := make([]G1, fs.width, fs.width)
-		fs._fftG1(valsCopy, 0, 1, rootz[:len(rootz)-1], 1, out)
+		out := make([]G1, n, n)
+		fs._fftG1(valsCopy, 0, 1, rootz, stride, out)
+		var tmp G1
 		for i := 0; i < len(out); i++ {
-			mulG1(&out[i], &out[i], &invLen)
+			mulG1(&tmp, &out[i], &invLen)
+			CopyG1(&out[i], &tmp)
 		}
 		return out, nil
 	} else {
-		out := make([]G1, fs.width, fs.width)
-		rootz := fs.expandedRootsOfUnity
+		out := make([]G1, n, n)
+		rootz := fs.reverseRootsOfUnity[:fs.maxWidth]
+		stride := fs.maxWidth / n
 		// Regular FFT
-		fs._fftG1(valsCopy, 0, 1, rootz[:len(rootz)-1], 1, out)
+		fs._fftG1(valsCopy, 0, 1, rootz, stride, out)
 		return out, nil
 	}
 }
 
 // warning: the values in `a` are modified in-place to become the outputs.
 // Make a deep copy first if you need to use them later.
-func (fs *FFTSettings) dASFFTExtension(ab []Big, domainStride uint) {
+func (fs *FFTSettings) dASFFTExtension(ab []Big, domainStride uint64) {
 	if len(ab) == 2 {
 		aHalf0 := &ab[0]
 		aHalf1 := &ab[1]
@@ -350,7 +362,7 @@ func (fs *FFTSettings) dASFFTExtension(ab []Big, domainStride uint) {
 		panic("bad usage")
 	}
 
-	half := uint(len(ab))
+	half := uint64(len(ab))
 	halfHalf := half >> 1
 	abHalf0s := ab[:halfHalf]
 	abHalf1s := ab[halfHalf:half]
@@ -358,7 +370,7 @@ func (fs *FFTSettings) dASFFTExtension(ab []Big, domainStride uint) {
 	//L0[i] = (((a_half0 + a_half1) % modulus) * inv2) % modulus
 	//R0[i] = (((a_half0 - L0[i]) % modulus) * inverse_domain[i * 2]) % modulus
 	var tmp1, tmp2, tmp3 Big
-	for i := uint(0); i < halfHalf; i++ {
+	for i := uint64(0); i < halfHalf; i++ {
 		aHalf0 := &abHalf0s[i]
 		aHalf1 := &abHalf1s[i]
 		addModBig(&tmp1, aHalf0, aHalf1)
@@ -380,7 +392,7 @@ func (fs *FFTSettings) dASFFTExtension(ab []Big, domainStride uint) {
 	// Half the work of a regular FFT: only deal with uneven-index outputs
 	var yTimesRoot Big
 	var x, y Big
-	for i := uint(0); i < halfHalf; i++ {
+	for i := uint64(0); i < halfHalf; i++ {
 		// Temporary copies, so that writing to output doesn't conflict with input.
 		// Note that one hand is from L1, the other R1
 		CopyBigNum(&x, &abHalf0s[i])
@@ -397,15 +409,14 @@ func (fs *FFTSettings) dASFFTExtension(ab []Big, domainStride uint) {
 // Then computes the values for the odd indices, which combined would make the right half of coefficients zero.
 // Warning: the odd results are written back to the vals slice.
 func (fs *FFTSettings) DASFFTExtension(vals []Big) {
-	if uint64(len(vals))*2 > fs.width {
+	if uint64(len(vals))*2 > fs.maxWidth {
 		panic("domain too small for extending requested values")
 	}
 	fs.dASFFTExtension(vals, 1)
 }
 
-func (fs *FFTSettings) mulPolys(a []Big, b []Big, rootsOfUnityStride uint) []Big {
-	// pad a and b to match roots of unity
-	size := fs.width / uint64(rootsOfUnityStride)
+func (fs *FFTSettings) mulPolys(a []Big, b []Big, rootsOfUnityStride uint64) []Big {
+	size := fs.maxWidth / rootsOfUnityStride
 	aVals := make([]Big, size, size)
 	bVals := make([]Big, size, size)
 	for i := 0; i < len(a); i++ {
@@ -420,13 +431,13 @@ func (fs *FFTSettings) mulPolys(a []Big, b []Big, rootsOfUnityStride uint) []Big
 	for i := len(b); i < len(bVals); i++ {
 		bVals[i] = ZERO
 	}
-	rootz := fs.expandedRootsOfUnity
+	rootz := fs.expandedRootsOfUnity[:fs.maxWidth]
 	// Get FFT of a and b
 	x1 := make([]Big, len(aVals), len(aVals))
-	fs._fft(aVals, 0, 1, rootz[:len(rootz)-1], rootsOfUnityStride, x1)
+	fs._fft(aVals, 0, 1, rootz, rootsOfUnityStride, x1)
 
 	x2 := make([]Big, len(bVals), len(bVals))
-	fs._fft(bVals, 0, 1, rootz[:len(rootz)-1], rootsOfUnityStride, x2)
+	fs._fft(bVals, 0, 1, rootz, rootsOfUnityStride, x2)
 
 	// multiply the two. Hack: store results in x1
 	var tmp Big
@@ -434,11 +445,11 @@ func (fs *FFTSettings) mulPolys(a []Big, b []Big, rootsOfUnityStride uint) []Big
 		CopyBigNum(&tmp, &x1[i])
 		mulModBig(&x1[i], &tmp, &x2[i])
 	}
-	revRootz := fs.reverseRootsOfUnity
+	revRootz := fs.reverseRootsOfUnity[:fs.maxWidth]
 
 	out := make([]Big, len(x1), len(x1))
 	// compute the FFT of the multiplied values.
-	fs._fft(x1, 0, 1, revRootz[:len(revRootz)-1], rootsOfUnityStride, out)
+	fs._fft(x1, 0, 1, revRootz, rootsOfUnityStride, out)
 	return out
 }
 
@@ -474,7 +485,7 @@ func pOfKX(poly []Big, k *Big) []Big {
 	return out
 }
 
-func inefficientOddEvenDiv2(positions []uint) (even []uint, odd []uint) { // TODO optimize away
+func inefficientOddEvenDiv2(positions []uint64) (even []uint64, odd []uint64) { // TODO optimize away
 	for _, p := range positions {
 		if p&1 == 0 {
 			even = append(even, p>>1)
@@ -487,7 +498,7 @@ func inefficientOddEvenDiv2(positions []uint) (even []uint, odd []uint) { // TOD
 
 // Return (x - root**positions[0]) * (x - root**positions[1]) * ...
 // possibly with a constant factor offset
-func (fs *FFTSettings) _zPoly(positions []uint, rootsOfUnityStride uint) []Big {
+func (fs *FFTSettings) _zPoly(positions []uint64, rootsOfUnityStride uint64) []Big {
 	// If there are not more than 4 positions, use the naive
 	// O(n^2) algorithm as it is faster
 	if len(positions) <= 4 {
@@ -527,7 +538,7 @@ func (fs *FFTSettings) _zPoly(positions []uint, rootsOfUnityStride uint) []Big {
 	evenPositions, oddPositions := inefficientOddEvenDiv2(positions)
 	left := fs._zPoly(evenPositions, rootsOfUnityStride<<1)
 	right := fs._zPoly(oddPositions, rootsOfUnityStride<<1)
-	invRoot := &fs.expandedRootsOfUnity[uint(len(fs.expandedRootsOfUnity))-1-rootsOfUnityStride]
+	invRoot := &fs.reverseRootsOfUnity[rootsOfUnityStride]
 	// Offset the result for the odd indices, and combine the two
 	out := fs.mulPolys(left, pOfKX(right, invRoot), rootsOfUnityStride)
 	// Deal with the special case where mul_polys returns zero
@@ -559,13 +570,13 @@ const maxRecoverAttempts = 10
 func (fs *FFTSettings) ErasureCodeRecover(vals []*Big) ([]Big, error) {
 	// Generate the polynomial that is zero at the roots of unity
 	// corresponding to the indices where vals[i] is None
-	positions := make([]uint, 0, len(vals))
-	for i := uint(0); i < uint(len(vals)); i++ {
+	positions := make([]uint64, 0, len(vals))
+	for i := uint64(0); i < uint64(len(vals)); i++ {
 		if vals[i] == nil {
 			positions = append(positions, i)
 		}
 	}
-	z := fs.zPoly(positions)
+	z := fs._zPoly(positions, fs.maxWidth/uint64(len(vals)))
 	//debugBigs("z", z)
 	zVals, err := fs.FFT(z, false)
 	if err != nil {

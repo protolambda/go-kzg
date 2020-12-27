@@ -7,8 +7,8 @@ import (
 
 func benchFFTRoundtrip(scale uint8, b *testing.B) {
 	fs := NewFFTSettings(scale)
-	data := make([]Big, fs.width, fs.width)
-	for i := uint64(0); i < fs.width; i++ {
+	data := make([]Big, fs.maxWidth, fs.maxWidth)
+	for i := uint64(0); i < fs.maxWidth; i++ {
 		asBig(&data[i], i)
 	}
 	b.ResetTimer()
@@ -39,8 +39,8 @@ func BenchmarkFFTSettings_FFT(b *testing.B) {
 
 func benchFFTExtension(scale uint8, b *testing.B) {
 	fs := NewFFTSettings(scale)
-	data := make([]Big, fs.width/2, fs.width/2)
-	for i := uint64(0); i < fs.width/2; i++ {
+	data := make([]Big, fs.maxWidth/2, fs.maxWidth/2)
+	for i := uint64(0); i < fs.maxWidth/2; i++ {
 		asBig(&data[i], i)
 	}
 	b.ResetTimer()
