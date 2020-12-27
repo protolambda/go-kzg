@@ -139,6 +139,17 @@ func debugBigPtrs(msg string, values []*Big) {
 	fmt.Println(out.String())
 }
 
+func debugG1s(msg string, values []G1) {
+	var out strings.Builder
+	out.WriteString("---")
+	out.WriteString(msg)
+	out.WriteString("---\n")
+	for i := range values {
+		out.WriteString(fmt.Sprintf("#%4d: %s\n", i, strG1(&values[i])))
+	}
+	fmt.Println(out.String())
+}
+
 func debugBigs(msg string, values []Big) {
 	var out strings.Builder
 	out.WriteString("---")
@@ -330,7 +341,7 @@ func (fs *FFTSettings) FFTG1(vals []G1, inv bool) ([]G1, error) {
 		return out, nil
 	} else {
 		out := make([]G1, n, n)
-		rootz := fs.reverseRootsOfUnity[:fs.maxWidth]
+		rootz := fs.expandedRootsOfUnity[:fs.maxWidth]
 		stride := fs.maxWidth / n
 		// Regular FFT
 		fs._fftG1(valsCopy, 0, 1, rootz, stride, out)
