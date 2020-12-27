@@ -8,7 +8,8 @@ func TestKateSettings_DAUsingFK20Multi(t *testing.T) {
 	chunkCount := uint64(32)
 	n := chunkLen * chunkCount
 	s1, s2 := generateSetup("1927409816240961209460912649124", chunkLen*chunkCount)
-	ks := NewKateSettings(fs, chunkLen, s1, s2)
+	ks := NewKateSettings(fs, s1, s2)
+	fk := NewFK20MultiSettings(ks, n*2, chunkLen)
 
 	// replicate same polynomial as in python test
 	polynomial := make([]Big, n, n)
@@ -25,7 +26,7 @@ func TestKateSettings_DAUsingFK20Multi(t *testing.T) {
 	commitment := ks.CommitToPoly(polynomial)
 	t.Log("commitment\n", strG1(commitment))
 
-	allProofs := ks.DAUsingFK20Multi(polynomial)
+	allProofs := fk.DAUsingFK20Multi(polynomial)
 	t.Log("All KZG proofs computed for data availability (supersampled by factor 2)")
 	for i := 0; i < len(allProofs); i++ {
 		t.Logf("%d: %s", i, strG1(&allProofs[i]))

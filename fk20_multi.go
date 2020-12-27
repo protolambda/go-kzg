@@ -14,7 +14,7 @@ import "fmt"
 // 	   ...
 // 	   proof[i]: w^(i*l + 0), w^(i*l + 1), ... w^(i*l + l - 1)
 // 	   ...
-func (ks *KateSettings) FK20Multi(polynomial []Big) []G1 {
+func (ks *FK20MultiSettings) FK20Multi(polynomial []Big) []G1 {
 	chunkCount := uint64(len(polynomial)) * 2 / ks.chunkLen
 	if ks.maxWidth != chunkCount {
 		panic(fmt.Errorf("KateSettings are set to maxWidth %d and chunkLen %d,"+
@@ -48,7 +48,7 @@ func (ks *KateSettings) FK20Multi(polynomial []Big) []G1 {
 
 // FK20 multi-proof method, optimized for dava availability where the top half of polynomial
 // coefficients == 0
-func (ks *KateSettings) FK20MultiDAOptimized(polynomial []Big) []G1 {
+func (ks *FK20MultiSettings) FK20MultiDAOptimized(polynomial []Big) []G1 {
 	chunkCount := uint64(len(polynomial)) / ks.chunkLen
 	if ks.maxWidth != chunkCount {
 		panic(fmt.Errorf("KateSettings are set to maxWidth %d and chunkLen %d,"+
@@ -94,7 +94,7 @@ func (ks *KateSettings) FK20MultiDAOptimized(polynomial []Big) []G1 {
 
 // Computes all the KZG proofs for data availability checks. This involves sampling on the double domain
 // and reordering according to reverse bit order
-func (ks *KateSettings) DAUsingFK20Multi(polynomial []Big) []G1 {
+func (ks *FK20MultiSettings) DAUsingFK20Multi(polynomial []Big) []G1 {
 	n := uint64(len(polynomial))
 	if n*2 != ks.maxWidth {
 		panic("expected poly contents half the size of the Kate settings")

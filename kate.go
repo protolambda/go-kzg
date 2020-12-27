@@ -11,16 +11,9 @@ type KateSettings struct {
 	extendedSecretG1 []G1
 	// [b.multiply(b.G2, pow(s, i, MODULUS)) for i in range(WIDTH+1)],
 	secretG2 []G2
-
-	xExtFFT []G1 // TODO: sizing this. Maybe pre-compute all possible sizes within maxWidth?
-
-	// TODO: maybe refactor chunks into separate settings?
-	chunkLen uint64
-	// chunkLen files, each of size maxWidth
-	xExtFFTFiles [][]G1
 }
 
-func NewKateSettings(fs *FFTSettings, chunkLen uint64, secretG1 []G1, secretG2 []G2) *KateSettings {
+func NewKateSettings(fs *FFTSettings, secretG1 []G1, secretG2 []G2) *KateSettings {
 	if len(secretG1) != len(secretG2) {
 		panic("secret list lengths don't match")
 	}
@@ -35,25 +28,84 @@ func NewKateSettings(fs *FFTSettings, chunkLen uint64, secretG1 []G1, secretG2 [
 		secretG2:         secretG2,
 	}
 
-	//x = setup[0][n - 2::-1] + [b.Z1]
-	//xext_fft = toeplitz_part1(x)
-	xExtFFTPrecompute := func(offset uint64, stride uint64) []G1 {
-		n := ks.maxWidth / 2
+	return ks
+}
+
+type FK20SingleSettings struct {
+	*KateSettings
+	xExtFFT []G1
+}
+
+func NewFK20SingleSettings(ks *KateSettings, n2 uint64) *FK20SingleSettings {
+	if n2 > ks.maxWidth {
+		panic("extended size is larger than kate settings supports")
+	}
+	if !isPowerOfTwo(n2) {
+		panic("extended size is not a power of two")
+	}
+	if n2 < 2 {
+		panic("extended size is too small")
+	}
+	n := n2 / 2
+	fk := &FK20SingleSettings{
+		KateSettings: ks,
+	}
+	x := make([]G1, n, n)
+	for i, j := uint64(0), n-2; i < n-1; i, j = i+1, j-1 {
+		CopyG1(&x[i], &ks.secretG1[j])
+	}
+	CopyG1(&x[n-1], &zeroG1)
+	fk.xExtFFT = fk.toeplitzPart1(x)
+	return fk
+}
+
+type FK20MultiSettings struct {
+	*KateSettings
+	// TODO: maybe refactor chunks into separate settings?
+	chunkLen uint64
+	// chunkLen files, each of size maxWidth
+	xExtFFTFiles [][]G1
+}
+
+func NewFK20MultiSettings(ks *KateSettings, n2 uint64, chunkLen uint64) *FK20MultiSettings {
+	if n2 > ks.maxWidth {
+		panic("extended size is larger than kate settings supports")
+	}
+	if !isPowerOfTwo(n2) {
+		panic("extended size is not a power of two")
+	}
+	if n2 < 2 {
+		panic("extended size is too small")
+	}
+	if chunkLen > n2 {
+		panic("chunk length is too large")
+	}
+	if !isPowerOfTwo(chunkLen) {
+		panic("chunk length must be power of two")
+	}
+	if chunkLen < 1 {
+		panic("chunk length is too small")
+	}
+	fk := &FK20MultiSettings{
+		KateSettings: ks,
+		chunkLen:     chunkLen,
+		xExtFFTFiles: make([][]G1, chunkLen, chunkLen),
+	}
+	// xext_fft = []
+	// for i in range(l):
+	//   x = setup[0][n - l - 1 - i::-l] + [b.Z1]
+	//   xext_fft.append(toeplitz_part1(x))
+	n := n2 / 2
+	xExtFFTPrecompute := func(offset uint64) []G1 {
 		x := make([]G1, n, n)
-		for i, j := uint64(0), n-2*stride; i < n-1; i, j = i+1, j-stride {
+		for i, j := uint64(0), n-2*chunkLen; i < n-1; i, j = i+1, j-chunkLen {
 			CopyG1(&x[i], &ks.secretG1[j])
 		}
 		CopyG1(&x[n-1], &zeroG1)
 		return ks.toeplitzPart1(x)
 	}
-
-	ks.xExtFFT = xExtFFTPrecompute(0, 1)
-	ks.xExtFFTFiles = make([][]G1, chunkLen, chunkLen)
 	for i := uint64(0); i < chunkLen; i++ {
-		ks.xExtFFTFiles[i] = xExtFFTPrecompute(i, chunkLen)
+		fk.xExtFFTFiles[i] = xExtFFTPrecompute(i)
 	}
-
-	// TODO init zeroing points
-
-	return ks
+	return fk
 }

@@ -5,14 +5,15 @@ import "testing"
 func TestKateSettings_DAUsingFK20(t *testing.T) {
 	fs := NewFFTSettings(5)
 	s1, s2 := generateSetup("1927409816240961209460912649124", 32+1)
-	ks := NewKateSettings(fs, 1, s1, s2)
+	ks := NewKateSettings(fs, s1, s2)
+	fk := NewFK20SingleSettings(ks, 32)
 
 	polynomial := testPoly(1, 2, 3, 4, 7, 7, 7, 7, 13, 13, 13, 13, 13, 13, 13, 13)
 
 	commitment := ks.CommitToPoly(polynomial)
 	t.Log("commitment\n", strG1(commitment))
 
-	allProofs := ks.DAUsingFK20(polynomial)
+	allProofs := fk.DAUsingFK20(polynomial)
 	t.Log("All KZG proofs computed")
 	for i := 0; i < len(allProofs); i++ {
 		t.Logf("%d: %s", i, strG1(&allProofs[i]))

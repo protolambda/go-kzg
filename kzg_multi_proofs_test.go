@@ -12,7 +12,7 @@ func TestKateSettings_ComputeProofMulti(t *testing.T) {
 func TestKateSettings_CheckProofMulti(t *testing.T) {
 	fs := NewFFTSettings(4)
 	s1, s2 := generateSetup("1927409816240961209460912649124", 16+1)
-	ks := NewKateSettings(fs, 1, s1, s2)
+	ks := NewKateSettings(fs, s1, s2)
 	for i := 0; i < len(ks.secretG1); i++ {
 		t.Logf("secret g1 %d: %s", i, strG1(&ks.secretG1[i]))
 	}
@@ -31,7 +31,7 @@ func TestKateSettings_CheckProofMulti(t *testing.T) {
 	cosetScale := uint8(3)
 	coset := make([]Big, 1<<cosetScale, 1<<cosetScale)
 	s1, s2 = generateSetup("1927409816240961209460912649124", 8+1)
-	ks = NewKateSettings(NewFFTSettings(cosetScale), 1, s1, s2)
+	ks = NewKateSettings(NewFFTSettings(cosetScale), s1, s2)
 	for i := 0; i < len(coset); i++ {
 		fmt.Printf("rootz %d: %s\n", i, bigStr(&ks.expandedRootsOfUnity[i]))
 		mulModBig(&coset[i], &xBig, &ks.expandedRootsOfUnity[i])
