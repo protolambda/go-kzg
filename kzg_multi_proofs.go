@@ -37,7 +37,7 @@ func (ks *KateSettings) ComputeProofMulti(poly []Big, x uint64, n uint64) *G1 {
 
 // Check a proof for a Kate commitment for an evaluation f(x w^i) = y_i
 // The ys must match the width of the FFT settings, or this will panic.
-func (ks *KateSettings) CheckProofMulti(commitment *G1, proof *G1, x uint64, ys []Big) bool {
+func (ks *KateSettings) CheckProofMulti(commitment *G1, proof *G1, x *Big, ys []Big) bool {
 	// Interpolate at a coset. Note because it is a coset, not the subgroup, we have to multiply the
 	// polynomial coefficients by x^i
 	interpolationPoly, err := ks.FFT(ys, true)
@@ -49,15 +49,12 @@ func (ks *KateSettings) CheckProofMulti(commitment *G1, proof *G1, x uint64, ys 
 	// x^0 at first, then up to x^n
 	var xPow Big
 	CopyBigNum(&xPow, &ONE)
-	// x
-	var xBig Big
-	asBig(&xBig, x)
 	var tmp, tmp2 Big
 	for i := 0; i < len(interpolationPoly); i++ {
 		invModBig(&tmp, &xPow)
 		mulModBig(&tmp2, &interpolationPoly[i], &tmp)
 		CopyBigNum(&interpolationPoly[i], &tmp2)
-		mulModBig(&tmp, &xPow, &xBig)
+		mulModBig(&tmp, &xPow, x)
 		CopyBigNum(&xPow, &tmp)
 	}
 	// [x^n]_2

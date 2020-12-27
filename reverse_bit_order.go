@@ -112,3 +112,16 @@ func reverseBitOrderG1(values []G1) {
 		CopyG1(&values[j], &tmp)
 	})
 }
+
+// rearrange Big elements in reverse bit order. Supports 2**31 max element count.
+func reverseBitOrderBig(values []Big) {
+	if len(values) > (1 << 31) {
+		panic("list too large")
+	}
+	var tmp Big
+	reverseBitOrder(uint32(len(values)), func(i, j uint32) {
+		CopyBigNum(&tmp, &values[i])
+		CopyBigNum(&values[i], &values[j])
+		CopyBigNum(&values[j], &tmp)
+	})
+}
