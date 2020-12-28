@@ -101,6 +101,14 @@ func strG2(v *G2) string {
 	return (*hbls.G2)(v).GetString(10)
 }
 
+func equalG1(a *G1, b *G1) bool {
+	return (*hbls.G1)(a).IsEqual((*hbls.G1)(b))
+}
+
+func equalG2(a *G2, b *G2) bool {
+	return (*hbls.G2)(a).IsEqual((*hbls.G2)(b))
+}
+
 func LinCombG1(numbers []G1, factors []Big) *G1 {
 	var out G1
 	// We're just using unsafe to cast elements that are an alias anyway, no problem.

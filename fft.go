@@ -294,7 +294,6 @@ func (fs *FFTSettings) FFT(vals []Big, inv bool) ([]Big, error) {
 
 		out := make([]Big, n, n)
 		fs._fft(valsCopy, 0, 1, rootz, stride, out)
-		debugBigs("inv fft without len invert", out)
 		var tmp Big
 		for i := 0; i < len(out); i++ {
 			mulModBig(&tmp, &out[i], &invLen)

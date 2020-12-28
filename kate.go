@@ -98,11 +98,12 @@ func NewFK20MultiSettings(ks *KateSettings, n2 uint64, chunkLen uint64) *FK20Mul
 	n := n2 / 2
 	k := n / chunkLen
 	xExtFFTPrecompute := func(offset uint64) []G1 {
-		x := make([]G1, n, n)
-		for i, j := uint64(0), n-chunkLen-1-offset; i+1 < k; i, j = i+1, j-chunkLen {
+		x := make([]G1, k, k)
+		start := n - chunkLen - 1 - offset
+		for i, j := uint64(0), start; i+1 < k; i, j = i+1, j-chunkLen {
 			CopyG1(&x[i], &ks.secretG1[j])
 		}
-		CopyG1(&x[n-1], &zeroG1)
+		CopyG1(&x[k-1], &zeroG1)
 		return ks.toeplitzPart1(x)
 	}
 	for i := uint64(0); i < chunkLen; i++ {

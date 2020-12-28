@@ -65,6 +65,12 @@ func equalBig(a *Big, b *Big) bool {
 	return (*hbls.Fr)(a).IsEqual((*hbls.Fr)(b))
 }
 
+func randomBig() *Big {
+	var out hbls.Fr
+	out.SetByCSPRNG()
+	return (*Big)(&out)
+}
+
 func subModBig(dst *Big, a, b *Big) {
 	hbls.FrSub((*hbls.Fr)(dst), (*hbls.Fr)(a), (*hbls.Fr)(b))
 }

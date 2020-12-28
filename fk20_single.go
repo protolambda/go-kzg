@@ -56,11 +56,15 @@ func (ks *KateSettings) ToeplitzPart2(toeplitzCoeffs []Big, xExtFFT []G1) (hExtF
 	if err != nil {
 		panic(fmt.Errorf("FFT failed in toeplitz part 2: %v", err))
 	}
+	debugBigs("focus toeplitzCoeffsFFT", toeplitzCoeffsFFT)
+	debugG1s("xExtFFT", xExtFFT)
 	n := uint64(len(toeplitzCoeffsFFT))
+	print("mul n: ", n)
 	hExtFFT = make([]G1, n, n)
 	for i := uint64(0); i < n; i++ {
 		mulG1(&hExtFFT[i], &xExtFFT[i], &toeplitzCoeffsFFT[i])
 	}
+	debugG1s("hExtFFT", hExtFFT)
 	return hExtFFT
 }
 
@@ -75,15 +79,16 @@ func (ks *KateSettings) ToeplitzPart3(hExtFFT []G1) []G1 {
 }
 
 func (ks *KateSettings) toeplitzCoeffsStepStrided(polynomial []Big, offset uint64, stride uint64) []Big {
-	n := uint64(len(polynomial)) / stride
-	n2 := n * 2
+	n := uint64(len(polynomial))
+	k := n / stride
+	k2 := k * 2
 	// [last poly item] + [0]*(n+1) + [poly items except first and last]
-	toeplitzCoeffs := make([]Big, n2, n2)
-	CopyBigNum(&toeplitzCoeffs[0], &polynomial[n-offset-stride])
-	for i := uint64(1); i <= n+1; i++ {
+	toeplitzCoeffs := make([]Big, k2, k2)
+	CopyBigNum(&toeplitzCoeffs[0], &polynomial[n-1-offset-stride])
+	for i := uint64(1); i <= k+1; i++ {
 		CopyBigNum(&toeplitzCoeffs[i], &ZERO)
 	}
-	for i, j := n+2, stride+offset; i < n2; i, j = i+1, j+stride {
+	for i, j := k+2, 2*stride-offset-1; i < k2; i, j = i+1, j+stride {
 		CopyBigNum(&toeplitzCoeffs[i], &polynomial[j])
 	}
 	return toeplitzCoeffs

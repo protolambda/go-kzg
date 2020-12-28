@@ -5,34 +5,28 @@ import (
 	"testing"
 )
 
-func benchFFTRoundtrip(scale uint8, b *testing.B) {
+func benchFFT(scale uint8, b *testing.B) {
 	fs := NewFFTSettings(scale)
 	data := make([]Big, fs.maxWidth, fs.maxWidth)
 	for i := uint64(0); i < fs.maxWidth; i++ {
-		asBig(&data[i], i)
+		CopyBigNum(&data[i], randomBig())
 	}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		coeffs, err := fs.FFT(data, false)
+		out, err := fs.FFT(data, false)
 		if err != nil {
 			b.Fatal(err)
 		}
-		res, err := fs.FFT(coeffs, true)
-		if err != nil {
-			b.Fatal(err)
-		}
-		for i := range res {
-			if got, expected := &res[i], &data[i]; !equalBig(got, expected) {
-				b.Fatalf("difference: %d: got: %s  expected: %s", i, bigStr(got), bigStr(expected))
-			}
+		if len(out) != len(data) {
+			panic("output len doesn't match input")
 		}
 	}
 }
 
 func BenchmarkFFTSettings_FFT(b *testing.B) {
-	for scale := uint8(4); scale < 16; scale++ {
+	for scale := uint8(17); scale < 18; scale++ {
 		b.Run(fmt.Sprintf("scale_%d", scale), func(b *testing.B) {
-			benchFFTRoundtrip(scale, b)
+			benchFFT(scale, b)
 		})
 	}
 }
@@ -48,13 +42,42 @@ func benchFFTExtension(scale uint8, b *testing.B) {
 		// it alternates between producing values for odd indices,
 		// and retrieving back the original data (but it's rotated by 1 index)
 		fs.DASFFTExtension(data)
+		fs.DASFFTExtension(data)
 	}
 }
 
 func BenchmarkFFTExtension(b *testing.B) {
-	for scale := uint8(4); scale < 16; scale++ {
+	for scale := uint8(15); scale < 16; scale++ {
 		b.Run(fmt.Sprintf("scale_%d", scale), func(b *testing.B) {
 			benchFFTExtension(scale, b)
+		})
+	}
+}
+
+func benchFFTG1(scale uint8, b *testing.B) {
+	fs := NewFFTSettings(scale)
+	data := make([]G1, fs.maxWidth, fs.maxWidth)
+	for i := uint64(0); i < fs.maxWidth; i++ {
+		var tmpG1 G1
+		CopyG1(&tmpG1, &genG1)
+		mulG1(&data[i], &tmpG1, randomBig())
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		out, err := fs.FFTG1(data, false)
+		if err != nil {
+			b.Fatal(err)
+		}
+		if len(out) != len(data) {
+			panic("output len doesn't match input")
+		}
+	}
+}
+
+func BenchmarkFFTSettings_FFTG1(b *testing.B) {
+	for scale := uint8(4); scale < 16; scale++ {
+		b.Run(fmt.Sprintf("scale_%d", scale), func(b *testing.B) {
+			benchFFTG1(scale, b)
 		})
 	}
 }

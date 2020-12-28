@@ -71,13 +71,18 @@ func (ks *FK20MultiSettings) FK20MultiDAOptimized(polynomial []Big) []G1 {
 	var tmp G1
 	for i := uint64(0); i < ks.chunkLen; i++ {
 		toeplitzCoeffs := ks.toeplitzCoeffsStepStrided(reducedPoly, i, ks.chunkLen)
+		debugBigs(fmt.Sprintf("toeplitz coeffs %d", i), toeplitzCoeffs)
+		debugG1s(fmt.Sprintf("xExtFFTFile %d", i), ks.xExtFFTFiles[i])
 		hExtFFTFile := ks.ToeplitzPart2(toeplitzCoeffs, ks.xExtFFTFiles[i])
+		debugG1s(fmt.Sprintf("hExtFFTFile %d", i), hExtFFTFile)
 		for j := uint64(0); j < k2; j++ {
 			addG1(&tmp, &hExtFFT[j], &hExtFFTFile[j])
 			CopyG1(&hExtFFT[j], &tmp)
 		}
 	}
+	debugG1s("hExtFFT", hExtFFT)
 	h := ks.ToeplitzPart3(hExtFFT)
+	debugG1s("h", h)
 
 	// Now redo the padding before final step.
 	// Instead of copying h into a new extended array, just reuse the old capacity.
@@ -89,6 +94,7 @@ func (ks *FK20MultiSettings) FK20MultiDAOptimized(polynomial []Big) []G1 {
 	if err != nil {
 		panic(err)
 	}
+	debugG1s("out", out)
 	return out
 }
 
@@ -102,7 +108,7 @@ func (ks *FK20MultiSettings) DAUsingFK20Multi(polynomial []Big) []G1 {
 	if !isPowerOfTwo(n) {
 		panic("expected poly length to be power of two")
 	}
-	n2 := n*2
+	n2 := n * 2
 	extendedPolynomial := make([]Big, n2, n2)
 	for i := uint64(0); i < n; i++ {
 		CopyBigNum(&extendedPolynomial[i], &polynomial[i])
@@ -113,5 +119,6 @@ func (ks *FK20MultiSettings) DAUsingFK20Multi(polynomial []Big) []G1 {
 	allProofs := ks.FK20MultiDAOptimized(extendedPolynomial)
 	// change to reverse bit order.
 	reverseBitOrderG1(allProofs)
+	debugG1s("ordered", allProofs)
 	return allProofs
 }
