@@ -354,14 +354,11 @@ func (fs *FFTSettings) dASFFTExtension(ab []Big, domainStride uint64) {
 	if len(ab) == 2 {
 		aHalf0 := &ab[0]
 		aHalf1 := &ab[1]
-		var tmp Big
-		addModBig(&tmp, aHalf0, aHalf1)
 		var x Big
-		mulModBig(&x, &tmp, &INVERSE_TWO)
-		// y = (((a_half0 - x) % modulus) * inverse_domain[0]) % modulus     # inverse_domain[0] will always be 1
+		addModBig(&x, aHalf0, aHalf1)
 		var y Big
-		subModBig(&y, aHalf0, &x)
-		// re-use tmp for y_times_root
+		subModBig(&y, aHalf0, aHalf1)
+		var tmp Big
 		mulModBig(&tmp, &y, &fs.expandedRootsOfUnity[domainStride])
 		addModBig(&ab[0], &x, &tmp)
 		subModBig(&ab[1], &x, &tmp)
@@ -379,15 +376,14 @@ func (fs *FFTSettings) dASFFTExtension(ab []Big, domainStride uint64) {
 	// Instead of allocating L0 and L1, just modify a in-place.
 	//L0[i] = (((a_half0 + a_half1) % modulus) * inv2) % modulus
 	//R0[i] = (((a_half0 - L0[i]) % modulus) * inverse_domain[i * 2]) % modulus
-	var tmp1, tmp2, tmp3 Big
+	var tmp1, tmp2 Big
 	for i := uint64(0); i < halfHalf; i++ {
 		aHalf0 := &abHalf0s[i]
 		aHalf1 := &abHalf1s[i]
 		addModBig(&tmp1, aHalf0, aHalf1)
-		mulModBig(&tmp2, &tmp1, &INVERSE_TWO) // tmp2 holds later L0[i] result
-		subModBig(&tmp3, aHalf0, &tmp2)
-		mulModBig(aHalf1, &tmp3, &fs.reverseRootsOfUnity[i*2*domainStride])
-		CopyBigNum(aHalf0, &tmp2)
+		subModBig(&tmp2, aHalf0, aHalf1)
+		mulModBig(aHalf1, &tmp2, &fs.reverseRootsOfUnity[i*2*domainStride])
+		CopyBigNum(aHalf0, &tmp1)
 	}
 
 	// L will be the left half of out
@@ -423,6 +419,14 @@ func (fs *FFTSettings) DASFFTExtension(vals []Big) {
 		panic("domain too small for extending requested values")
 	}
 	fs.dASFFTExtension(vals, 1)
+	// The above function didn't perform the divide by 2 on every layer.
+	// So now do it all at once, by dividing by 2**depth (=length).
+	var invLen Big
+	asBig(&invLen, uint64(len(vals)))
+	invModBig(&invLen, &invLen)
+	for i := 0; i < len(vals); i++ {
+		mulModBig(&vals[i], &vals[i], &invLen)
+	}
 }
 
 func (fs *FFTSettings) mulPolys(a []Big, b []Big, rootsOfUnityStride uint64) []Big {
