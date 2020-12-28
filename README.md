@@ -23,15 +23,52 @@ TODO: working with Herumi BLS currently as it exposes more functionality in Go A
 ## Bignums
 
 The BLS curve order is used for the modulo math, the Herumi BLS `F_p` type is can be used as `Big` with the `bignum_hbls` build tag.
-By default, Go `big.Int` are used instead.
+By default, Go `big.Int` are used instead. **Note: this is changing, Herumi will soon be the default, until BLST is available.**
 
 ### FFT benchmarks
 
-#### Roundtrip
+Benchmarks on a `Intel Core i7-6700HQ @ 8x 3.5GHz` with `-test.benchtime=10s`:
+
+#### FFT with F_r elements
+
+Using Herumi BLS. A single FFT per operation, of `2**scale` elements. Random numbers of `0...modulus` as inputs.
+
+```
+BenchmarkFFTSettings_FFT/scale_4-8         	  777571	     14872 ns/op
+BenchmarkFFTSettings_FFT/scale_5-8         	  365899	     35068 ns/op
+BenchmarkFFTSettings_FFT/scale_6-8         	  153195	     78093 ns/op
+BenchmarkFFTSettings_FFT/scale_7-8         	   69822	    173340 ns/op
+BenchmarkFFTSettings_FFT/scale_8-8         	   32451	    372674 ns/op
+BenchmarkFFTSettings_FFT/scale_9-8         	   14539	    814604 ns/op
+BenchmarkFFTSettings_FFT/scale_10-8        	    6512	   1804612 ns/op
+BenchmarkFFTSettings_FFT/scale_11-8        	    3088	   3739216 ns/op
+BenchmarkFFTSettings_FFT/scale_12-8        	    1549	   8132423 ns/op
+BenchmarkFFTSettings_FFT/scale_13-8        	     687	  17562389 ns/op
+BenchmarkFFTSettings_FFT/scale_14-8        	     319	  38035214 ns/op
+BenchmarkFFTSettings_FFT/scale_15-8        	     146	  79236893 ns/op
+```
+
+#### FFT with G1 points
+
+Using Herumi BLS. A single FFT per operation, of `2**scale` elements. Random full G1 points, generator times random scalar.
+```
+BenchmarkFFTSettings_FFTG1/scale_4-8               3612     3214052 ns/op
+BenchmarkFFTSettings_FFTG1/scale_5-8               1524     7814302 ns/op
+BenchmarkFFTSettings_FFTG1/scale_6-8                652    18545635 ns/op
+BenchmarkFFTSettings_FFTG1/scale_7-8                282    43225687 ns/op
+BenchmarkFFTSettings_FFTG1/scale_8-8                121    97727803 ns/op
+BenchmarkFFTSettings_FFTG1/scale_9-8                 52   220462276 ns/op
+BenchmarkFFTSettings_FFTG1/scale_10-8                24   486038684 ns/op
+BenchmarkFFTSettings_FFTG1/scale_11-8                10  1069652806 ns/op
+BenchmarkFFTSettings_FFTG1/scale_12-8                 5  2337882518 ns/op
+BenchmarkFFTSettings_FFTG1/scale_13-8                 2  5058462998 ns/op
+BenchmarkFFTSettings_FFTG1/scale_14-8                 1  10894399107 ns/op
+BenchmarkFFTSettings_FFTG1/scale_15-8                 1  23526792397 ns/op
+```
+
+#### Roundtrip FFT (old benches)
 
 Operation: Do `FFT` with `2**scale` values, then do the inverse, and compare all results with the inputs.
-
-Benchmarks on a `Intel Core i7-6700HQ @ 8x 3.5GHz` with `-test.benchtime=10s`:
 
 With Herumi BLS `F_p`:
 ```

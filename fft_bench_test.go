@@ -24,7 +24,7 @@ func benchFFT(scale uint8, b *testing.B) {
 }
 
 func BenchmarkFFTSettings_FFT(b *testing.B) {
-	for scale := uint8(17); scale < 18; scale++ {
+	for scale := uint8(4); scale < 16; scale++ {
 		b.Run(fmt.Sprintf("scale_%d", scale), func(b *testing.B) {
 			benchFFT(scale, b)
 		})
