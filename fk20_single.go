@@ -56,15 +56,15 @@ func (ks *KateSettings) ToeplitzPart2(toeplitzCoeffs []Big, xExtFFT []G1) (hExtF
 	if err != nil {
 		panic(fmt.Errorf("FFT failed in toeplitz part 2: %v", err))
 	}
-	debugBigs("focus toeplitzCoeffsFFT", toeplitzCoeffsFFT)
-	debugG1s("xExtFFT", xExtFFT)
+	//debugBigs("focus toeplitzCoeffsFFT", toeplitzCoeffsFFT)
+	//debugG1s("xExtFFT", xExtFFT)
 	n := uint64(len(toeplitzCoeffsFFT))
-	print("mul n: ", n)
+	//print("mul n: ", n)
 	hExtFFT = make([]G1, n, n)
 	for i := uint64(0); i < n; i++ {
 		mulG1(&hExtFFT[i], &xExtFFT[i], &toeplitzCoeffsFFT[i])
 	}
-	debugG1s("hExtFFT", hExtFFT)
+	//debugG1s("hExtFFT", hExtFFT)
 	return hExtFFT
 }
 

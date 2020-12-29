@@ -61,7 +61,6 @@ func NewFK20SingleSettings(ks *KateSettings, n2 uint64) *FK20SingleSettings {
 
 type FK20MultiSettings struct {
 	*KateSettings
-	// TODO: maybe refactor chunks into separate settings?
 	chunkLen uint64
 	// chunkLen files, each of size maxWidth
 	xExtFFTFiles [][]G1

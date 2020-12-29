@@ -32,20 +32,21 @@ func TestKateSettings_DAUsingFK20Multi(t *testing.T) {
 		t.Logf("%d: %s", i, strG1(&allProofs[i]))
 	}
 
-	// Now check all positions
-	// we don't want to modify the original input, and the inner function would modify it in-place, so make a copy.
-	oddData := make([]Big, n, n)
-	for i := 0; i < len(oddData); i++ {
-		CopyBigNum(&oddData[i], &polynomial[i])
-	}
-	// get the odd data (input even data)
-	fs.DASFFTExtension(oddData)
-	// we need both here, merge them into one array
-	extendedData := make([]Big, n*2, n*2)
+	// We have the data in polynomial form already,
+	// no need to use the DAS FFT (which extends data directly, not coeffs).
+	extendedCoeffs := make([]Big, n*2, n*2)
 	for i := uint64(0); i < n; i++ {
-		CopyBigNum(&extendedData[i*2], &polynomial[i])
-		CopyBigNum(&extendedData[i*2+1], &oddData[i])
+		CopyBigNum(&extendedCoeffs[i], &polynomial[i])
 	}
+	for i := n; i < n*2; i++ {
+		CopyBigNum(&extendedCoeffs[i], &ZERO)
+	}
+	extendedData, err := ks.FFT(extendedCoeffs, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	reverseBitOrderBig(extendedData)
+	debugBigs("extended_data", extendedData)
 
 	n2 := n * 2
 	domainStride := fk.maxWidth / n2
@@ -70,11 +71,11 @@ func TestKateSettings_DAUsingFK20Multi(t *testing.T) {
 				t.Fatal("failed to reproduce matching y values for subgroup")
 			}
 		}
-		t.Log("x:\n", bigStr(&x))
 
 		proof := &allProofs[pos]
 		if !ks.CheckProofMulti(commitment, proof, &x, ys) {
 			t.Fatal("could not verify proof")
 		}
+		t.Logf("Data availability check %d passed", pos)
 	}
 }
