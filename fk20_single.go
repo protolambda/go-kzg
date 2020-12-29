@@ -1,3 +1,5 @@
+// Original: https://github.com/ethereum/research/blob/master/kzg_data_availability/fk20_single.py
+
 package kate
 
 import "fmt"

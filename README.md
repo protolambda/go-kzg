@@ -3,7 +3,8 @@
 This repo is *super experimental*.
 
 This is an implementation in Go, initially aimed at chunkification and extension of data, 
-and building/verifying Kate proofs for the output data. 
+and building/verifying Kate proofs for the output data.
+The Kate proofs are built on top of BLS12-381.
 
 Part of a low-latency data-availability sampling network prototype for Eth2 Phase 1.
 See https://github.com/protolambda/eth2-das
@@ -15,6 +16,20 @@ Code is based on:
 - [FFT explainer by Vitalik](https://vitalik.ca/general/2019/05/12/fft.html)
 - [Kate explainer by Dankrad](https://dankradfeist.de/ethereum/2020/06/16/kate-polynomial-commitments.html)
 - [Kate amortized paper by Dankrad and Dmitry](https://github.com/khovratovich/Kate/blob/master/Kate_amortized.pdf)
+
+Features:
+- (I)FFT on `F_r`
+- (I)FFT on `G1`
+- Specialized FFT for extension of `F_r` data
+- Kate
+  - commitments
+  - generate/verify proof for single point
+  - generate/verify proofs for multiple points
+  - generate/verify proofs for all points, using FK20
+  - generate/verify proofs for ranges (cosets) of points, using FK20
+- Data recovery: given an arbitrary subset of data (at least half), recover the rest
+- Optimized for Data-availability usage
+
 
 ## BLS
 
