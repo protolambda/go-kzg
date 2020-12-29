@@ -50,3 +50,12 @@ func debugBigsOffsetStride(msg string, values []Big, offset uint64, stride uint6
 	}
 	fmt.Println(out.String())
 }
+
+func bigRange(start uint64, end uint64) []Big {
+	l := end - start
+	out := make([]Big, l, l)
+	for i := uint64(0); i < l; i++ {
+		asBig(&out[i], start+i)
+	}
+	return out
+}
