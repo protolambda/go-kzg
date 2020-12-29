@@ -3,6 +3,7 @@
 package kate
 
 import (
+	"crypto/rand"
 	u256 "github.com/holiman/uint256"
 	"math/big"
 )
@@ -73,6 +74,16 @@ func equalZero(v *Big) bool {
 
 func equalBig(a *Big, b *Big) bool {
 	return (*u256.Int)(a).Eq((*u256.Int)(b))
+}
+
+func randomBig() *Big {
+	v, err := rand.Int(rand.Reader, _modulus.ToBig())
+	if err != nil {
+		panic(err)
+	}
+	var out u256.Int
+	out.SetFromBig(v)
+	return (*Big)(&out)
 }
 
 func subModBig(dst *Big, a, b *Big) {

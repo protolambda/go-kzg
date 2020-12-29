@@ -1,4 +1,4 @@
-// +build bignum_hbls
+// +build !bignum_pure,!bignum_hol256
 
 package kate
 
@@ -9,6 +9,7 @@ import (
 func init() {
 	hbls.Init(hbls.BLS12_381)
 	initGlobals()
+	ClearG1(&ZERO_G1)
 	initG1G2()
 }
 

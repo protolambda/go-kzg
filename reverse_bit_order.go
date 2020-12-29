@@ -99,29 +99,3 @@ func reverseBitOrder(length uint32, swap func(i, j uint32)) {
 		}
 	}
 }
-
-// rearrange G1 elements in reverse bit order. Supports 2**31 max element count.
-func reverseBitOrderG1(values []G1) {
-	if len(values) > (1 << 31) {
-		panic("list too large")
-	}
-	var tmp G1
-	reverseBitOrder(uint32(len(values)), func(i, j uint32) {
-		CopyG1(&tmp, &values[i])
-		CopyG1(&values[i], &values[j])
-		CopyG1(&values[j], &tmp)
-	})
-}
-
-// rearrange Big elements in reverse bit order. Supports 2**31 max element count.
-func reverseBitOrderBig(values []Big) {
-	if len(values) > (1 << 31) {
-		panic("list too large")
-	}
-	var tmp Big
-	reverseBitOrder(uint32(len(values)), func(i, j uint32) {
-		CopyBigNum(&tmp, &values[i])
-		CopyBigNum(&values[i], &values[j])
-		CopyBigNum(&values[j], &tmp)
-	})
-}

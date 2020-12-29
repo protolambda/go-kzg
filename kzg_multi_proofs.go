@@ -1,5 +1,7 @@
 // Original: https://github.com/ethereum/research/blob/master/kzg_data_availability/kzg_proofs.py
 
+// +build !bignum_pure,!bignum_hol256
+
 package kate
 
 // Compute Kate proof for polynomial in coefficient form at positions x * w^y where w is

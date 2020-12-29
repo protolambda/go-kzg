@@ -29,16 +29,25 @@ Features:
   - generate/verify proofs for ranges (cosets) of points, using FK20
 - Data recovery: given an arbitrary subset of data (at least half), recover the rest
 - Optimized for Data-availability usage
-
+- Change bignum / BLS with build tags.
 
 ## BLS
 
 TODO: working with Herumi BLS currently as it exposes more functionality in Go API than BLST does. Still very limited compared to python.
+The BLS functionality is generalized, and simple `G1` and `G2` types are exposed to use it. In the future different BLS libraries could be supported.
 
 ## Bignums
 
-The BLS curve order is used for the modulo math, the Herumi BLS `F_p` type is can be used as `Big` with the `bignum_hbls` build tag.
-By default, Go `big.Int` are used instead. **Note: this is changing, Herumi will soon be the default, until BLST is available.**
+The BLS curve order is used for the modulo math, different libraries could be used to provide this functionality.
+Note: some of these libraries do not have full BLS functionality, only big-num / uint256. The Kate code will be excluded when compiling with a non-BLS build tag.
+
+Build tag options:
+- `` (default, empty): use Herumi BLS library, using the `F_p` type. Previously used by `bignum_hbls` build tag.
+- `-tags bignum_hol256`: Use the uint256 code that Geth uses, [`holiman/uint256`](https://github.com/holiman/uint256)
+- `-tags bignum_pure`: Use the native Go bignum implementation.
+
+
+## Benchmarks
 
 ### FFT benchmarks
 

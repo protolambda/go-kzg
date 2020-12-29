@@ -1,8 +1,9 @@
-// +build !bignum_hbls,!bignum_hol256
+// +build bignum_pure
 
 package kate
 
 import (
+	"crypto/rand"
 	"math/big"
 )
 
@@ -65,6 +66,14 @@ func equalZero(v *Big) bool {
 
 func equalBig(a *Big, b *Big) bool {
 	return (*big.Int)(a).Cmp((*big.Int)(b)) == 0
+}
+
+func randomBig() *Big {
+	v, err := rand.Int(rand.Reader, &_modulus)
+	if err != nil {
+		panic(err)
+	}
+	return (*Big)(v)
 }
 
 func subModBig(dst *Big, a, b *Big) {

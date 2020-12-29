@@ -2,8 +2,6 @@ package kate
 
 var scale2RootOfUnity []Big
 
-var ZERO_G1 G1
-
 var ZERO, ONE, TWO Big
 var MODULUS_MINUS1, MODULUS_MINUS1_DIV2, MODULUS_MINUS2 Big
 var INVERSE_TWO Big
@@ -59,8 +57,6 @@ func initGlobals() {
 	divModBig(&MODULUS_MINUS1_DIV2, &MODULUS_MINUS1, &TWO)
 	subModBig(&MODULUS_MINUS2, &ZERO, &TWO)
 	invModBig(&INVERSE_TWO, &TWO)
-
-	ClearG1(&ZERO_G1)
 }
 
 func isPowerOfTwo(v uint64) bool {

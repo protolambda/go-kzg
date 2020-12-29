@@ -1,11 +1,15 @@
-// +build bignum_hbls
+// +build !bignum_pure,!bignum_hol256
 
 package kate
 
 import (
+	"fmt"
 	hbls "github.com/herumi/bls-eth-go-binary/bls"
+	"strings"
 	"unsafe"
 )
+
+var ZERO_G1 G1
 
 var genG1 G1
 var genG2 G2
@@ -174,4 +178,15 @@ func PairingsVerify(a1 *G1, a2 *G2, b1 *G1, b2 *G2) bool {
 	// TODO, alternatively use the equal check (faster or slower?):
 	////fmt.Println("tmp2", tmp2.GetString(10))
 	//return tmp.IsEqual(&tmp2)
+}
+
+func debugG1s(msg string, values []G1) {
+	var out strings.Builder
+	out.WriteString("---")
+	out.WriteString(msg)
+	out.WriteString("---\n")
+	for i := range values {
+		out.WriteString(fmt.Sprintf("#%4d: %s\n", i, strG1(&values[i])))
+	}
+	fmt.Println(out.String())
 }

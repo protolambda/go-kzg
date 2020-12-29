@@ -1,13 +1,11 @@
+// +build !bignum_pure,!bignum_hol256
+
 package kate
 
 import (
 	"fmt"
 	"testing"
 )
-
-func TestKateSettings_ComputeProofMulti(t *testing.T) {
-	// TODO
-}
 
 func TestKateSettings_CheckProofMulti(t *testing.T) {
 	fs := NewFFTSettings(4)
