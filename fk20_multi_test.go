@@ -60,16 +60,18 @@ func TestKateSettings_DAUsingFK20Multi(t *testing.T) {
 		// ys, but constructed by evaluating the polynomial in the sub-domain range
 		ys2 := make([]Big, chunkLen, chunkLen)
 		// don't recompute the subgroup domain, just select it from the bigger domain by applying a stride
-		stride := domainStride * chunkLen
+		stride := ks.maxWidth / chunkLen
+		coset := make([]Big, chunkLen, chunkLen)
 		for i := uint64(0); i < chunkLen; i++ {
 			var z Big // a value of the coset list
-			CopyBigNum(&z, &ks.expandedRootsOfUnity[i*stride])
+			mulModBig(&z, &x, &ks.expandedRootsOfUnity[i*stride])
+			CopyBigNum(&coset[i], &z)
 			EvalPolyAt(&ys2[i], polynomial, &z)
 		}
 		// permanently change order of ys values
 		reverseBitOrderBig(ys)
 		for i := 0; i < len(ys); i++ {
-			if !equalBig(&ys[i], &ys[i]) {
+			if !equalBig(&ys[i], &ys2[i]) {
 				t.Fatal("failed to reproduce matching y values for subgroup")
 			}
 		}
