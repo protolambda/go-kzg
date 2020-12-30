@@ -118,10 +118,6 @@ func TestFullDAS(t *testing.T) {
 	}
 	// skip sample serialization/deserialization, no network to transfer data here.
 
-	// TODO
-	// make some cosets go missing
-	// recover missing cosets
-
 	// verify cosets individually
 	extSize := sampleCount * cosetWidth
 	domainStride := ks.maxWidth / extSize
@@ -133,24 +129,43 @@ func TestFullDAS(t *testing.T) {
 			t.Fatalf("failed to verify proof of sample %d", i)
 		}
 	}
-	reconstructed := make([]Big, extSize, extSize)
+
+	// make some samples go missing
+	partialReconstructed := make([]*Big, extSize, extSize)
+	rng := rand.New(rand.NewSource(42))
+	missing := 1000                  // TODO: set to 0, enable recovery once fixed.
 	for i, sample := range samples { // samples are already ordered in original data order
+		// make a random subset (but <= 1/2) go missing.
+		if rng.Int31n(2) == 0 && missing < len(samples)/2 {
+			t.Logf("not using sample %d", i)
+			missing++
+			continue
+		}
+
 		offset := uint64(i) * cosetWidth
 		for j := uint64(0); j < cosetWidth; j++ {
-			// sample contents are still reverse-bit-ordered, undo that during the reconstruction
-			CopyBigNum(&reconstructed[offset+j], &sample.sub[reverseBitsLimited(uint32(cosetWidth), uint32(j))])
+			// sample contents are still reverse-bit-ordered, undo that
+			partialReconstructed[offset+j] = &sample.sub[reverseBitsLimited(uint32(cosetWidth), uint32(j))]
 		}
 	}
-	for i := 0; i < len(reconstructed); i++ {
-		if !equalBig(&extended[i], &reconstructed[i]) {
-			t.Errorf("diff %d: %s <> %s", i, bigStr(&extended[i]), bigStr(&reconstructed[i]))
+	// TODO: is second half of IFFT(partialReconstructed) all zeroes? Need to apply bit-reverse ordering? Below recovery is broken.
+	// recover missing data
+	recovered, err := ks.ErasureCodeRecover(partialReconstructed)
+	if err != nil {
+		t.Fatal(err)
+	}
+	debugBigs("recovered", recovered)
+
+	for i := 0; i < len(recovered); i++ {
+		if !equalBig(&extended[i], &recovered[i]) {
+			t.Errorf("diff %d: %s <> %s", i, bigStr(&extended[i]), bigStr(&recovered[i]))
 		}
 	}
 	// take first half, convert back to bytes
 	size := extSize / 2
 	reconstructedData := make([]byte, size*31, size*31)
 	for i := uint64(0); i < size; i++ {
-		p := BigNumTo32(&reconstructed[i])
+		p := BigNumTo32(&recovered[i])
 		copy(reconstructedData[i*31:(i+1)*31], p[:31])
 	}
 
