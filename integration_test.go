@@ -133,7 +133,7 @@ func TestFullDAS(t *testing.T) {
 	// make some samples go missing
 	partialReconstructed := make([]*Big, extSize, extSize)
 	rng := rand.New(rand.NewSource(42))
-	missing := 1000                  // TODO: set to 0, enable recovery once fixed.
+	missing := 0
 	for i, sample := range samples { // samples are already ordered in original data order
 		// make a random subset (but <= 1/2) go missing.
 		if rng.Int31n(2) == 0 && missing < len(samples)/2 {
@@ -148,12 +148,13 @@ func TestFullDAS(t *testing.T) {
 			partialReconstructed[offset+j] = &sample.sub[reverseBitsLimited(uint32(cosetWidth), uint32(j))]
 		}
 	}
-	// TODO: is second half of IFFT(partialReconstructed) all zeroes? Need to apply bit-reverse ordering? Below recovery is broken.
+	reverseBitOrderBigPtr(partialReconstructed)
 	// recover missing data
 	recovered, err := ks.ErasureCodeRecover(partialReconstructed)
 	if err != nil {
 		t.Fatal(err)
 	}
+	reverseBitOrderBig(recovered)
 	debugBigs("recovered", recovered)
 
 	for i := 0; i < len(recovered); i++ {

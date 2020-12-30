@@ -99,3 +99,13 @@ func reverseBitOrderBig(values []Big) {
 		CopyBigNum(&values[j], &tmp)
 	})
 }
+
+// rearrange Big ptr elements in reverse bit order. Supports 2**31 max element count.
+func reverseBitOrderBigPtr(values []*Big) {
+	if len(values) > (1 << 31) {
+		panic("list too large")
+	}
+	reverseBitOrder(uint32(len(values)), func(i, j uint32) {
+		values[i], values[j] = values[j], values[i]
+	})
+}

@@ -165,6 +165,7 @@ func (fs *FFTSettings) ErasureCodeRecover(vals []*Big) ([]Big, error) {
 			positions = append(positions, i)
 		}
 	}
+	// TODO: handle len(positions)==0 case
 	z := fs._zPoly(positions, fs.maxWidth/uint64(len(vals)))
 	//debugBigs("z", z)
 	zVals, err := fs.FFT(z, false)
