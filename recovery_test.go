@@ -9,26 +9,26 @@ import (
 func TestErasureCodeRecoverSimple(t *testing.T) {
 	// Create some random data, with padding...
 	fs := NewFFTSettings(5)
-	data := make([]Big, fs.maxWidth, fs.maxWidth)
+	poly := make([]Big, fs.maxWidth, fs.maxWidth)
 	for i := uint64(0); i < fs.maxWidth/2; i++ {
-		asBig(&data[i], i)
+		asBig(&poly[i], i)
 	}
 	for i := fs.maxWidth / 2; i < fs.maxWidth; i++ {
-		data[i] = ZERO
+		poly[i] = ZERO
 	}
-	debugBigs("data", data)
-	// Get coefficients for polynomial SLOW_INDICES
-	coeffs, err := fs.FFT(data, false)
+	debugBigs("poly", poly)
+	// Get data for polynomial SLOW_INDICES
+	data, err := fs.FFT(poly, false)
 	if err != nil {
 		t.Fatal(err)
 	}
-	debugBigs("coeffs", coeffs)
+	debugBigs("data", data)
 
 	// copy over the 2nd half, leave the first half as nils
 	subset := make([]*Big, fs.maxWidth, fs.maxWidth)
 	half := fs.maxWidth / 2
 	for i := half; i < fs.maxWidth; i++ {
-		subset[i] = &coeffs[i]
+		subset[i] = &data[i]
 	}
 
 	debugBigPtrs("subset", subset)
@@ -38,19 +38,19 @@ func TestErasureCodeRecoverSimple(t *testing.T) {
 	}
 	debugBigs("recovered", recovered)
 	for i := range recovered {
-		if got := &recovered[i]; !equalBig(got, &coeffs[i]) {
-			t.Errorf("recovery at index %d got %s but expected %s", i, bigStr(got), bigStr(&coeffs[i]))
+		if got := &recovered[i]; !equalBig(got, &data[i]) {
+			t.Errorf("recovery at index %d got %s but expected %s", i, bigStr(got), bigStr(&data[i]))
 		}
 	}
-	// And recover the original data for good measure
+	// And recover the original coeffs for good measure
 	back, err := fs.FFT(recovered, true)
 	if err != nil {
 		t.Fatal(err)
 	}
 	debugBigs("back", back)
 	for i := uint64(0); i < half; i++ {
-		if got := &back[i]; !equalBig(got, &data[i]) {
-			t.Errorf("data at index %d got %s but expected %s", i, bigStr(got), bigStr(&data[i]))
+		if got := &back[i]; !equalBig(got, &poly[i]) {
+			t.Errorf("coeff at index %d got %s but expected %s", i, bigStr(got), bigStr(&poly[i]))
 		}
 	}
 	for i := half; i < fs.maxWidth; i++ {
@@ -61,28 +61,28 @@ func TestErasureCodeRecoverSimple(t *testing.T) {
 }
 
 func TestErasureCodeRecover(t *testing.T) {
-	// Create some random data, with padding...
+	// Create some random poly, with padding so we get redundant data
 	fs := NewFFTSettings(7)
-	data := make([]Big, fs.maxWidth, fs.maxWidth)
+	poly := make([]Big, fs.maxWidth, fs.maxWidth)
 	for i := uint64(0); i < fs.maxWidth/2; i++ {
-		asBig(&data[i], i)
+		asBig(&poly[i], i)
 	}
 	for i := fs.maxWidth / 2; i < fs.maxWidth; i++ {
-		data[i] = ZERO
+		poly[i] = ZERO
 	}
-	debugBigs("data", data)
+	debugBigs("poly", poly)
 	// Get coefficients for polynomial SLOW_INDICES
-	coeffs, err := fs.FFT(data, false)
+	data, err := fs.FFT(poly, false)
 	if err != nil {
 		t.Fatal(err)
 	}
-	debugBigs("coeffs", coeffs)
+	debugBigs("data", data)
 
 	// Util to pick a random subnet of the values
 	randomSubset := func(known uint64, rngSeed uint64) []*Big {
 		withMissingValues := make([]*Big, fs.maxWidth, fs.maxWidth)
-		for i := range coeffs {
-			withMissingValues[i] = &coeffs[i]
+		for i := range data {
+			withMissingValues[i] = &data[i]
 		}
 		rng := rand.New(rand.NewSource(int64(rngSeed)))
 		missing := fs.maxWidth - known
@@ -112,11 +112,11 @@ func TestErasureCodeRecover(t *testing.T) {
 				}
 				debugBigs("recovered", recovered)
 				for i := range recovered {
-					if got := &recovered[i]; !equalBig(got, &coeffs[i]) {
-						t.Errorf("recovery at index %d got %s but expected %s", i, bigStr(got), bigStr(&coeffs[i]))
+					if got := &recovered[i]; !equalBig(got, &data[i]) {
+						t.Errorf("recovery at index %d got %s but expected %s", i, bigStr(got), bigStr(&data[i]))
 					}
 				}
-				// And recover the original data for good measure
+				// And recover the original coeffs for good measure
 				back, err := fs.FFT(recovered, true)
 				if err != nil {
 					t.Fatal(err)
@@ -124,8 +124,8 @@ func TestErasureCodeRecover(t *testing.T) {
 				debugBigs("back", back)
 				half := uint64(len(back)) / 2
 				for i := uint64(0); i < half; i++ {
-					if got := &back[i]; !equalBig(got, &data[i]) {
-						t.Errorf("data at index %d got %s but expected %s", i, bigStr(got), bigStr(&data[i]))
+					if got := &back[i]; !equalBig(got, &poly[i]) {
+						t.Errorf("coeff at index %d got %s but expected %s", i, bigStr(got), bigStr(&poly[i]))
 					}
 				}
 				for i := half; i < fs.maxWidth; i++ {
