@@ -88,7 +88,7 @@ func (ks *KateSettings) toeplitzCoeffsStepStrided(polynomial []Big, offset uint6
 	k2 := k * 2
 	// [last poly item] + [0]*(n+1) + [poly items except first and last]
 	toeplitzCoeffs := make([]Big, k2, k2)
-	CopyBigNum(&toeplitzCoeffs[0], &polynomial[n-1-offset-stride])
+	CopyBigNum(&toeplitzCoeffs[0], &polynomial[n-1-offset])
 	for i := uint64(1); i <= k+1; i++ {
 		CopyBigNum(&toeplitzCoeffs[i], &ZERO)
 	}

@@ -18,7 +18,9 @@ func TestKateSettings_DAUsingFK20Multi(t *testing.T) {
 	var tmp134 Big
 	asBig(&tmp134, 134)
 	for i := uint64(0); i < chunkCount; i++ {
-		for j, v := range []uint64{1, 2, 3, 4, 7, 8, 9, 10, 13, 14, 1, 15, 0, 1000, 0, 33} {
+		// Note: different contents from older python test, make each section different,
+		// to cover toeplitz coefficient edge cases better.
+		for j, v := range []uint64{1, 2, 3, 4 + i, 7, 8 + i*i, 9, 10, 13, 14, 1, 15, 0, 1000, 0, 33} {
 			asBig(&polynomial[i*chunkLen+uint64(j)], v)
 		}
 		subModBig(&polynomial[i*chunkLen+12], &ZERO, &ONE)    // "MODULUS - 1"

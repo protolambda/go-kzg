@@ -75,16 +75,19 @@ func (ks *FK20MultiSettings) FK20MultiDAOptimized(polynomial []Big) []G1 {
 	var tmp G1
 	for i := uint64(0); i < ks.chunkLen; i++ {
 		toeplitzCoeffs := ks.toeplitzCoeffsStepStrided(reducedPoly, i, ks.chunkLen)
-		//debugBigs(fmt.Sprintf("toeplitz coeffs %d", i), toeplitzCoeffs)
-		//debugG1s(fmt.Sprintf("xExtFFTFile %d", i), ks.xExtFFTFiles[i])
+		//debugBigs(fmt.Sprintf("toeplitz_coefficients %d:", i), toeplitzCoeffs)
+		//debugG1s(fmt.Sprintf("xext_fft file %d:", i), ks.xExtFFTFiles[i])
 		hExtFFTFile := ks.ToeplitzPart2(toeplitzCoeffs, ks.xExtFFTFiles[i])
-		//debugG1s(fmt.Sprintf("hExtFFTFile %d", i), hExtFFTFile)
+		//debugG1s(fmt.Sprintf("hext_fft file %d:", i), hExtFFTFile)
 		for j := uint64(0); j < k2; j++ {
 			addG1(&tmp, &hExtFFT[j], &hExtFFTFile[j])
 			CopyG1(&hExtFFT[j], &tmp)
 		}
+		//debugG1s(fmt.Sprintf("hext_fft %d:", i), hExtFFT)
 	}
+	//debugG1s("hext_fft final", hExtFFT)
 	h := ks.ToeplitzPart3(hExtFFT)
+	//debugG1s("h", h)
 
 	// TODO: maybe use a G1 version of the DAS extension FFT to perform the h -> output conversion?
 

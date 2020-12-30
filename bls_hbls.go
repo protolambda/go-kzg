@@ -182,11 +182,8 @@ func PairingsVerify(a1 *G1, a2 *G2, b1 *G1, b2 *G2) bool {
 
 func debugG1s(msg string, values []G1) {
 	var out strings.Builder
-	out.WriteString("---")
-	out.WriteString(msg)
-	out.WriteString("---\n")
 	for i := range values {
-		out.WriteString(fmt.Sprintf("#%4d: %s\n", i, strG1(&values[i])))
+		out.WriteString(fmt.Sprintf("%s %d: %s\n", msg, i, strG1(&values[i])))
 	}
 	fmt.Println(out.String())
 }
