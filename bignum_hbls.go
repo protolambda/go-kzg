@@ -30,9 +30,8 @@ func BigNumFrom32(dst *Big, v [32]byte) {
 func BigNumTo32(src *Big) (v [32]byte) {
 	b := (*hbls.Fr)(src).Serialize()
 	last := len(b) - 1
-	half := last / 2
 	// reverse endianness, u256.Int outputs big-endian bytes
-	for i := 0; i < half; i++ {
+	for i := 0; i < 16; i++ {
 		b[i], b[last-i] = b[last-i], b[i]
 	}
 	copy(v[:], b)
