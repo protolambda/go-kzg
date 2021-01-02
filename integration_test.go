@@ -86,35 +86,11 @@ func TestFullDAS(t *testing.T) {
 			CopyBigNum(&sample.sub[j], &extended[i*cosetWidth+j])
 		}
 		debugBigs("sample pre-order", sample.sub)
-		// Now redo the reverse bit ordering: from a continuous range to the full domain with large stride.
-		// (stride equals sample length here)
-		// That's what the proofs are built for, and much more viable to do efficiently.
-		reverseBitOrderBig(sample.sub)
 
 		// construct that same coset from the polynomial form, to make sure we have the correct points.
 		domainPos := reverseBitsLimited(uint32(sampleCount), uint32(i))
 
 		sample.proof = &proofs[domainPos]
-
-		var x Big
-		CopyBigNum(&x, &ks.expandedRootsOfUnity[uint64(domainPos)*(fk.maxWidth/uint64(len(extendedAsPoly)))])
-		ys2 := make([]Big, cosetWidth, cosetWidth)
-		// don't recompute the subgroup domain, just select it from the bigger domain by applying a stride
-		stride := ks.maxWidth / cosetWidth
-		coset := make([]Big, cosetWidth, cosetWidth)
-		for j := uint64(0); j < cosetWidth; j++ {
-			var z Big // a value of the coset list
-			mulModBig(&z, &x, &ks.expandedRootsOfUnity[j*stride])
-			CopyBigNum(&coset[j], &z)
-			EvalPolyAt(&ys2[j], extendedAsPoly, &z)
-		}
-		for i := uint64(0); i < cosetWidth; i++ {
-			if !equalBig(&sample.sub[i], &ys2[i]) {
-				debugBigs("sample", sample.sub)
-				debugBigs("ys2", ys2)
-				t.Fatal("failed to reproduce matching y values for subgroup")
-			}
-		}
 	}
 	// skip sample serialization/deserialization, no network to transfer data here.
 
@@ -125,9 +101,11 @@ func TestFullDAS(t *testing.T) {
 		var x Big
 		domainPos := uint64(reverseBitsLimited(uint32(sampleCount), uint32(i)))
 		CopyBigNum(&x, &ks.expandedRootsOfUnity[domainPos*domainStride])
+		reverseBitOrderBig(sample.sub) // match poly order
 		if !ks.CheckProofMulti(commit, sample.proof, &x, sample.sub) {
 			t.Fatalf("failed to verify proof of sample %d", i)
 		}
+		reverseBitOrderBig(sample.sub) // match original data order
 	}
 
 	// make some samples go missing
@@ -144,16 +122,18 @@ func TestFullDAS(t *testing.T) {
 
 		offset := uint64(i) * cosetWidth
 		for j := uint64(0); j < cosetWidth; j++ {
-			// sample contents are still reverse-bit-ordered, undo that
-			partialReconstructed[offset+j] = &sample.sub[reverseBitsLimited(uint32(cosetWidth), uint32(j))]
+			partialReconstructed[offset+j] = &sample.sub[j]
 		}
 	}
+	// samples were slices of reverse-bit-ordered data. Undo that order first, then IFFT will match the polynomial.
 	reverseBitOrderBigPtr(partialReconstructed)
 	// recover missing data
 	recovered, err := ks.ErasureCodeRecover(partialReconstructed)
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	// apply reverse bit-ordering again to get original data into first half
 	reverseBitOrderBig(recovered)
 	debugBigs("recovered", recovered)
 
