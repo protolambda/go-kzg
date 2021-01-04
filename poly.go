@@ -1,7 +1,8 @@
 package kate
 
-// unlike divModBig (lossy), invert the divisor, then multiply
+// invert the divisor, then multiply
 func polyFactorDiv(dst *Big, a *Big, b *Big) {
+	// TODO: use divmod instead.
 	var tmp Big
 	invModBig(&tmp, b)
 	mulModBig(dst, &tmp, a)

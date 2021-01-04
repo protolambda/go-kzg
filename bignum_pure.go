@@ -86,7 +86,7 @@ func addModBig(dst *Big, a, b *Big) {
 }
 
 func divModBig(dst *Big, a, b *Big) {
-	(*big.Int)(dst).Div((*big.Int)(a), (*big.Int)(b))
+	(*big.Int)(dst).DivMod((*big.Int)(a), (*big.Int)(b))
 }
 
 func mulModBig(dst *Big, a, b *Big) {

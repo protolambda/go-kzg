@@ -1,4 +1,4 @@
-// +build !bignum_pure,!bignum_hol256
+// +build !bignum_pure,!bignum_hol256,!bignum_kilic
 
 package kate
 
@@ -30,7 +30,7 @@ func BigNumFrom32(dst *Big, v [32]byte) {
 func BigNumTo32(src *Big) (v [32]byte) {
 	b := (*hbls.Fr)(src).Serialize()
 	last := len(b) - 1
-	// reverse endianness, u256.Int outputs big-endian bytes
+	// reverse endianness, Herumi outputs big-endian bytes
 	for i := 0; i < 16; i++ {
 		b[i], b[last-i] = b[last-i], b[i]
 	}

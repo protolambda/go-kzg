@@ -98,8 +98,9 @@ func addModBig(dst *Big, a, b *Big) {
 }
 
 func divModBig(dst *Big, a, b *Big) {
-	(*u256.Int)(dst).Div((*u256.Int)(a), (*u256.Int)(b))
-	(*u256.Int)(dst).Mod((*u256.Int)(dst), &_modulus)
+	var tmp Big
+	invModBig(&tmp, b)
+	mulModBig(dst, a, &tmp)
 }
 
 func mulModBig(dst *Big, a, b *Big) {
