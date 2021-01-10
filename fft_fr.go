@@ -51,16 +51,25 @@ func (fs *FFTSettings) _fft(vals []Big, valsOffset uint64, valsStride uint64, ro
 
 func (fs *FFTSettings) FFT(vals []Big, inv bool) ([]Big, error) {
 	n := uint64(len(vals))
-	if n > fs.maxWidth {
-		return nil, fmt.Errorf("got %d values but only have %d roots of unity", n, fs.maxWidth)
-	}
-	if !isPowerOfTwo(n) {
-		return nil, fmt.Errorf("got %d values but not a power of two", n)
-	}
 	// We make a copy so we can mutate it during the work.
 	valsCopy := make([]Big, n, n) // TODO: maybe optimize this away, and write back to original input array?
 	for i := uint64(0); i < n; i++ {
 		CopyBigNum(&valsCopy[i], &vals[i])
+	}
+	out := make([]Big, n, n)
+	if err := fs.InplaceFFT(valsCopy, out, inv); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (fs *FFTSettings) InplaceFFT(vals []Big, out []Big, inv bool) error {
+	n := uint64(len(vals))
+	if n > fs.maxWidth {
+		return fmt.Errorf("got %d values but only have %d roots of unity", n, fs.maxWidth)
+	}
+	if !isPowerOfTwo(n) {
+		return fmt.Errorf("got %d values but not a power of two", n)
 	}
 	if inv {
 		var invLen Big
@@ -69,21 +78,19 @@ func (fs *FFTSettings) FFT(vals []Big, inv bool) ([]Big, error) {
 		rootz := fs.reverseRootsOfUnity[:fs.maxWidth]
 		stride := fs.maxWidth / n
 
-		out := make([]Big, n, n)
-		fs._fft(valsCopy, 0, 1, rootz, stride, out)
+		fs._fft(vals, 0, 1, rootz, stride, out)
 		var tmp Big
 		for i := 0; i < len(out); i++ {
 			mulModBig(&tmp, &out[i], &invLen)
 			CopyBigNum(&out[i], &tmp) // TODO: depending on bignum implementation, allow to directly write back to an input
 		}
-		return out, nil
+		return nil
 	} else {
-		out := make([]Big, n, n)
 		rootz := fs.expandedRootsOfUnity[:fs.maxWidth]
 		stride := fs.maxWidth / n
 		// Regular FFT
-		fs._fft(valsCopy, 0, 1, rootz, stride, out)
-		return out, nil
+		fs._fft(vals, 0, 1, rootz, stride, out)
+		return nil
 	}
 }
 
