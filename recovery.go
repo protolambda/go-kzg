@@ -4,7 +4,7 @@ package kate
 
 import "fmt"
 
-func (fs *FFTSettings) mulPolys(a []Big, b []Big, rootsOfUnityStride uint64) []Big {
+func (fs *FFTSettings) mulPolysWithFFT(a []Big, b []Big, rootsOfUnityStride uint64) []Big {
 	size := fs.maxWidth / rootsOfUnityStride
 	aVals := make([]Big, size, size)
 	bVals := make([]Big, size, size)
@@ -129,7 +129,7 @@ func (fs *FFTSettings) _zPoly(positions []uint64, rootsOfUnityStride uint64) []B
 	right := fs._zPoly(oddPositions, rootsOfUnityStride<<1)
 	invRoot := &fs.reverseRootsOfUnity[rootsOfUnityStride]
 	// Offset the result for the odd indices, and combine the two
-	out := fs.mulPolys(left, pOfKX(right, invRoot), rootsOfUnityStride)
+	out := fs.mulPolysWithFFT(left, pOfKX(right, invRoot), rootsOfUnityStride)
 	// Deal with the special case where mul_polys returns zero
 	// when it should return x ^ (2 ** k) - 1
 	isZero := true
