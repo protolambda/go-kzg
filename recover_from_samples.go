@@ -108,7 +108,7 @@ func nextPowOf2(v uint64) uint64 {
 // unshift poly, in-place. Multiplies each coeff with 1/shift_factor**i
 func (fs *FFTSettings) ShiftPoly(poly []Big) {
 	var shiftFactor Big
-	asBig(&shiftFactor, 5)  // primitive root of unity
+	asBig(&shiftFactor, 5) // primitive root of unity
 	var factorPower Big
 	CopyBigNum(&factorPower, &ONE)
 	var invFactor Big
@@ -126,7 +126,7 @@ func (fs *FFTSettings) ShiftPoly(poly []Big) {
 // unshift poly, in-place. Multiplies each coeff with shift_factor**i
 func (fs *FFTSettings) UnshiftPoly(poly []Big) {
 	var shiftFactor Big
-	asBig(&shiftFactor, 5)  // primitive root of unity
+	asBig(&shiftFactor, 5) // primitive root of unity
 	var factorPower Big
 	CopyBigNum(&factorPower, &ONE)
 	var tmp Big
@@ -208,4 +208,3 @@ func (fs *FFTSettings) RecoverPolyFromSamples(samples []*Big, zeroPolyFn ZeroPol
 	}
 	return reconstructedData, nil
 }
-

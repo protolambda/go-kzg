@@ -9,11 +9,10 @@ package kate
 
 import "fmt"
 
-
-type ZeroPolyFn func (missingIndices []uint64) ([]Big, []Big)
+type ZeroPolyFn func(missingIndices []uint64) ([]Big, []Big)
 
 func (fs *FFTSettings) makeZeroPolyMulLeaf(dst []Big, indices []uint64, domainStride uint64) {
-	if len(dst) != len(indices) + 1 {
+	if len(dst) != len(indices)+1 {
 		panic(fmt.Sprintf("expected different destination length: %d, got: %d", len(indices)+1, len(dst)))
 	}
 	CopyBigNum(&dst[len(dst)-1], &ONE)
@@ -23,7 +22,7 @@ func (fs *FFTSettings) makeZeroPolyMulLeaf(dst []Big, indices []uint64, domainSt
 		CopyBigNum(&dst[i], &negDi)
 		if i > 0 {
 			addModBig(&dst[i], &dst[i], &dst[i-1])
-			for j := i-1; j > 0; j-- {
+			for j := i - 1; j > 0; j-- {
 				mulModBig(&dst[j], &dst[j], &negDi)
 				addModBig(&dst[j], &dst[j], &dst[j-1])
 			}
@@ -51,7 +50,7 @@ func (fs *FFTSettings) reduceLeaves(scratch []Big, dst []Big, ps [][]Big) {
 			CopyBigNum(&pPadded[i], &ZERO)
 		}
 	}
-	mulEvalPs := scratch[n:2*n]
+	mulEvalPs := scratch[n : 2*n]
 	// while we're not using dst, use the space for the intermediate results
 	pEval := dst
 	prep(0)
@@ -108,7 +107,7 @@ func (fs *FFTSettings) ZeroPolyViaMultiplication(missingIndices []uint64, length
 		if end < len(missingIndices) {
 			end = len(missingIndices)
 		}
-		leaves[i] = out[outOffset:outOffset+perLeafPoly]
+		leaves[i] = out[outOffset : outOffset+perLeafPoly]
 		fs.makeZeroPolyMulLeaf(leaves[i], missingIndices[offset:end], domainStride)
 		offset += perLeaf
 		outOffset += perLeafPoly
@@ -122,17 +121,17 @@ func (fs *FFTSettings) ZeroPolyViaMultiplication(missingIndices []uint64, length
 
 	// from bottom to top, start reducing leaves.
 	for len(leaves) > 1 {
-		reducedCount := (len(leaves)+reductionFactor-1)/reductionFactor
+		reducedCount := (len(leaves) + reductionFactor - 1) / reductionFactor
 		// all the leaves are the same. Except possibly the last leaf, but that's ok.
 		leafSize := len(leaves[0])
 		for i := 0; i < reducedCount; i++ {
 			reduced := out[i*leafSize : (i+1)*leafSize]
-			start := i*reductionFactor
+			start := i * reductionFactor
 			end := start + reductionFactor
 			if end > len(leaves) {
 				end = len(leaves)
 			}
-			if end > start + 1 {
+			if end > start+1 {
 				// TODO possible optimization if only 2 values are being reduced, instead of 3 or common 4
 
 				// note: reduced overlaps with leaves[start:end]. Perfect overlap if leaves end-start==reduction_factor
