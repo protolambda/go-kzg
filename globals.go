@@ -6,11 +6,13 @@ var ZERO, ONE, TWO Big
 var MODULUS_MINUS1, MODULUS_MINUS1_DIV2, MODULUS_MINUS2 Big
 var INVERSE_TWO Big
 
+func bigNumHelper(v string) (out Big) {
+	bigNum(&out, v)
+	return
+}
+
 func initGlobals() {
-	bigNumHelper := func(v string) (out Big) {
-		bigNum(&out, v)
-		return
-	}
+
 	// MODULUS = 52435875175126190479447740508185965837690552500527637822603658699938581184513
 	// PRIMITIVE_ROOT = 5
 	// [pow(PRIMITIVE_ROOT, (MODULUS - 1) // (2**i), MODULUS) for i in range(32)]

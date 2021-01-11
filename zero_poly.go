@@ -12,10 +12,14 @@ import "fmt"
 type ZeroPolyFn func(missingIndices []uint64) ([]Big, []Big)
 
 func (fs *FFTSettings) makeZeroPolyMulLeaf(dst []Big, indices []uint64, domainStride uint64) {
-	if len(dst) != len(indices)+1 {
-		panic(fmt.Sprintf("expected different destination length: %d, got: %d", len(indices)+1, len(dst)))
+	if len(dst) < len(indices)+1 {
+		panic(fmt.Sprintf("expected bigger destination length: %d, got: %d", len(indices)+1, len(dst)))
 	}
-	CopyBigNum(&dst[len(dst)-1], &ONE)
+	// zero out the unused slots
+	for i := len(indices) + 1; i < len(dst); i++ {
+		CopyBigNum(&dst[i], &ZERO)
+	}
+	CopyBigNum(&dst[len(indices)], &ONE)
 	var negDi Big
 	for i, v := range indices {
 		subModBig(&negDi, &ZERO, &fs.expandedRootsOfUnity[v*domainStride])
@@ -74,7 +78,7 @@ func (fs *FFTSettings) reduceLeaves(scratch []Big, dst []Big, ps [][]Big) {
 
 func (fs *FFTSettings) ZeroPolyViaMultiplication(missingIndices []uint64, length uint64) ([]Big, []Big) {
 	if len(missingIndices) == 0 {
-		panic("no data is missing")
+		return make([]Big, length, length), make([]Big, length, length)
 	}
 	if length > fs.maxWidth {
 		panic("too many ")
@@ -83,10 +87,10 @@ func (fs *FFTSettings) ZeroPolyViaMultiplication(missingIndices []uint64, length
 		panic("length not a power of two")
 	}
 	// just under a power of two, since the leaf gets 1 bigger after building a poly for it
-	perLeaf := 63
+	perLeaf := uint64(63)
 	perLeafPoly := perLeaf + 1
-	leafCount := (len(missingIndices) + perLeaf - 1) / perLeaf
-	n := nextPowOf2(uint64(leafCount * perLeafPoly))
+	leafCount := (uint64(len(missingIndices)) + perLeaf - 1) / perLeaf
+	n := nextPowOf2(leafCount * perLeafPoly)
 
 	domainStride := fs.maxWidth / length
 
@@ -100,12 +104,13 @@ func (fs *FFTSettings) ZeroPolyViaMultiplication(missingIndices []uint64, length
 	// Combining leaves can be done mostly in-place, using a scratchpad.
 	leaves := make([][]Big, leafCount, leafCount)
 
-	offset := 0
-	outOffset := 0
-	for i := 0; i < leafCount; i++ {
+	offset := uint64(0)
+	outOffset := uint64(0)
+	max := uint64(len(missingIndices))
+	for i := uint64(0); i < leafCount; i++ {
 		end := offset + perLeaf
-		if end < len(missingIndices) {
-			end = len(missingIndices)
+		if end > max {
+			end = max
 		}
 		leaves[i] = out[outOffset : outOffset+perLeafPoly]
 		fs.makeZeroPolyMulLeaf(leaves[i], missingIndices[offset:end], domainStride)
@@ -125,9 +130,12 @@ func (fs *FFTSettings) ZeroPolyViaMultiplication(missingIndices []uint64, length
 		// all the leaves are the same. Except possibly the last leaf, but that's ok.
 		leafSize := len(leaves[0])
 		for i := 0; i < reducedCount; i++ {
-			reduced := out[i*leafSize : (i+1)*leafSize]
 			start := i * reductionFactor
 			end := start + reductionFactor
+			if end > int(n)/leafSize {
+				end = int(n) / leafSize
+			}
+			reduced := out[start*leafSize : end*leafSize]
 			if end > len(leaves) {
 				end = len(leaves)
 			}
@@ -142,6 +150,17 @@ func (fs *FFTSettings) ZeroPolyViaMultiplication(missingIndices []uint64, length
 		leaves = leaves[:reducedCount]
 	}
 	zeroPoly := leaves[0]
+	// When the input length is really small, we may be dealing with an output larger than we can FFT.
+	// Just makes sure it's all zeroes, then truncate it.
+	for i := length; i < uint64(len(zeroPoly)); i++ {
+		if !equalZero(&zeroPoly[i]) {
+			panic(fmt.Sprintf("expected zero coeffs after length %d, got: %s at %d", length, bigStr(&zeroPoly[i]), i))
+		}
+	}
+	if length < uint64(len(zeroPoly)) {
+		zeroPoly = zeroPoly[:length]
+	}
+
 	zeroEval, err := fs.FFT(zeroPoly, false)
 	if err != nil {
 		panic(err)
