@@ -4,8 +4,9 @@ package kate
 
 import (
 	"crypto/rand"
-	u256 "github.com/holiman/uint256"
 	"math/big"
+
+	u256 "github.com/holiman/uint256"
 )
 
 var _modulus u256.Int
@@ -15,6 +16,10 @@ type Big u256.Int
 func init() {
 	bigNum((*Big)(&_modulus), "52435875175126190479447740508185965837690552500527637822603658699938581184513")
 	initGlobals()
+}
+
+func norm(in *Big) *Big {
+	return in
 }
 
 func bigNum(dst *Big, v string) {

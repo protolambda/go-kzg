@@ -63,7 +63,7 @@ func (ks *KateSettings) CheckProofMulti(commitment *G1, proof *G1, x *Big, ys []
 	}
 	// [x^n]_2
 	var xn2 G2
-	mulG2(&xn2, &genG2, &xPow)
+	mulG2(&xn2, &genG2, norm(&xPow))
 	// [s^n - x^n]_2
 	var xnMinusYn G2
 	subG2(&xnMinusYn, &ks.secretG2[len(ys)], &xn2)

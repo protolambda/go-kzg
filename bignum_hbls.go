@@ -1,4 +1,4 @@
-// +build !bignum_pure,!bignum_hol256,!bignum_kilic
+// +build !bignum_pure,!bignum_hol256,!bignum_kilic,!bignum_kilic_red
 
 package kate
 
@@ -14,6 +14,10 @@ func init() {
 }
 
 type Big hbls.Fr
+
+func norm(in *Big) *Big {
+	return in
+}
 
 func bigNum(dst *Big, v string) {
 	if err := (*hbls.Fr)(dst).SetString(v, 10); err != nil {

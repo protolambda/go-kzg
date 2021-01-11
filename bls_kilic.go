@@ -1,12 +1,13 @@
-// +build bignum_kilic
+// +build bignum_kilic bignum_kilic_red
 
 package kate
 
 import (
 	"fmt"
-	kbls "github.com/kilic/bls12-381"
 	"math/big"
 	"strings"
+
+	kbls "github.com/kilic/bls12-381"
 )
 
 var ZERO_G1 G1
@@ -122,7 +123,7 @@ func LinCombG1(numbers []G1, factors []Big) *G1 {
 	}
 	tmpFrs := make([]*kbls.Fr, len(factors), len(factors))
 	for i := 0; i < len(factors); i++ {
-		tmpFrs[i] = (*kbls.Fr)(&factors[i])
+		tmpFrs[i] = (*kbls.Fr)(norm(&factors[i]))
 	}
 	_, _ = curveG1.MultiExp((*kbls.PointG1)(&out), tmpG1s, tmpFrs)
 	return &out

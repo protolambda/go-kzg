@@ -2,7 +2,9 @@
 
 package kate
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestKateSettings_DAUsingFK20Multi(t *testing.T) {
 	fs := NewFFTSettings(4 + 5 + 1)

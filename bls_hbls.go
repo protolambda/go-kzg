@@ -1,12 +1,13 @@
-// +build !bignum_pure,!bignum_hol256,!bignum_kilic
+// +build !bignum_pure,!bignum_hol256,!bignum_kilic,!bignum_kilic_red
 
 package kate
 
 import (
 	"fmt"
-	hbls "github.com/herumi/bls-eth-go-binary/bls"
 	"strings"
 	"unsafe"
+
+	hbls "github.com/herumi/bls-eth-go-binary/bls"
 )
 
 var ZERO_G1 G1

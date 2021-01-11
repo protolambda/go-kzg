@@ -66,7 +66,7 @@ func (ks *KateSettings) ToeplitzPart2(toeplitzCoeffs []Big, xExtFFT []G1) (hExtF
 	//print("mul n: ", n)
 	hExtFFT = make([]G1, n, n)
 	for i := uint64(0); i < n; i++ {
-		mulG1(&hExtFFT[i], &xExtFFT[i], &toeplitzCoeffsFFT[i])
+		mulG1(&hExtFFT[i], &xExtFFT[i], norm(&toeplitzCoeffsFFT[i]))
 	}
 	//debugG1s("hExtFFT", hExtFFT)
 	return hExtFFT

@@ -2,7 +2,9 @@
 
 package kate
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestKateSettings_CheckProofSingle(t *testing.T) {
 	fs := NewFFTSettings(4)
@@ -11,6 +13,7 @@ func TestKateSettings_CheckProofSingle(t *testing.T) {
 	for i := 0; i < len(ks.secretG1); i++ {
 		t.Logf("secret g1 %d: %s", i, strG1(&ks.secretG1[i]))
 	}
+	t.Logf("secret g1 %d: %s", 3, strG1(&ks.secretG1[3]))
 
 	polynomial := testPoly(1, 2, 3, 4, 7, 7, 7, 7, 13, 13, 13, 13, 13, 13, 13, 13)
 	for i := 0; i < len(polynomial); i++ {
@@ -53,8 +56,9 @@ func generateSetup(secret string, n uint64) ([]G1, []G2) {
 	s1Out := make([]G1, n, n)
 	s2Out := make([]G2, n, n)
 	for i := uint64(0); i < n; i++ {
-		mulG1(&s1Out[i], &genG1, &sPow)
-		mulG2(&s2Out[i], &genG2, &sPow)
+		e := norm(&sPow)
+		mulG1(&s1Out[i], &genG1, e)
+		mulG2(&s2Out[i], &genG2, e)
 		var tmp Big
 		CopyBigNum(&tmp, &sPow)
 		mulModBig(&sPow, &tmp, &s)

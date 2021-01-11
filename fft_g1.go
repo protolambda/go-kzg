@@ -12,13 +12,13 @@ func (fs *FFTSettings) simpleFTG1(vals []G1, valsOffset uint64, valsStride uint6
 	for i := uint64(0); i < l; i++ {
 		jv := &vals[valsOffset]
 		r := &rootsOfUnity[0]
-		mulG1(&v, jv, r)
+		mulG1(&v, jv, norm(r))
 		CopyG1(&last, &v)
 
 		for j := uint64(1); j < l; j++ {
 			jv := &vals[valsOffset+j*valsStride]
 			r := &rootsOfUnity[((i*j)%l)*rootsOfUnityStride]
-			mulG1(&v, jv, r)
+			mulG1(&v, jv, norm(r))
 			CopyG1(&tmp, &last)
 			addG1(&last, &tmp, &v)
 		}
@@ -45,7 +45,7 @@ func (fs *FFTSettings) _fftG1(vals []G1, valsOffset uint64, valsStride uint64, r
 		CopyG1(&x, &out[i])
 		CopyG1(&y, &out[i+half])
 		root := &rootsOfUnity[i*rootsOfUnityStride]
-		mulG1(&yTimesRoot, &y, root)
+		mulG1(&yTimesRoot, &y, norm(root))
 		addG1(&out[i], &x, &yTimesRoot)
 		subG1(&out[i+half], &x, &yTimesRoot)
 	}
@@ -75,7 +75,8 @@ func (fs *FFTSettings) FFTG1(vals []G1, inv bool) ([]G1, error) {
 		fs._fftG1(valsCopy, 0, 1, rootz, stride, out)
 		var tmp G1
 		for i := 0; i < len(out); i++ {
-			mulG1(&tmp, &out[i], &invLen)
+
+			mulG1(&tmp, &out[i], norm(&invLen))
 			CopyG1(&out[i], &tmp)
 		}
 		return out, nil
