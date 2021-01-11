@@ -23,8 +23,8 @@ func TestFFTRoundtrip(t *testing.T) {
 			t.Errorf("difference: %d: got: %s  expected: %s", i, bigStr(got), bigStr(expected))
 		}
 	}
-	// t.Log("zero", bigStr(&ZERO))
-	// t.Log("zero", bigStr(&ONE))
+	t.Log("zero", bigStr(&ZERO))
+	t.Log("zero", bigStr(&ONE))
 }
 
 func TestInvFFT(t *testing.T) {

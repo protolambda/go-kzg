@@ -13,7 +13,6 @@ func TestKateSettings_CheckProofSingle(t *testing.T) {
 	for i := 0; i < len(ks.secretG1); i++ {
 		t.Logf("secret g1 %d: %s", i, strG1(&ks.secretG1[i]))
 	}
-	t.Logf("secret g1 %d: %s", 3, strG1(&ks.secretG1[3]))
 
 	polynomial := testPoly(1, 2, 3, 4, 7, 7, 7, 7, 13, 13, 13, 13, 13, 13, 13, 13)
 	for i := 0; i < len(polynomial); i++ {
