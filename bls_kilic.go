@@ -1,4 +1,4 @@
-// +build bignum_kilic bignum_kilic_red
+// +build bignum_kilic
 
 package kate
 
