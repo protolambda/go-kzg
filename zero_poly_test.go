@@ -6,7 +6,47 @@ import (
 	"testing"
 )
 
-func TestFFTSettings_ZeroPolyViaMultiplication(t *testing.T) {
+func TestFFTSettings_reduceLeaves(t *testing.T) {
+	fs := NewFFTSettings(4)
+
+	var fromTreeReduction []Big
+
+	{
+		// prepare some leaves
+		leaves := [][]Big{make([]Big, 3), make([]Big, 3), make([]Big, 3), make([]Big, 3)}
+		leafIndices := [][]uint64{{1, 3}, {7, 8}, {9, 10}, {12, 13}}
+		for i := 0; i < 4; i++ {
+			fs.makeZeroPolyMulLeaf(leaves[i], leafIndices[i], 1)
+		}
+
+		dst := make([]Big, 16, 16)
+		scratch := make([]Big, 32, 32)
+		fs.reduceLeaves(scratch, dst, leaves)
+		fromTreeReduction = dst[:2*4+1]
+	}
+
+	var fromDirect []Big
+	{
+		dst := make([]Big, 9, 9)
+		indices := []uint64{1, 3, 7, 8, 9, 10, 12, 13}
+		fs.makeZeroPolyMulLeaf(dst, indices, 1)
+		fromDirect = dst
+	}
+
+	if len(fromDirect) != len(fromTreeReduction) {
+		t.Fatal("length mismatch")
+	}
+	for i := 0; i < len(fromDirect); i++ {
+		a, b := &fromDirect[i], &fromTreeReduction[i]
+		if !equalBig(a, b) {
+			t.Errorf("zero poly coeff %d is different. direct: %s, tree: %s", i, bigStr(a), bigStr(b))
+		}
+	}
+	//debugBigs("zero poly (tree reduction)", fromTreeReduction)
+	//debugBigs("zero poly (direct slow)", fromDirect)
+}
+
+func TestFFTSettings_ZeroPolyViaMultiplication_Python(t *testing.T) {
 	fs := NewFFTSettings(4)
 
 	exists := []bool{
