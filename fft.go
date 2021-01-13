@@ -2,6 +2,16 @@
 
 package kate
 
+import "math/bits"
+
+// if not already a power of 2, return the next power of 2
+func nextPowOf2(v uint64) uint64 {
+	if v == 0 {
+		return 1
+	}
+	return uint64(1) << bits.Len64(v-1)
+}
+
 // Expands the power circle for a given root of unity to WIDTH+1 values.
 // The first entry will be 1, the last entry will also be 1,
 // for convenience when reversing the array (useful for inverses)
