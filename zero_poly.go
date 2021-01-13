@@ -37,6 +37,9 @@ func (fs *FFTSettings) makeZeroPolyMulLeaf(dst []Big, indices []uint64, domainSt
 
 func (fs *FFTSettings) reduceLeaves(scratch []Big, dst []Big, ps [][]Big) {
 	n := uint64(len(dst))
+	if len(ps) == 0 {
+		panic("empty leaves")
+	}
 	if min := uint64(len(ps[0]) * len(ps)); min > n {
 		panic(fmt.Sprintf("expected larger destination length: %d, got: %d", min, n))
 	}
