@@ -17,9 +17,10 @@ func debugBigPtrs(msg string, values []*Big) {
 }
 
 func debugBigs(msg string, values []Big) {
+	fmt.Println("---------------------------")
 	var out strings.Builder
 	for i := range values {
 		out.WriteString(fmt.Sprintf("%s %d: %s\n", msg, i, bigStr(&values[i])))
 	}
-	fmt.Println(out.String())
+	fmt.Print(out.String())
 }

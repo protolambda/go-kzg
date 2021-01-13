@@ -9,7 +9,7 @@ package kate
 
 import "fmt"
 
-type ZeroPolyFn func(missingIndices []uint64) ([]Big, []Big)
+type ZeroPolyFn func(missingIndices []uint64, length uint64) ([]Big, []Big)
 
 func (fs *FFTSettings) makeZeroPolyMulLeaf(dst []Big, indices []uint64, domainStride uint64) {
 	if len(dst) < len(indices)+1 {
@@ -96,8 +96,10 @@ func (fs *FFTSettings) ZeroPolyViaMultiplication(missingIndices []uint64, length
 	perLeafPoly := uint64(64)
 	perLeaf := perLeafPoly - 1
 	if uint64(len(missingIndices)) <= perLeaf {
-		zeroPoly := make([]Big, len(missingIndices)+1, len(missingIndices)+1)
+		zeroPoly := make([]Big, len(missingIndices)+1, length)
 		fs.makeZeroPolyMulLeaf(zeroPoly, missingIndices, domainStride)
+		// pad with zeroes (capacity is already there)
+		zeroPoly = zeroPoly[:length]
 		zeroEval, err := fs.FFT(zeroPoly, false)
 		if err != nil {
 			panic(err)
@@ -166,12 +168,10 @@ func (fs *FFTSettings) ZeroPolyViaMultiplication(missingIndices []uint64, length
 		leaves = leaves[:reducedCount]
 	}
 	zeroPoly := leaves[0]
-	// When the input length is really small, we may be dealing with an output larger than we can FFT.
-	// Just makes sure it's all zeroes, then truncate it.
-	for i := length; i < uint64(len(zeroPoly)); i++ {
-		if !equalZero(&zeroPoly[i]) {
-			panic(fmt.Sprintf("expected zero coeffs after length %d, got: %s at %d", length, bigStr(&zeroPoly[i]), i))
-		}
+	if zl := uint64(len(zeroPoly)); zl < length {
+		zeroPoly = append(zeroPoly, make([]Big, length-zl, length-zl)...)
+	} else if zl > length {
+		panic("expected output smaller or equal to input length")
 	}
 
 	zeroEval, err := fs.FFT(zeroPoly, false)

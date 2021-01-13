@@ -149,7 +149,7 @@ func (fs *FFTSettings) RecoverPolyFromSamples(samples []*Big, zeroPolyFn ZeroPol
 		}
 	}
 
-	zeroEval, zeroPoly := zeroPolyFn(missingIndices)
+	zeroEval, zeroPoly := zeroPolyFn(missingIndices, uint64(len(samples)))
 
 	for i, s := range samples {
 		if (s == nil) != equalZero(&zeroEval[i]) {
@@ -186,9 +186,8 @@ func (fs *FFTSettings) RecoverPolyFromSamples(samples []*Big, zeroPolyFn ZeroPol
 	}
 
 	evalShiftedReconstructedPoly := evalShiftedPolyWithZero
-	var tmp Big
 	for i := 0; i < len(evalShiftedReconstructedPoly); i++ {
-		divModBig(&tmp, &evalShiftedPolyWithZero[i], &evalShiftedZeroPoly[i])
+		divModBig(&evalShiftedReconstructedPoly[i], &evalShiftedPolyWithZero[i], &evalShiftedZeroPoly[i])
 	}
 	shiftedReconstructedPoly, err := fs.FFT(evalShiftedReconstructedPoly, true)
 	if err != nil {
