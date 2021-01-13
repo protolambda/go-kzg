@@ -37,13 +37,16 @@ func (fs *FFTSettings) makeZeroPolyMulLeaf(dst []Big, indices []uint64, domainSt
 
 func (fs *FFTSettings) reduceLeaves(scratch []Big, dst []Big, ps [][]Big) {
 	n := uint64(len(dst))
+	if !isPowerOfTwo(n) {
+		panic("destination must be a power of two")
+	}
 	if len(ps) == 0 {
 		panic("empty leaves")
 	}
 	if min := uint64(len(ps[0]) * len(ps)); min > n {
 		panic(fmt.Sprintf("expected larger destination length: %d, got: %d", min, n))
 	}
-	if uint64(len(scratch)) < 2*n {
+	if uint64(len(scratch)) < 3*n {
 		panic("not enough scratch space")
 	}
 	// TODO: good to optimize, there's lots of padding
@@ -58,8 +61,7 @@ func (fs *FFTSettings) reduceLeaves(scratch []Big, dst []Big, ps [][]Big) {
 		}
 	}
 	mulEvalPs := scratch[n : 2*n]
-	// while we're not using dst, use the space for the intermediate results
-	pEval := dst
+	pEval := scratch[2*n : 3*n]
 	prep(0)
 	if err := fs.InplaceFFT(pPadded, mulEvalPs, false); err != nil {
 		panic(err)
@@ -89,13 +91,22 @@ func (fs *FFTSettings) ZeroPolyViaMultiplication(missingIndices []uint64, length
 	if !isPowerOfTwo(length) {
 		panic("length not a power of two")
 	}
+	domainStride := fs.maxWidth / length
 	// just under a power of two, since the leaf gets 1 bigger after building a poly for it
-	perLeaf := uint64(63)
-	perLeafPoly := perLeaf + 1
+	perLeafPoly := uint64(64)
+	perLeaf := perLeafPoly - 1
+	if uint64(len(missingIndices)) <= perLeaf {
+		zeroPoly := make([]Big, len(missingIndices)+1, len(missingIndices)+1)
+		fs.makeZeroPolyMulLeaf(zeroPoly, missingIndices, domainStride)
+		zeroEval, err := fs.FFT(zeroPoly, false)
+		if err != nil {
+			panic(err)
+		}
+		return zeroEval, zeroPoly
+	}
+
 	leafCount := (uint64(len(missingIndices)) + perLeaf - 1) / perLeaf
 	n := nextPowOf2(leafCount * perLeafPoly)
-
-	domainStride := fs.maxWidth / length
 
 	// The assumption here is that if the output is a power of two length, matching the sum of child leaf lengths,
 	// then the space can be reused.
@@ -125,7 +136,7 @@ func (fs *FFTSettings) ZeroPolyViaMultiplication(missingIndices []uint64, length
 
 	// must be a power of 2
 	reductionFactor := 4
-	scratch := make([]Big, n*2, n*2)
+	scratch := make([]Big, n*3, n*3)
 
 	// from bottom to top, start reducing leaves.
 	for len(leaves) > 1 {
@@ -135,18 +146,20 @@ func (fs *FFTSettings) ZeroPolyViaMultiplication(missingIndices []uint64, length
 		for i := 0; i < reducedCount; i++ {
 			start := i * reductionFactor
 			end := start + reductionFactor
-			if end > int(n)/leafSize {
-				end = int(n) / leafSize
+			// E.g. if we *started* with 2 leaves, we won't have more than that since it is already a power of 2.
+			// If we had 3, it would have been rounded up anyway. So just pick the end
+			outEnd := end * leafSize
+			if outEnd > len(out) {
+				outEnd = len(out)
 			}
-			reduced := out[start*leafSize : end*leafSize]
+			reduced := out[start*leafSize : outEnd]
+			// unlike reduced output, input may be smaller than the amount that aligns with powers of two
 			if end > len(leaves) {
 				end = len(leaves)
 			}
+			leavesSlice := leaves[start:end]
 			if end > start+1 {
-				// TODO possible optimization if only 2 values are being reduced, instead of 3 or common 4
-
-				// note: reduced overlaps with leaves[start:end]. Perfect overlap if leaves end-start==reduction_factor
-				fs.reduceLeaves(scratch, reduced, leaves[start:end])
+				fs.reduceLeaves(scratch, reduced, leavesSlice)
 			}
 			leaves[i] = reduced
 		}
@@ -159,9 +172,6 @@ func (fs *FFTSettings) ZeroPolyViaMultiplication(missingIndices []uint64, length
 		if !equalZero(&zeroPoly[i]) {
 			panic(fmt.Sprintf("expected zero coeffs after length %d, got: %s at %d", length, bigStr(&zeroPoly[i]), i))
 		}
-	}
-	if length < uint64(len(zeroPoly)) {
-		zeroPoly = zeroPoly[:length]
 	}
 
 	zeroEval, err := fs.FFT(zeroPoly, false)

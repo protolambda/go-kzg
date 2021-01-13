@@ -51,10 +51,17 @@ func (fs *FFTSettings) _fft(vals []Big, valsOffset uint64, valsStride uint64, ro
 
 func (fs *FFTSettings) FFT(vals []Big, inv bool) ([]Big, error) {
 	n := uint64(len(vals))
+	if n > fs.maxWidth {
+		return nil, fmt.Errorf("got %d values but only have %d roots of unity", n, fs.maxWidth)
+	}
+	n = nextPowOf2(n)
 	// We make a copy so we can mutate it during the work.
-	valsCopy := make([]Big, n, n) // TODO: maybe optimize this away, and write back to original input array?
-	for i := uint64(0); i < n; i++ {
+	valsCopy := make([]Big, n, n)
+	for i := 0; i < len(vals); i++ {
 		CopyBigNum(&valsCopy[i], &vals[i])
+	}
+	for i := uint64(len(vals)); i < n; i++ {
+		CopyBigNum(&valsCopy[i], &ZERO)
 	}
 	out := make([]Big, n, n)
 	if err := fs.InplaceFFT(valsCopy, out, inv); err != nil {

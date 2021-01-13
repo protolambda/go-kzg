@@ -20,7 +20,7 @@ func TestFFTSettings_reduceLeaves(t *testing.T) {
 		}
 
 		dst := make([]Big, 16, 16)
-		scratch := make([]Big, 32, 32)
+		scratch := make([]Big, 16*3, 16*3)
 		fs.reduceLeaves(scratch, dst, leaves)
 		fromTreeReduction = dst[:2*4+1]
 	}
@@ -100,7 +100,7 @@ func testReduceLeaves(scale uint8, missingRatio float64, seed int64, t *testing.
 
 	{
 		dst := make([]Big, pointCount, pointCount)
-		scratch := make([]Big, pointCount*2, pointCount*2)
+		scratch := make([]Big, pointCount*3, pointCount*3)
 		fs.reduceLeaves(scratch, dst, leaves)
 		fromTreeReduction = dst[:missingCount+1]
 	}
@@ -208,21 +208,12 @@ func testZeroPoly(t *testing.T, scale uint8, seed int64) {
 			missingStr += fmt.Sprintf(" %d", i)
 		}
 	}
-	t.Logf("missing indices:%s", missingStr)
+	//t.Logf("missing indices:%s", missingStr)
 
 	zeroEval, zeroPoly := fs.ZeroPolyViaMultiplication(missingIndices, uint64(len(exists)))
 
-	for i, v := range exists {
-		if i >= len(zeroEval) {
-			continue
-		}
-		if !v && !equalZero(&zeroEval[i]) {
-			t.Errorf("bad zero eval at: %d, got: %s", i, bigStr(&zeroEval[i]))
-		}
-	}
-
-	debugBigs("zero eval", zeroEval)
-	debugBigs("zero poly", zeroPoly)
+	//debugBigs("zero eval", zeroEval)
+	//debugBigs("zero poly", zeroPoly)
 
 	for i, v := range exists {
 		if !v {
@@ -240,19 +231,24 @@ func testZeroPoly(t *testing.T, scale uint8, seed int64) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for i := range p {
+	for i := 0; i < len(zeroPoly); i++ {
 		if !equalBig(&p[i], &zeroPoly[i]) {
 			t.Errorf("fft not correct, i: %v, a: %s, b: %s", i, bigStr(&p[i]), bigStr(&zeroPoly[i]))
+		}
+	}
+	for i := len(zeroPoly); i < len(p); i++ {
+		if !equalZero(&p[i]) {
+			t.Errorf("fft not correct, i: %v, a: %s, b: 0", i, bigStr(&p[i]))
 		}
 	}
 }
 
 func TestFFTSettings_ZeroPolyViaMultiplication_Parametrized(t *testing.T) {
-	for i := uint8(3); i < 10; i++ {
+	for i := uint8(3); i < 12; i++ {
 		t.Run(fmt.Sprintf("scale_%d", i), func(t *testing.T) {
 			for j := int64(0); j < 3; j++ {
 				t.Run(fmt.Sprintf("case_%d", j), func(t *testing.T) {
-					testZeroPoly(t, i, j)
+					testZeroPoly(t, i, int64(i)*1000+j)
 				})
 			}
 		})
