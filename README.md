@@ -227,6 +227,42 @@ Note that Kilic BLS is even faster: `0.0172` seconds! However, its performance w
 A lot of the difference in speed between Herumi and Kilic BLS comes from native Go vs. CGO: 
 Each Mul/Add/Sub in Herumi comes with a CGO overhead cost. Porting the FFT code to Herumi internals, and only inducing the call-overhead once, would likely alleviate this difference. 
 
+#### Zero polynomial
+
+Using Kilic BLS, computing a zero polynomial for `N/2` points in a domain of `N` points, where `N = 2**scale`.
+
+```
+BenchmarkFFTSettings_ZeroPolyViaMultiplication/scale_5-8         	  582222	     19849 ns/op
+BenchmarkFFTSettings_ZeroPolyViaMultiplication/scale_6-8         	  212700	     56463 ns/op
+BenchmarkFFTSettings_ZeroPolyViaMultiplication/scale_7-8         	   32444	    370005 ns/op
+BenchmarkFFTSettings_ZeroPolyViaMultiplication/scale_8-8         	   13376	    899227 ns/op
+BenchmarkFFTSettings_ZeroPolyViaMultiplication/scale_9-8         	    5282	   2264945 ns/op
+BenchmarkFFTSettings_ZeroPolyViaMultiplication/scale_10-8        	    2251	   5317543 ns/op
+BenchmarkFFTSettings_ZeroPolyViaMultiplication/scale_11-8        	     922	  12907627 ns/op
+BenchmarkFFTSettings_ZeroPolyViaMultiplication/scale_12-8        	     405	  29571684 ns/op
+BenchmarkFFTSettings_ZeroPolyViaMultiplication/scale_13-8        	     170	  69992466 ns/op
+BenchmarkFFTSettings_ZeroPolyViaMultiplication/scale_14-8        	      75	 160242911 ns/op
+BenchmarkFFTSettings_ZeroPolyViaMultiplication/scale_15-8        	      32	 367837490 ns/op
+```
+
+#### Recover from samples
+
+Using Kilic BLS, recovering a polynomial with `N/2` missing points, to get back `N` points, where `N = 2**scale`.
+
+```
+BenchmarkFFTSettings_RecoverPolyFromSamples/scale_5-8         	   33908	    345835 ns/op
+BenchmarkFFTSettings_RecoverPolyFromSamples/scale_6-8         	   17180	    700476 ns/op
+BenchmarkFFTSettings_RecoverPolyFromSamples/scale_7-8         	    7290	   1655556 ns/op
+BenchmarkFFTSettings_RecoverPolyFromSamples/scale_8-8         	    3410	   3486237 ns/op
+BenchmarkFFTSettings_RecoverPolyFromSamples/scale_9-8         	    1596	   7516292 ns/op
+BenchmarkFFTSettings_RecoverPolyFromSamples/scale_10-8        	     748	  15906447 ns/op
+BenchmarkFFTSettings_RecoverPolyFromSamples/scale_11-8        	     346	  34549928 ns/op
+BenchmarkFFTSettings_RecoverPolyFromSamples/scale_12-8        	     162	  73824466 ns/op
+BenchmarkFFTSettings_RecoverPolyFromSamples/scale_13-8        	      74	 160337719 ns/op
+BenchmarkFFTSettings_RecoverPolyFromSamples/scale_14-8        	      33	 344798427 ns/op
+BenchmarkFFTSettings_RecoverPolyFromSamples/scale_15-8        	      15	 747324287 ns/op
+```
+
 ## License
 
 MIT, see [`LICENSE`](./LICENSE) file.
