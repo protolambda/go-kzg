@@ -1,4 +1,4 @@
-package kate
+package kzg
 
 // invert the divisor, then multiply
 func polyFactorDiv(dst *Big, a *Big, b *Big) {

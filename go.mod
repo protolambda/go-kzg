@@ -1,4 +1,4 @@
-module github.com/protolambda/go-kate
+module github.com/protolambda/go-kzg
 
 go 1.15
 

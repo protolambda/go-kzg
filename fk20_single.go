@@ -2,7 +2,7 @@
 
 // +build !bignum_pure,!bignum_hol256
 
-package kate
+package kzg
 
 import "fmt"
 
@@ -33,7 +33,7 @@ import "fmt"
 
 // Performs the first part of the Toeplitz matrix multiplication algorithm, which is a Fourier
 // transform of the vector x extended
-func (ks *KateSettings) toeplitzPart1(x []G1) []G1 {
+func (ks *KZGSettings) toeplitzPart1(x []G1) []G1 {
 	n := uint64(len(x))
 	n2 := n * 2
 	// Extend x with zeros (neutral element of G1)
@@ -52,7 +52,7 @@ func (ks *KateSettings) toeplitzPart1(x []G1) []G1 {
 }
 
 // Performs the second part of the Toeplitz matrix multiplication algorithm
-func (ks *KateSettings) ToeplitzPart2(toeplitzCoeffs []Big, xExtFFT []G1) (hExtFFT []G1) {
+func (ks *KZGSettings) ToeplitzPart2(toeplitzCoeffs []Big, xExtFFT []G1) (hExtFFT []G1) {
 	if uint64(len(toeplitzCoeffs)) != uint64(len(xExtFFT)) {
 		panic("expected toeplitz coeffs to match xExtFFT length")
 	}
@@ -73,7 +73,7 @@ func (ks *KateSettings) ToeplitzPart2(toeplitzCoeffs []Big, xExtFFT []G1) (hExtF
 }
 
 // Transform back and return the first half of the vector
-func (ks *KateSettings) ToeplitzPart3(hExtFFT []G1) []G1 {
+func (ks *KZGSettings) ToeplitzPart3(hExtFFT []G1) []G1 {
 	out, err := ks.FFTG1(hExtFFT, true)
 	if err != nil {
 		panic(fmt.Errorf("toeplitz part 3 err: %v", err))
@@ -82,7 +82,7 @@ func (ks *KateSettings) ToeplitzPart3(hExtFFT []G1) []G1 {
 	return out[:len(out)/2]
 }
 
-func (ks *KateSettings) toeplitzCoeffsStepStrided(polynomial []Big, offset uint64, stride uint64) []Big {
+func (ks *KZGSettings) toeplitzCoeffsStepStrided(polynomial []Big, offset uint64, stride uint64) []Big {
 	n := uint64(len(polynomial))
 	k := n / stride
 	k2 := k * 2
@@ -99,7 +99,7 @@ func (ks *KateSettings) toeplitzCoeffsStepStrided(polynomial []Big, offset uint6
 }
 
 // TODO: call above with offset=0, stride=1
-func (ks *KateSettings) toeplitzCoeffsStep(polynomial []Big) []Big {
+func (ks *KZGSettings) toeplitzCoeffsStep(polynomial []Big) []Big {
 	n := uint64(len(polynomial))
 	n2 := n * 2
 	// [last poly item] + [0]*(n+1) + [poly items except first and last]

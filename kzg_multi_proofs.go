@@ -2,12 +2,12 @@
 
 // +build !bignum_pure,!bignum_hol256
 
-package kate
+package kzg
 
-// Compute Kate proof for polynomial in coefficient form at positions x * w^y where w is
+// Compute KZG proof for polynomial in coefficient form at positions x * w^y where w is
 // an n-th root of unity (this is the proof for one data availability sample, which consists
 // of several polynomial evaluations)
-func (ks *KateSettings) ComputeProofMulti(poly []Big, x uint64, n uint64) *G1 {
+func (ks *KZGSettings) ComputeProofMulti(poly []Big, x uint64, n uint64) *G1 {
 	// divisor = [-pow(x, n, MODULUS)] + [0] * (n - 1) + [1]
 	divisor := make([]Big, n+1, n+1)
 	var xBig Big
@@ -39,9 +39,9 @@ func (ks *KateSettings) ComputeProofMulti(poly []Big, x uint64, n uint64) *G1 {
 	return LinCombG1(ks.secretG1[:len(quotientPolynomial)], quotientPolynomial)
 }
 
-// Check a proof for a Kate commitment for an evaluation f(x w^i) = y_i
+// Check a proof for a KZG commitment for an evaluation f(x w^i) = y_i
 // The ys must have a power of 2 length
-func (ks *KateSettings) CheckProofMulti(commitment *G1, proof *G1, x *Big, ys []Big) bool {
+func (ks *KZGSettings) CheckProofMulti(commitment *G1, proof *G1, x *Big, ys []Big) bool {
 	// Interpolate at a coset. Note because it is a coset, not the subgroup, we have to multiply the
 	// polynomial coefficients by x^i
 	interpolationPoly, err := ks.FFT(ys, true)

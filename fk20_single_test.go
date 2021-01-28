@@ -1,13 +1,13 @@
 // +build !bignum_pure,!bignum_hol256
 
-package kate
+package kzg
 
 import "testing"
 
-func TestKateSettings_DAUsingFK20(t *testing.T) {
+func TestKZGSettings_DAUsingFK20(t *testing.T) {
 	fs := NewFFTSettings(5)
 	s1, s2 := generateSetup("1927409816240961209460912649124", 32+1)
-	ks := NewKateSettings(fs, s1, s2)
+	ks := NewKZGSettings(fs, s1, s2)
 	fk := NewFK20SingleSettings(ks, 32)
 
 	polynomial := testPoly(1, 2, 3, 4, 7, 7, 7, 7, 13, 13, 13, 13, 13, 13, 13, 13)

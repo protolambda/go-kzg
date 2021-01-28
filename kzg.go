@@ -1,10 +1,10 @@
 // +build !bignum_pure,!bignum_hol256
 
-package kate
+package kzg
 
 import "fmt"
 
-type KateSettings struct {
+type KZGSettings struct {
 	*FFTSettings
 
 	// setup values
@@ -15,7 +15,7 @@ type KateSettings struct {
 	secretG2 []G2
 }
 
-func NewKateSettings(fs *FFTSettings, secretG1 []G1, secretG2 []G2) *KateSettings {
+func NewKZGSettings(fs *FFTSettings, secretG1 []G1, secretG2 []G2) *KZGSettings {
 	if len(secretG1) != len(secretG2) {
 		panic("secret list lengths don't match")
 	}
@@ -23,7 +23,7 @@ func NewKateSettings(fs *FFTSettings, secretG1 []G1, secretG2 []G2) *KateSetting
 		panic(fmt.Errorf("expected more values for secrets, maxWidth: %d, got: %d", fs.maxWidth, len(secretG1)))
 	}
 
-	ks := &KateSettings{
+	ks := &KZGSettings{
 		FFTSettings:      fs,
 		secretG1:         secretG1,
 		extendedSecretG1: nil,
@@ -34,13 +34,13 @@ func NewKateSettings(fs *FFTSettings, secretG1 []G1, secretG2 []G2) *KateSetting
 }
 
 type FK20SingleSettings struct {
-	*KateSettings
+	*KZGSettings
 	xExtFFT []G1
 }
 
-func NewFK20SingleSettings(ks *KateSettings, n2 uint64) *FK20SingleSettings {
+func NewFK20SingleSettings(ks *KZGSettings, n2 uint64) *FK20SingleSettings {
 	if n2 > ks.maxWidth {
-		panic("extended size is larger than kate settings supports")
+		panic("extended size is larger than kzg settings supports")
 	}
 	if !isPowerOfTwo(n2) {
 		panic("extended size is not a power of two")
@@ -50,7 +50,7 @@ func NewFK20SingleSettings(ks *KateSettings, n2 uint64) *FK20SingleSettings {
 	}
 	n := n2 / 2
 	fk := &FK20SingleSettings{
-		KateSettings: ks,
+		KZGSettings: ks,
 	}
 	x := make([]G1, n, n)
 	for i, j := uint64(0), n-2; i < n-1; i, j = i+1, j-1 {
@@ -62,15 +62,15 @@ func NewFK20SingleSettings(ks *KateSettings, n2 uint64) *FK20SingleSettings {
 }
 
 type FK20MultiSettings struct {
-	*KateSettings
+	*KZGSettings
 	chunkLen uint64
 	// chunkLen files, each of size maxWidth
 	xExtFFTFiles [][]G1
 }
 
-func NewFK20MultiSettings(ks *KateSettings, n2 uint64, chunkLen uint64) *FK20MultiSettings {
+func NewFK20MultiSettings(ks *KZGSettings, n2 uint64, chunkLen uint64) *FK20MultiSettings {
 	if n2 > ks.maxWidth {
-		panic("extended size is larger than kate settings supports")
+		panic("extended size is larger than kzg settings supports")
 	}
 	if !isPowerOfTwo(n2) {
 		panic("extended size is not a power of two")
@@ -88,7 +88,7 @@ func NewFK20MultiSettings(ks *KateSettings, n2 uint64, chunkLen uint64) *FK20Mul
 		panic("chunk length is too small")
 	}
 	fk := &FK20MultiSettings{
-		KateSettings: ks,
+		KZGSettings:  ks,
 		chunkLen:     chunkLen,
 		xExtFFTFiles: make([][]G1, chunkLen, chunkLen),
 	}

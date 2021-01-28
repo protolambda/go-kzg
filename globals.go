@@ -1,4 +1,4 @@
-package kate
+package kzg
 
 var scale2RootOfUnity []Big
 

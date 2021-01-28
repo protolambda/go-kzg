@@ -1,6 +1,6 @@
 // +build !bignum_pure,!bignum_hol256,!bignum_kilic
 
-package kate
+package kzg
 
 import (
 	"fmt"

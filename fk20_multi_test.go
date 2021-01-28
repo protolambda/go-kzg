@@ -1,16 +1,16 @@
 // +build !bignum_pure,!bignum_hol256
 
-package kate
+package kzg
 
 import "testing"
 
-func TestKateSettings_DAUsingFK20Multi(t *testing.T) {
+func TestKZGSettings_DAUsingFK20Multi(t *testing.T) {
 	fs := NewFFTSettings(4 + 5 + 1)
 	chunkLen := uint64(16)
 	chunkCount := uint64(32)
 	n := chunkLen * chunkCount
 	s1, s2 := generateSetup("1927409816240961209460912649124", chunkLen*chunkCount*2)
-	ks := NewKateSettings(fs, s1, s2)
+	ks := NewKZGSettings(fs, s1, s2)
 	fk := NewFK20MultiSettings(ks, n*2, chunkLen)
 
 	// replicate same polynomial as in python test

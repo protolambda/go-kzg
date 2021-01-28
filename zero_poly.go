@@ -5,7 +5,7 @@
 // - simplified merges
 // - no heap allocations during reduction
 
-package kate
+package kzg
 
 import "fmt"
 

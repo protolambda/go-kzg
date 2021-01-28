@@ -1,10 +1,10 @@
-# Kate and FFT utils
+# KZG and FFT utils
 
 This repo is *super experimental*.
 
 This is an implementation in Go, initially aimed at chunkification and extension of data, 
-and building/verifying Kate proofs for the output data.
-The Kate proofs are built on top of BLS12-381.
+and building/verifying KZG proofs for the output data.
+The KZG proofs, or Kate proofs, are built on top of BLS12-381.
 
 Part of a low-latency data-availability sampling network prototype for Eth2 Phase 1.
 See https://github.com/protolambda/eth2-das
@@ -21,7 +21,7 @@ Features:
 - (I)FFT on `F_r`
 - (I)FFT on `G1`
 - Specialized FFT for extension of `F_r` data
-- Kate
+- KZG
   - commitments
   - generate/verify proof for single point
   - generate/verify proofs for multiple points
@@ -39,7 +39,7 @@ The BLS functionality is generalized, and simple `G1` and `G2` types are exposed
 ## Bignums
 
 The BLS curve order is used for the modulo math, different libraries could be used to provide this functionality.
-Note: some of these libraries do not have full BLS functionality, only big-num / uint256. The Kate code will be excluded when compiling with a non-BLS build tag.
+Note: some of these libraries do not have full BLS functionality, only big-num / uint256. The KZG code will be excluded when compiling with a non-BLS build tag.
 
 Build tag options:
 - ` ` (default, empty): use Herumi BLS library. Previously used by `bignum_hbls` build tag. [`herumi/bls-eth-go-binary`](https://github.com/herumi/bls-eth-go-binary/)
@@ -74,7 +74,7 @@ BenchmarkFFTSettings_FFT/scale_15-8        	     146	  79236893 ns/op
 ```
 
 Note: about 1/3 of the computation time is CGO call overhead to the native Herumi BLS code.
-When moving the Kate code into the native library, or reducing the overhead otherwise, the performance can improve significantly.
+When moving the KZG code into the native library, or reducing the overhead otherwise, the performance can improve significantly.
 
 #### FFT with G1 points
 

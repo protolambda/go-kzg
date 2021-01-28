@@ -2,15 +2,15 @@
 
 // +build !bignum_pure,!bignum_hol256
 
-package kate
+package kzg
 
-// Kate commitment to polynomial in coefficient form
-func (ks *KateSettings) CommitToPoly(coeffs []Big) *G1 {
+// KZG commitment to polynomial in coefficient form
+func (ks *KZGSettings) CommitToPoly(coeffs []Big) *G1 {
 	return LinCombG1(ks.secretG1[:len(coeffs)], coeffs)
 }
 
-// Kate commitment to polynomial in coefficient form, unoptimized version
-func (ks *KateSettings) CommitToPolyUnoptimized(coeffs []Big) *G1 {
+// KZG commitment to polynomial in coefficient form, unoptimized version
+func (ks *KZGSettings) CommitToPolyUnoptimized(coeffs []Big) *G1 {
 	// Do so by computing the linear combination with the shared secret.
 	var out G1
 	ClearG1(&out)
@@ -23,8 +23,8 @@ func (ks *KateSettings) CommitToPolyUnoptimized(coeffs []Big) *G1 {
 	return &out
 }
 
-// Compute Kate proof for polynomial in coefficient form at position x
-func (ks *KateSettings) ComputeProofSingle(poly []Big, x uint64) *G1 {
+// Compute KZG proof for polynomial in coefficient form at position x
+func (ks *KZGSettings) ComputeProofSingle(poly []Big, x uint64) *G1 {
 	// divisor = [-x, 1]
 	divisor := [2]Big{}
 	var tmp Big
@@ -44,8 +44,8 @@ func (ks *KateSettings) ComputeProofSingle(poly []Big, x uint64) *G1 {
 	return LinCombG1(ks.secretG1[:len(quotientPolynomial)], quotientPolynomial)
 }
 
-// Check a proof for a Kate commitment for an evaluation f(x) = y
-func (ks *KateSettings) CheckProofSingle(commitment *G1, proof *G1, x *Big, y *Big) bool {
+// Check a proof for a KZG commitment for an evaluation f(x) = y
+func (ks *KZGSettings) CheckProofSingle(commitment *G1, proof *G1, x *Big, y *Big) bool {
 	// Verify the pairing equation
 	var xG2 G2
 	mulG2(&xG2, &genG2, x)

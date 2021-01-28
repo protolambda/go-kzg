@@ -1,6 +1,6 @@
 // +build bignum_kilic
 
-package kate
+package kzg
 
 import (
 	"crypto/rand"

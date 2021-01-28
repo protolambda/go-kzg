@@ -1,13 +1,13 @@
 // +build !bignum_pure,!bignum_hol256
 
-package kate
+package kzg
 
 import "testing"
 
-func TestKateSettings_CheckProofSingle(t *testing.T) {
+func TestKZGSettings_CheckProofSingle(t *testing.T) {
 	fs := NewFFTSettings(4)
 	s1, s2 := generateSetup("1927409816240961209460912649124", 16+1)
-	ks := NewKateSettings(fs, s1, s2)
+	ks := NewKZGSettings(fs, s1, s2)
 	for i := 0; i < len(ks.secretG1); i++ {
 		t.Logf("secret g1 %d: %s", i, strG1(&ks.secretG1[i]))
 	}

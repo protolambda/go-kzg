@@ -2,7 +2,7 @@
 
 // +build !bignum_pure,!bignum_hol256
 
-package kate
+package kzg
 
 import "fmt"
 
@@ -22,7 +22,7 @@ func (ks *FK20MultiSettings) FK20Multi(polynomial []Big) []G1 {
 	n := uint64(len(polynomial))
 	n2 := n * 2
 	if ks.maxWidth < n2 {
-		panic(fmt.Errorf("KateSettings are set to maxWidth %d but got half polynomial of length %d",
+		panic(fmt.Errorf("KZGSettings are set to maxWidth %d but got half polynomial of length %d",
 			ks.maxWidth, n))
 	}
 
@@ -54,7 +54,7 @@ func (ks *FK20MultiSettings) FK20Multi(polynomial []Big) []G1 {
 func (ks *FK20MultiSettings) FK20MultiDAOptimized(polynomial []Big) []G1 {
 	n2 := uint64(len(polynomial))
 	if ks.maxWidth < n2 {
-		panic(fmt.Errorf("KateSettings are set to maxWidth %d but got polynomial of length %d",
+		panic(fmt.Errorf("KZGSettings are set to maxWidth %d but got polynomial of length %d",
 			ks.maxWidth, n2))
 	}
 	n := n2 / 2

@@ -1,4 +1,4 @@
-package kate
+package kzg
 
 // warning: the values in `a` are modified in-place to become the outputs.
 // Make a deep copy first if you need to use them later.

@@ -1,6 +1,6 @@
 // +build bignum_hol256
 
-package kate
+package kzg
 
 import (
 	"crypto/rand"

@@ -1,4 +1,4 @@
-package kate
+package kzg
 
 const (
 	mask0 = ^uint32((1 << (1 << iota)) - 1)

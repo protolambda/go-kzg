@@ -1,6 +1,6 @@
 // +build !bignum_pure,!bignum_hol256
 
-package kate
+package kzg
 
 import (
 	"bytes"
@@ -13,7 +13,7 @@ import (
 // change to reverse bit order
 // extend data
 // compute commitment over extended data
-func integrationTestSetup(scale uint8, seed int64) (data []byte, extended []Big, extendedAsPoly []Big, commit *G1, ks *KateSettings) {
+func integrationTestSetup(scale uint8, seed int64) (data []byte, extended []Big, extendedAsPoly []Big, commit *G1, ks *KZGSettings) {
 	points := 1 << scale
 	size := points * 31
 	data = make([]byte, size, size)
@@ -45,7 +45,7 @@ func integrationTestSetup(scale uint8, seed int64) (data []byte, extended []Big,
 		CopyBigNum(&extended[i+1], &oddPoints[i/2])
 	}
 	s1, s2 := generateSetup("1927409816240961209460912649124", uint64(len(extended)))
-	ks = NewKateSettings(fs, s1, s2)
+	ks = NewKZGSettings(fs, s1, s2)
 	// get coefficient form (half of this is zeroes, but ok)
 	coeffs, err := ks.FFT(extended, true)
 	if err != nil {

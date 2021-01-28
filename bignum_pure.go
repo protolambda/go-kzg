@@ -1,6 +1,6 @@
 // +build bignum_pure
 
-package kate
+package kzg
 
 import (
 	"crypto/rand"

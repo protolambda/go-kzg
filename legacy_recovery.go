@@ -1,6 +1,6 @@
 // Original: https://github.com/ethereum/research/blob/master/mimc_stark/recovery.py
 
-package kate
+package kzg
 
 import "fmt"
 
