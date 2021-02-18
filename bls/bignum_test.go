@@ -6,65 +6,65 @@ import "testing"
 // used actually handles dst/arg overlaps well.
 
 func TestInplaceAdd(t *testing.T) {
-	aVal := RandomBig()
-	bVal := RandomBig()
-	aPlusB := new(Big)
-	AddModBig(aPlusB, aVal, bVal)
-	twoA := new(Big)
-	MulModBig(twoA, aVal, &TWO)
+	aVal := RandomFr()
+	bVal := RandomFr()
+	aPlusB := new(Fr)
+	AddModFr(aPlusB, aVal, bVal)
+	twoA := new(Fr)
+	MulModFr(twoA, aVal, &TWO)
 
-	check := func(name string, fn func(a, b *Big) bool) {
+	check := func(name string, fn func(a, b *Fr) bool) {
 		t.Run(name, func(t *testing.T) {
-			var a, b Big
-			CopyBigNum(&a, aVal)
-			CopyBigNum(&b, bVal)
+			var a, b Fr
+			CopyFr(&a, aVal)
+			CopyFr(&b, bVal)
 			if !fn(&a, &b) {
 				t.Error("fail")
 			}
 		})
 	}
-	check("dst equals lhs", func(a *Big, b *Big) bool {
-		AddModBig(a, a, b)
-		return EqualBig(a, aPlusB)
+	check("dst equals lhs", func(a *Fr, b *Fr) bool {
+		AddModFr(a, a, b)
+		return EqualFr(a, aPlusB)
 	})
-	check("dst equals rhs", func(a *Big, b *Big) bool {
-		AddModBig(b, a, b)
-		return EqualBig(b, aPlusB)
+	check("dst equals rhs", func(a *Fr, b *Fr) bool {
+		AddModFr(b, a, b)
+		return EqualFr(b, aPlusB)
 	})
-	check("dst equals lhs and rhs", func(a *Big, b *Big) bool {
-		AddModBig(a, a, a)
-		return EqualBig(a, twoA)
+	check("dst equals lhs and rhs", func(a *Fr, b *Fr) bool {
+		AddModFr(a, a, a)
+		return EqualFr(a, twoA)
 	})
 }
 
 func TestInplaceMul(t *testing.T) {
-	aVal := RandomBig()
-	bVal := RandomBig()
-	aMulB := new(Big)
-	MulModBig(aMulB, aVal, bVal)
-	squareA := new(Big)
-	MulModBig(squareA, aVal, aVal)
+	aVal := RandomFr()
+	bVal := RandomFr()
+	aMulB := new(Fr)
+	MulModFr(aMulB, aVal, bVal)
+	squareA := new(Fr)
+	MulModFr(squareA, aVal, aVal)
 
-	check := func(name string, fn func(a, b *Big) bool) {
+	check := func(name string, fn func(a, b *Fr) bool) {
 		t.Run(name, func(t *testing.T) {
-			var a, b Big
-			CopyBigNum(&a, aVal)
-			CopyBigNum(&b, bVal)
+			var a, b Fr
+			CopyFr(&a, aVal)
+			CopyFr(&b, bVal)
 			if !fn(&a, &b) {
 				t.Error("fail")
 			}
 		})
 	}
-	check("dst equals lhs", func(a *Big, b *Big) bool {
-		MulModBig(a, a, b)
-		return EqualBig(a, aMulB)
+	check("dst equals lhs", func(a *Fr, b *Fr) bool {
+		MulModFr(a, a, b)
+		return EqualFr(a, aMulB)
 	})
-	check("dst equals rhs", func(a *Big, b *Big) bool {
-		MulModBig(b, a, b)
-		return EqualBig(b, aMulB)
+	check("dst equals rhs", func(a *Fr, b *Fr) bool {
+		MulModFr(b, a, b)
+		return EqualFr(b, aMulB)
 	})
-	check("dst equals lhs and rhs", func(a *Big, b *Big) bool {
-		MulModBig(a, a, a)
-		return EqualBig(a, squareA)
+	check("dst equals lhs and rhs", func(a *Fr, b *Fr) bool {
+		MulModFr(a, a, a)
+		return EqualFr(a, squareA)
 	})
 }

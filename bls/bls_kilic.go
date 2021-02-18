@@ -42,7 +42,7 @@ func CopyG1(dst *G1, v *G1) {
 	*dst = *v
 }
 
-func MulG1(dst *G1, a *G1, b *Big) {
+func MulG1(dst *G1, a *G1, b *Fr) {
 	curveG1.MulScalar((*kbls.PointG1)(dst), (*kbls.PointG1)(a), (*kbls.Fr)(b))
 }
 
@@ -78,7 +78,7 @@ func CopyG2(dst *G2, v *G2) {
 	*dst = *v
 }
 
-func MulG2(dst *G2, a *G2, b *Big) {
+func MulG2(dst *G2, a *G2, b *Fr) {
 	curveG2.MulScalar((*kbls.PointG2)(dst), (*kbls.PointG2)(a), (*kbls.Fr)(b))
 }
 
@@ -111,7 +111,7 @@ func EqualG2(a *G2, b *G2) bool {
 	return curveG2.Equal((*kbls.PointG2)(a), (*kbls.PointG2)(b))
 }
 
-func LinCombG1(numbers []G1, factors []Big) *G1 {
+func LinCombG1(numbers []G1, factors []Fr) *G1 {
 	if len(numbers) != len(factors) {
 		panic("got LinCombG1 numbers/factors length mismatch")
 	}
@@ -128,28 +128,28 @@ func LinCombG1(numbers []G1, factors []Big) *G1 {
 	return &out
 }
 
-func EvalPolyAtUnoptimized(dst *Big, coeffs []Big, x *Big) {
+func EvalPolyAtUnoptimized(dst *Fr, coeffs []Fr, x *Fr) {
 	if len(coeffs) == 0 {
-		CopyBigNum(dst, &ZERO)
+		CopyFr(dst, &ZERO)
 		return
 	}
 	if EqualZero(x) {
-		CopyBigNum(dst, &coeffs[0])
+		CopyFr(dst, &coeffs[0])
 		return
 	}
 	// Horner's method: work backwards, avoid doing more than N multiplications
 	// https://en.wikipedia.org/wiki/Horner%27s_method
-	var last Big
-	CopyBigNum(&last, &coeffs[len(coeffs)-1])
-	var tmp Big
+	var last Fr
+	CopyFr(&last, &coeffs[len(coeffs)-1])
+	var tmp Fr
 	for i := len(coeffs) - 2; i >= 0; i-- {
-		MulModBig(&tmp, &last, x)
-		AddModBig(&last, &tmp, &coeffs[i])
+		MulModFr(&tmp, &last, x)
+		AddModFr(&last, &tmp, &coeffs[i])
 	}
-	CopyBigNum(dst, &last)
+	CopyFr(dst, &last)
 }
 
-func EvalPolyAt(dst *Big, p []Big, x *Big) {
+func EvalPolyAt(dst *Fr, p []Fr, x *Fr) {
 	// TODO: kilic BLS has no optimized evaluation function
 	EvalPolyAtUnoptimized(dst, p, x)
 }

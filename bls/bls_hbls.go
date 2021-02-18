@@ -53,7 +53,7 @@ func CopyG1(dst *G1, v *G1) {
 	*dst = *v
 }
 
-func MulG1(dst *G1, a *G1, b *Big) {
+func MulG1(dst *G1, a *G1, b *Fr) {
 	hbls.G1Mul((*hbls.G1)(dst), (*hbls.G1)(a), (*hbls.Fr)(b))
 }
 
@@ -84,7 +84,7 @@ func CopyG2(dst *G2, v *G2) {
 	*dst = *v
 }
 
-func MulG2(dst *G2, a *G2, b *Big) {
+func MulG2(dst *G2, a *G2, b *Fr) {
 	hbls.G2Mul((*hbls.G2)(dst), (*hbls.G2)(a), (*hbls.Fr)(b))
 }
 
@@ -113,7 +113,7 @@ func EqualG2(a *G2, b *G2) bool {
 	return (*hbls.G2)(a).IsEqual((*hbls.G2)(b))
 }
 
-func LinCombG1(numbers []G1, factors []Big) *G1 {
+func LinCombG1(numbers []G1, factors []Fr) *G1 {
 	var out G1
 	// We're just using unsafe to cast elements that are an alias anyway, no problem.
 	// Go doesn't let us do the cast otherwise without copy.
@@ -121,28 +121,28 @@ func LinCombG1(numbers []G1, factors []Big) *G1 {
 	return &out
 }
 
-func EvalPolyAtUnoptimized(dst *Big, coeffs []Big, x *Big) {
+func EvalPolyAtUnoptimized(dst *Fr, coeffs []Fr, x *Fr) {
 	if len(coeffs) == 0 {
-		CopyBigNum(dst, &ZERO)
+		CopyFr(dst, &ZERO)
 		return
 	}
 	if EqualZero(x) {
-		CopyBigNum(dst, &coeffs[0])
+		CopyFr(dst, &coeffs[0])
 		return
 	}
 	// Horner's method: work backwards, avoid doing more than N multiplications
 	// https://en.wikipedia.org/wiki/Horner%27s_method
-	var last Big
-	CopyBigNum(&last, &coeffs[len(coeffs)-1])
-	var tmp Big
+	var last Fr
+	CopyFr(&last, &coeffs[len(coeffs)-1])
+	var tmp Fr
 	for i := len(coeffs) - 2; i >= 0; i-- {
-		MulModBig(&tmp, &last, x)
-		AddModBig(&last, &tmp, &coeffs[i])
+		MulModFr(&tmp, &last, x)
+		AddModFr(&last, &tmp, &coeffs[i])
 	}
-	CopyBigNum(dst, &last)
+	CopyFr(dst, &last)
 }
 
-func EvalPolyAt(dst *Big, p []Big, x *Big) {
+func EvalPolyAt(dst *Fr, p []Fr, x *Fr) {
 	if err := hbls.FrEvaluatePolynomial(
 		(*hbls.Fr)(dst),
 		*(*[]hbls.Fr)(unsafe.Pointer(&p)),

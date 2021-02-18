@@ -7,7 +7,7 @@ import (
 	"github.com/protolambda/go-kzg/bls"
 )
 
-func (fs *FFTSettings) simpleFTG1(vals []bls.G1, valsOffset uint64, valsStride uint64, rootsOfUnity []bls.Big, rootsOfUnityStride uint64, out []bls.G1) {
+func (fs *FFTSettings) simpleFTG1(vals []bls.G1, valsOffset uint64, valsStride uint64, rootsOfUnity []bls.Fr, rootsOfUnityStride uint64, out []bls.G1) {
 	l := uint64(len(out))
 	var v bls.G1
 	var tmp bls.G1
@@ -29,7 +29,7 @@ func (fs *FFTSettings) simpleFTG1(vals []bls.G1, valsOffset uint64, valsStride u
 	}
 }
 
-func (fs *FFTSettings) _fftG1(vals []bls.G1, valsOffset uint64, valsStride uint64, rootsOfUnity []bls.Big, rootsOfUnityStride uint64, out []bls.G1) {
+func (fs *FFTSettings) _fftG1(vals []bls.G1, valsOffset uint64, valsStride uint64, rootsOfUnity []bls.Fr, rootsOfUnityStride uint64, out []bls.G1) {
 	if len(out) <= 4 { // if the value count is small, run the unoptimized version instead. // TODO tune threshold. (can be different for G1)
 		fs.simpleFTG1(vals, valsOffset, valsStride, rootsOfUnity, rootsOfUnityStride, out)
 		return
@@ -68,9 +68,9 @@ func (fs *FFTSettings) FFTG1(vals []bls.G1, inv bool) ([]bls.G1, error) {
 		bls.CopyG1(&valsCopy[i], &vals[i])
 	}
 	if inv {
-		var invLen bls.Big
-		bls.AsBig(&invLen, n)
-		bls.InvModBig(&invLen, &invLen)
+		var invLen bls.Fr
+		bls.AsFr(&invLen, n)
+		bls.InvModFr(&invLen, &invLen)
 		rootz := fs.reverseRootsOfUnity[:fs.maxWidth]
 		stride := fs.maxWidth / n
 

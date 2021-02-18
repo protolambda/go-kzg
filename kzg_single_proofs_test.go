@@ -17,7 +17,7 @@ func TestKZGSettings_CheckProofSingle(t *testing.T) {
 
 	polynomial := testPoly(1, 2, 3, 4, 7, 7, 7, 7, 13, 13, 13, 13, 13, 13, 13, 13)
 	for i := 0; i < len(polynomial); i++ {
-		t.Logf("poly coeff %d: %s", i, bls.BigStr(&polynomial[i]))
+		t.Logf("poly coeff %d: %s", i, bls.FrStr(&polynomial[i]))
 	}
 
 	commitment := ks.CommitToPoly(polynomial)
@@ -26,41 +26,41 @@ func TestKZGSettings_CheckProofSingle(t *testing.T) {
 	proof := ks.ComputeProofSingle(polynomial, 17)
 	t.Log("proof\n", bls.StrG1(proof))
 
-	var x bls.Big
-	bls.AsBig(&x, 17)
-	var value bls.Big
+	var x bls.Fr
+	bls.AsFr(&x, 17)
+	var value bls.Fr
 	bls.EvalPolyAt(&value, polynomial, &x)
-	t.Log("value\n", bls.BigStr(&value))
+	t.Log("value\n", bls.FrStr(&value))
 
 	if !ks.CheckProofSingle(commitment, proof, &x, &value) {
 		t.Fatal("could not verify proof")
 	}
 }
 
-func testPoly(polynomial ...uint64) []bls.Big {
+func testPoly(polynomial ...uint64) []bls.Fr {
 	n := len(polynomial)
-	polynomialBig := make([]bls.Big, n, n)
+	polynomialFr := make([]bls.Fr, n, n)
 	for i := 0; i < n; i++ {
-		bls.AsBig(&polynomialBig[i], polynomial[i])
+		bls.AsFr(&polynomialFr[i], polynomial[i])
 	}
-	return polynomialBig
+	return polynomialFr
 }
 
 func generateSetup(secret string, n uint64) ([]bls.G1, []bls.G2) {
-	var s bls.Big
-	bls.BigNum(&s, secret)
+	var s bls.Fr
+	bls.SetFr(&s, secret)
 
-	var sPow bls.Big
-	bls.CopyBigNum(&sPow, &bls.ONE)
+	var sPow bls.Fr
+	bls.CopyFr(&sPow, &bls.ONE)
 
 	s1Out := make([]bls.G1, n, n)
 	s2Out := make([]bls.G2, n, n)
 	for i := uint64(0); i < n; i++ {
 		bls.MulG1(&s1Out[i], &bls.GenG1, &sPow)
 		bls.MulG2(&s2Out[i], &bls.GenG2, &sPow)
-		var tmp bls.Big
-		bls.CopyBigNum(&tmp, &sPow)
-		bls.MulModBig(&sPow, &tmp, &s)
+		var tmp bls.Fr
+		bls.CopyFr(&tmp, &sPow)
+		bls.MulModFr(&sPow, &tmp, &s)
 	}
 	return s1Out, s2Out
 }

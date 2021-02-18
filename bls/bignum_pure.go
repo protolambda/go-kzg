@@ -4,30 +4,29 @@ package bls
 
 import (
 	"crypto/rand"
-	"math/big"
 )
 
-var _modulus big.Int
+var _modulus fr.Int
 
 func init() {
-	BigNum((*Big)(&_modulus), "52435875175126190479447740508185965837690552500527637822603658699938581184513")
+	Fr((*Fr)(&_modulus), "52435875175126190479447740508185965837690552500527637822603658699938581184513")
 	initGlobals()
 }
 
-type Big big.Int
+type Fr fr.Int
 
-// BigNumFrom32 mutates the big num. The value v is little-endian 32-bytes.
-func BigNumFrom32(dst *Big, v [32]byte) {
+// FrFrom32 mutates the fr num. The value v is little-endian 32-bytes.
+func FrFrom32(dst *Fr, v [32]byte) {
 	// reverse endianness, big.Int takes big-endian bytes
 	for i := 0; i < 16; i++ {
 		v[i], v[31-i] = v[31-i], v[i]
 	}
-	(*big.Int)(dst).SetBytes(v[:])
+	(*fr.Int)(dst).SetBytes(v[:])
 }
 
-// BigNumTo32 serializes a big number to 32 bytes. Encoded little-endian.
-func BigNumTo32(src *Big) (v [32]byte) {
-	b := (*big.Int)(src).Bytes()
+// FrTo32 serializes a fr number to 32 bytes. Encoded little-endian.
+func FrTo32(src *Fr) (v [32]byte) {
+	b := (*fr.Int)(src).Bytes()
 	last := len(b) - 1
 	// reverse endianness, u256.Int outputs big-endian bytes
 	for i := 0; i < 16; i++ {
@@ -37,71 +36,71 @@ func BigNumTo32(src *Big) (v [32]byte) {
 	return
 }
 
-func CopyBigNum(dst *Big, v *Big) {
-	(*big.Int)(dst).Set((*big.Int)(v))
+func CopyFr(dst *Fr, v *Fr) {
+	(*fr.Int)(dst).Set((*fr.Int)(v))
 }
 
-func BigNum(dst *Big, v string) {
-	if err := (*big.Int)(dst).UnmarshalText([]byte(v)); err != nil {
+func Fr(dst *Fr, v string) {
+	if err := (*fr.Int)(dst).UnmarshalText([]byte(v)); err != nil {
 		panic(err)
 	}
 }
 
-func AsBig(dst *Big, i uint64) {
-	(*big.Int)(dst).SetUint64(i)
+func AsFr(dst *Fr, i uint64) {
+	(*fr.Int)(dst).SetUint64(i)
 }
 
-func BigStr(b *Big) string {
-	return (*big.Int)(b).String()
+func FrStr(b *Fr) string {
+	return (*fr.Int)(b).String()
 }
 
-func EqualOne(v *Big) bool {
-	return (*big.Int)(v).Cmp((*big.Int)(&ONE)) == 0
+func EqualOne(v *Fr) bool {
+	return (*fr.Int)(v).Cmp((*fr.Int)(&ONE)) == 0
 }
 
-func EqualZero(v *Big) bool {
-	return (*big.Int)(v).Cmp((*big.Int)(&ZERO)) == 0
+func EqualZero(v *Fr) bool {
+	return (*fr.Int)(v).Cmp((*fr.Int)(&ZERO)) == 0
 }
 
-func EqualBig(a *Big, b *Big) bool {
-	return (*big.Int)(a).Cmp((*big.Int)(b)) == 0
+func EqualFr(a *Fr, b *Fr) bool {
+	return (*fr.Int)(a).Cmp((*fr.Int)(b)) == 0
 }
 
-func RandomBig() *Big {
+func RandomFr() *Fr {
 	v, err := rand.Int(rand.Reader, &_modulus)
 	if err != nil {
 		panic(err)
 	}
-	return (*Big)(v)
+	return (*Fr)(v)
 }
 
-func SubModBig(dst *Big, a, b *Big) {
-	(*big.Int)(dst).Sub((*big.Int)(a), (*big.Int)(b))
-	(*big.Int)(dst).Mod((*big.Int)(dst), &_modulus)
+func SubModFr(dst *Fr, a, b *Fr) {
+	(*fr.Int)(dst).Sub((*fr.Int)(a), (*fr.Int)(b))
+	(*fr.Int)(dst).Mod((*fr.Int)(dst), &_modulus)
 }
 
-func AddModBig(dst *Big, a, b *Big) {
-	(*big.Int)(dst).Add((*big.Int)(a), (*big.Int)(b))
-	(*big.Int)(dst).Mod((*big.Int)(dst), &_modulus)
+func AddModFr(dst *Fr, a, b *Fr) {
+	(*fr.Int)(dst).Add((*fr.Int)(a), (*fr.Int)(b))
+	(*fr.Int)(dst).Mod((*fr.Int)(dst), &_modulus)
 }
 
-func DivModBig(dst *Big, a, b *Big) {
-	(*big.Int)(dst).DivMod((*big.Int)(a), (*big.Int)(b))
+func DivModFr(dst *Fr, a, b *Fr) {
+	(*fr.Int)(dst).DivMod((*fr.Int)(a), (*fr.Int)(b))
 }
 
-func MulModBig(dst *Big, a, b *Big) {
-	(*big.Int)(dst).Mul((*big.Int)(a), (*big.Int)(b))
-	(*big.Int)(dst).Mod((*big.Int)(dst), &_modulus)
+func MulModFr(dst *Fr, a, b *Fr) {
+	(*fr.Int)(dst).Mul((*fr.Int)(a), (*fr.Int)(b))
+	(*fr.Int)(dst).Mod((*fr.Int)(dst), &_modulus)
 }
 
-func PowModBig(dst *Big, a, b *Big) {
-	(*big.Int)(dst).Exp((*big.Int)(a), (*big.Int)(b), &_modulus)
+func PowModFr(dst *Fr, a, b *Fr) {
+	(*fr.Int)(dst).Exp((*fr.Int)(a), (*fr.Int)(b), &_modulus)
 }
 
-func InvModBig(dst *Big, v *Big) {
-	(*big.Int)(dst).ModInverse((*big.Int)(v), &_modulus)
+func InvModFr(dst *Fr, v *Fr) {
+	(*fr.Int)(dst).ModInverse((*fr.Int)(v), &_modulus)
 }
 
-//func sqrModBig(dst *Big, v *Big) {
+//func sqrModFr(dst *Fr, v *Fr) {
 //	(*big.Int)(dst).ModSqrt((*big.Int)(v), &_modulus)
 //}

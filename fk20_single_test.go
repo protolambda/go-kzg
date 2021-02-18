@@ -26,14 +26,14 @@ func TestKZGSettings_DAUsingFK20(t *testing.T) {
 
 	// Now check a random position
 	pos := uint64(9)
-	var posBig bls.Big
-	bls.AsBig(&posBig, pos)
-	var x bls.Big
-	bls.CopyBigNum(&x, &ks.expandedRootsOfUnity[pos])
-	t.Log("x:\n", bls.BigStr(&x))
-	var y bls.Big
+	var posFr bls.Fr
+	bls.AsFr(&posFr, pos)
+	var x bls.Fr
+	bls.CopyFr(&x, &ks.expandedRootsOfUnity[pos])
+	t.Log("x:\n", bls.FrStr(&x))
+	var y bls.Fr
 	bls.EvalPolyAt(&y, polynomial, &x)
-	t.Log("y:\n", bls.BigStr(&y))
+	t.Log("y:\n", bls.FrStr(&y))
 
 	proof := &allProofs[reverseBitsLimited(uint32(2*16), uint32(pos))]
 

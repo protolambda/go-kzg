@@ -18,15 +18,15 @@ func nextPowOf2(v uint64) uint64 {
 // Expands the power circle for a given root of unity to WIDTH+1 values.
 // The first entry will be 1, the last entry will also be 1,
 // for convenience when reversing the array (useful for inverses)
-func expandRootOfUnity(rootOfUnity *bls.Big) []bls.Big {
-	rootz := make([]bls.Big, 2)
+func expandRootOfUnity(rootOfUnity *bls.Fr) []bls.Fr {
+	rootz := make([]bls.Fr, 2)
 	rootz[0] = bls.ONE // some unused number in py code
 	rootz[1] = *rootOfUnity
 	for i := 1; !bls.EqualOne(&rootz[i]); {
-		rootz = append(rootz, bls.Big{})
+		rootz = append(rootz, bls.Fr{})
 		this := &rootz[i]
 		i++
-		bls.MulModBig(&rootz[i], this, rootOfUnity)
+		bls.MulModFr(&rootz[i], this, rootOfUnity)
 	}
 	return rootz
 }
@@ -34,11 +34,11 @@ func expandRootOfUnity(rootOfUnity *bls.Big) []bls.Big {
 type FFTSettings struct {
 	maxWidth uint64
 	// the generator used to get all roots of unity
-	rootOfUnity *bls.Big
+	rootOfUnity *bls.Fr
 	// domain, starting and ending with 1 (duplicate!)
-	expandedRootsOfUnity []bls.Big
+	expandedRootsOfUnity []bls.Fr
 	// reverse domain, same as inverse values of domain. Also starting and ending with 1.
-	reverseRootsOfUnity []bls.Big
+	reverseRootsOfUnity []bls.Fr
 }
 
 func NewFFTSettings(maxScale uint8) *FFTSettings {
@@ -46,7 +46,7 @@ func NewFFTSettings(maxScale uint8) *FFTSettings {
 	root := &bls.Scale2RootOfUnity[maxScale]
 	rootz := expandRootOfUnity(&bls.Scale2RootOfUnity[maxScale])
 	// reverse roots of unity
-	rootzReverse := make([]bls.Big, len(rootz), len(rootz))
+	rootzReverse := make([]bls.Fr, len(rootz), len(rootz))
 	copy(rootzReverse, rootz)
 	for i, j := uint64(0), uint64(len(rootz)-1); i < j; i, j = i+1, j-1 {
 		rootzReverse[i], rootzReverse[j] = rootzReverse[j], rootzReverse[i]

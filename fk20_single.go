@@ -55,7 +55,7 @@ func (ks *KZGSettings) toeplitzPart1(x []bls.G1) []bls.G1 {
 }
 
 // Performs the second part of the Toeplitz matrix multiplication algorithm
-func (ks *KZGSettings) ToeplitzPart2(toeplitzCoeffs []bls.Big, xExtFFT []bls.G1) (hExtFFT []bls.G1) {
+func (ks *KZGSettings) ToeplitzPart2(toeplitzCoeffs []bls.Fr, xExtFFT []bls.G1) (hExtFFT []bls.G1) {
 	if uint64(len(toeplitzCoeffs)) != uint64(len(xExtFFT)) {
 		panic("expected toeplitz coeffs to match xExtFFT length")
 	}
@@ -63,7 +63,7 @@ func (ks *KZGSettings) ToeplitzPart2(toeplitzCoeffs []bls.Big, xExtFFT []bls.G1)
 	if err != nil {
 		panic(fmt.Errorf("FFT failed in toeplitz part 2: %v", err))
 	}
-	//debugBigs("focus toeplitzCoeffsFFT", toeplitzCoeffsFFT)
+	//debugFrs("focus toeplitzCoeffsFFT", toeplitzCoeffsFFT)
 	//DebugG1s("xExtFFT", xExtFFT)
 	n := uint64(len(toeplitzCoeffsFFT))
 	//print("mul n: ", n)
@@ -85,40 +85,40 @@ func (ks *KZGSettings) ToeplitzPart3(hExtFFT []bls.G1) []bls.G1 {
 	return out[:len(out)/2]
 }
 
-func (ks *KZGSettings) toeplitzCoeffsStepStrided(polynomial []bls.Big, offset uint64, stride uint64) []bls.Big {
+func (ks *KZGSettings) toeplitzCoeffsStepStrided(polynomial []bls.Fr, offset uint64, stride uint64) []bls.Fr {
 	n := uint64(len(polynomial))
 	k := n / stride
 	k2 := k * 2
 	// [last poly item] + [0]*(n+1) + [poly items except first and last]
-	toeplitzCoeffs := make([]bls.Big, k2, k2)
-	bls.CopyBigNum(&toeplitzCoeffs[0], &polynomial[n-1-offset])
+	toeplitzCoeffs := make([]bls.Fr, k2, k2)
+	bls.CopyFr(&toeplitzCoeffs[0], &polynomial[n-1-offset])
 	for i := uint64(1); i <= k+1; i++ {
-		bls.CopyBigNum(&toeplitzCoeffs[i], &bls.ZERO)
+		bls.CopyFr(&toeplitzCoeffs[i], &bls.ZERO)
 	}
 	for i, j := k+2, 2*stride-offset-1; i < k2; i, j = i+1, j+stride {
-		bls.CopyBigNum(&toeplitzCoeffs[i], &polynomial[j])
+		bls.CopyFr(&toeplitzCoeffs[i], &polynomial[j])
 	}
 	return toeplitzCoeffs
 }
 
 // TODO: call above with offset=0, stride=1
-func (ks *KZGSettings) toeplitzCoeffsStep(polynomial []bls.Big) []bls.Big {
+func (ks *KZGSettings) toeplitzCoeffsStep(polynomial []bls.Fr) []bls.Fr {
 	n := uint64(len(polynomial))
 	n2 := n * 2
 	// [last poly item] + [0]*(n+1) + [poly items except first and last]
-	toeplitzCoeffs := make([]bls.Big, n2, n2)
-	bls.CopyBigNum(&toeplitzCoeffs[0], &polynomial[n-1])
+	toeplitzCoeffs := make([]bls.Fr, n2, n2)
+	bls.CopyFr(&toeplitzCoeffs[0], &polynomial[n-1])
 	for i := uint64(1); i <= n+1; i++ {
-		bls.CopyBigNum(&toeplitzCoeffs[i], &bls.ZERO)
+		bls.CopyFr(&toeplitzCoeffs[i], &bls.ZERO)
 	}
 	for i, j := n+2, 1; i < n2; i, j = i+1, j+1 {
-		bls.CopyBigNum(&toeplitzCoeffs[i], &polynomial[j])
+		bls.CopyFr(&toeplitzCoeffs[i], &polynomial[j])
 	}
 	return toeplitzCoeffs
 }
 
 // Compute all n (single) proofs according to FK20 method
-func (fk *FK20SingleSettings) FK20Single(polynomial []bls.Big) []bls.G1 {
+func (fk *FK20SingleSettings) FK20Single(polynomial []bls.Fr) []bls.G1 {
 	toeplitzCoeffs := fk.toeplitzCoeffsStep(polynomial)
 	// Compute the vector h from the paper using a Toeplitz matrix multiplication
 	hExtFFT := fk.ToeplitzPart2(toeplitzCoeffs, fk.xExtFFT)
@@ -135,7 +135,7 @@ func (fk *FK20SingleSettings) FK20Single(polynomial []bls.Big) []bls.G1 {
 // Special version of the FK20 for the situation of data availability checks:
 // The upper half of the polynomial coefficients is always 0, so we do not need to extend to twice the size
 // for Toeplitz matrix multiplication
-func (fk *FK20SingleSettings) FK20SingleDAOptimized(polynomial []bls.Big) []bls.G1 {
+func (fk *FK20SingleSettings) FK20SingleDAOptimized(polynomial []bls.Fr) []bls.G1 {
 	if uint64(len(polynomial)) > fk.maxWidth {
 		panic(fmt.Errorf(
 			"expected input of length %d (incl half of zeroes) to not exceed precomputed settings length %d",
@@ -172,7 +172,7 @@ func (fk *FK20SingleSettings) FK20SingleDAOptimized(polynomial []bls.Big) []bls.
 
 // Computes all the KZG proofs for data availability checks. This involves sampling on the double domain
 // and reordering according to reverse bit order
-func (fk *FK20SingleSettings) DAUsingFK20(polynomial []bls.Big) []bls.G1 {
+func (fk *FK20SingleSettings) DAUsingFK20(polynomial []bls.Fr) []bls.G1 {
 	n := uint64(len(polynomial))
 	if n > fk.maxWidth/2 {
 		panic("expected poly contents not bigger than half the size of the FK20-single settings")
@@ -181,12 +181,12 @@ func (fk *FK20SingleSettings) DAUsingFK20(polynomial []bls.Big) []bls.G1 {
 		panic("expected poly length to be power of two")
 	}
 	n2 := n * 2
-	extendedPolynomial := make([]bls.Big, n2, n2)
+	extendedPolynomial := make([]bls.Fr, n2, n2)
 	for i := uint64(0); i < n; i++ {
-		bls.CopyBigNum(&extendedPolynomial[i], &polynomial[i])
+		bls.CopyFr(&extendedPolynomial[i], &polynomial[i])
 	}
 	for i := n; i < n2; i++ {
-		bls.CopyBigNum(&extendedPolynomial[i], &bls.ZERO)
+		bls.CopyFr(&extendedPolynomial[i], &bls.ZERO)
 	}
 	allProofs := fk.FK20SingleDAOptimized(extendedPolynomial)
 	// change to reverse bit order.

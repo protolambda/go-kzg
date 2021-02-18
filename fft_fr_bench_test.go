@@ -8,9 +8,9 @@ import (
 
 func benchFFT(scale uint8, b *testing.B) {
 	fs := NewFFTSettings(scale)
-	data := make([]bls.Big, fs.maxWidth, fs.maxWidth)
+	data := make([]bls.Fr, fs.maxWidth, fs.maxWidth)
 	for i := uint64(0); i < fs.maxWidth; i++ {
-		bls.CopyBigNum(&data[i], bls.RandomBig())
+		bls.CopyFr(&data[i], bls.RandomFr())
 	}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {

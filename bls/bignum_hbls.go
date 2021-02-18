@@ -13,21 +13,21 @@ func init() {
 	initG1G2()
 }
 
-type Big hbls.Fr
+type Fr hbls.Fr
 
-func BigNum(dst *Big, v string) {
+func SetFr(dst *Fr, v string) {
 	if err := (*hbls.Fr)(dst).SetString(v, 10); err != nil {
 		panic(err)
 	}
 }
 
-// BigNumFrom32 mutates the big num. The value v is little-endian 32-bytes.
-func BigNumFrom32(dst *Big, v [32]byte) {
+// FrFrom32 mutates the fr num. The value v is little-endian 32-bytes.
+func FrFrom32(dst *Fr, v [32]byte) {
 	(*hbls.Fr)(dst).SetLittleEndian(v[:])
 }
 
-// BigNumTo32 serializes a big number to 32 bytes. Encoded little-endian.
-func BigNumTo32(src *Big) (v [32]byte) {
+// FrTo32 serializes a fr number to 32 bytes. Encoded little-endian.
+func FrTo32(src *Fr) (v [32]byte) {
 	b := (*hbls.Fr)(src).Serialize()
 	last := len(b) - 1
 	// reverse endianness, Herumi outputs big-endian bytes
@@ -38,59 +38,59 @@ func BigNumTo32(src *Big) (v [32]byte) {
 	return
 }
 
-func CopyBigNum(dst *Big, v *Big) {
+func CopyFr(dst *Fr, v *Fr) {
 	*dst = *v
 }
 
-func AsBig(dst *Big, i uint64) {
+func AsFr(dst *Fr, i uint64) {
 	(*hbls.Fr)(dst).SetInt64(int64(i))
 }
 
-func BigStr(b *Big) string {
+func FrStr(b *Fr) string {
 	if b == nil {
 		return "<nil>"
 	}
 	return (*hbls.Fr)(b).GetString(10)
 }
 
-func EqualOne(v *Big) bool {
+func EqualOne(v *Fr) bool {
 	return (*hbls.Fr)(v).IsOne()
 }
 
-func EqualZero(v *Big) bool {
+func EqualZero(v *Fr) bool {
 	return (*hbls.Fr)(v).IsZero()
 }
 
-func EqualBig(a *Big, b *Big) bool {
+func EqualFr(a *Fr, b *Fr) bool {
 	return (*hbls.Fr)(a).IsEqual((*hbls.Fr)(b))
 }
 
-func RandomBig() *Big {
+func RandomFr() *Fr {
 	var out hbls.Fr
 	out.SetByCSPRNG()
-	return (*Big)(&out)
+	return (*Fr)(&out)
 }
 
-func SubModBig(dst *Big, a, b *Big) {
+func SubModFr(dst *Fr, a, b *Fr) {
 	hbls.FrSub((*hbls.Fr)(dst), (*hbls.Fr)(a), (*hbls.Fr)(b))
 }
 
-func AddModBig(dst *Big, a, b *Big) {
+func AddModFr(dst *Fr, a, b *Fr) {
 	hbls.FrAdd((*hbls.Fr)(dst), (*hbls.Fr)(a), (*hbls.Fr)(b))
 }
 
-func DivModBig(dst *Big, a, b *Big) {
+func DivModFr(dst *Fr, a, b *Fr) {
 	hbls.FrDiv((*hbls.Fr)(dst), (*hbls.Fr)(a), (*hbls.Fr)(b))
 }
 
-func MulModBig(dst *Big, a, b *Big) {
+func MulModFr(dst *Fr, a, b *Fr) {
 	hbls.FrMul((*hbls.Fr)(dst), (*hbls.Fr)(a), (*hbls.Fr)(b))
 }
 
-func InvModBig(dst *Big, v *Big) {
+func InvModFr(dst *Fr, v *Fr) {
 	hbls.FrInv((*hbls.Fr)(dst), (*hbls.Fr)(v))
 }
 
-//func SqrModBig(dst *Big, v *Big) {
+//func SqrModFr(dst *Fr, v *Fr) {
 //	hbls.FrSqr((*hbls.Fr)(dst), (*hbls.Fr)(v))
 //}

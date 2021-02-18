@@ -17,17 +17,17 @@ func TestKZGSettings_DAUsingFK20Multi(t *testing.T) {
 	fk := NewFK20MultiSettings(ks, n*2, chunkLen)
 
 	// replicate same polynomial as in python test
-	polynomial := make([]bls.Big, n, n)
-	var tmp134 bls.Big
-	bls.AsBig(&tmp134, 134)
+	polynomial := make([]bls.Fr, n, n)
+	var tmp134 bls.Fr
+	bls.AsFr(&tmp134, 134)
 	for i := uint64(0); i < chunkCount; i++ {
 		// Note: different contents from older python test, make each section different,
 		// to cover toeplitz coefficient edge cases better.
 		for j, v := range []uint64{1, 2, 3, 4 + i, 7, 8 + i*i, 9, 10, 13, 14, 1, 15, 0, 1000, 0, 33} {
-			bls.AsBig(&polynomial[i*chunkLen+uint64(j)], v)
+			bls.AsFr(&polynomial[i*chunkLen+uint64(j)], v)
 		}
-		bls.SubModBig(&polynomial[i*chunkLen+12], &bls.ZERO, &bls.ONE) // "MODULUS - 1"
-		bls.SubModBig(&polynomial[i*chunkLen+14], &bls.ZERO, &tmp134)  // "MODULUS - 134"
+		bls.SubModFr(&polynomial[i*chunkLen+12], &bls.ZERO, &bls.ONE) // "MODULUS - 1"
+		bls.SubModFr(&polynomial[i*chunkLen+14], &bls.ZERO, &tmp134)  // "MODULUS - 134"
 	}
 
 	commitment := ks.CommitToPoly(polynomial)
@@ -41,42 +41,42 @@ func TestKZGSettings_DAUsingFK20Multi(t *testing.T) {
 
 	// We have the data in polynomial form already,
 	// no need to use the DAS FFT (which extends data directly, not coeffs).
-	extendedCoeffs := make([]bls.Big, n*2, n*2)
+	extendedCoeffs := make([]bls.Fr, n*2, n*2)
 	for i := uint64(0); i < n; i++ {
-		bls.CopyBigNum(&extendedCoeffs[i], &polynomial[i])
+		bls.CopyFr(&extendedCoeffs[i], &polynomial[i])
 	}
 	for i := n; i < n*2; i++ {
-		bls.CopyBigNum(&extendedCoeffs[i], &bls.ZERO)
+		bls.CopyFr(&extendedCoeffs[i], &bls.ZERO)
 	}
 	extendedData, err := ks.FFT(extendedCoeffs, false)
 	if err != nil {
 		t.Fatal(err)
 	}
-	reverseBitOrderBig(extendedData)
-	debugBigs("extended_data", extendedData)
+	reverseBitOrderFr(extendedData)
+	debugFrs("extended_data", extendedData)
 
 	n2 := n * 2
 	domainStride := fk.maxWidth / n2
 	for pos := uint64(0); pos < 2*chunkCount; pos++ {
 		domainPos := reverseBitsLimited(uint32(2*chunkCount), uint32(pos))
-		var x bls.Big
-		bls.CopyBigNum(&x, &ks.expandedRootsOfUnity[uint64(domainPos)*domainStride])
+		var x bls.Fr
+		bls.CopyFr(&x, &ks.expandedRootsOfUnity[uint64(domainPos)*domainStride])
 		ys := extendedData[chunkLen*pos : chunkLen*(pos+1)]
 		// ys, but constructed by evaluating the polynomial in the sub-domain range
-		ys2 := make([]bls.Big, chunkLen, chunkLen)
+		ys2 := make([]bls.Fr, chunkLen, chunkLen)
 		// don't recompute the subgroup domain, just select it from the bigger domain by applying a stride
 		stride := ks.maxWidth / chunkLen
-		coset := make([]bls.Big, chunkLen, chunkLen)
+		coset := make([]bls.Fr, chunkLen, chunkLen)
 		for i := uint64(0); i < chunkLen; i++ {
-			var z bls.Big // a value of the coset list
-			bls.MulModBig(&z, &x, &ks.expandedRootsOfUnity[i*stride])
-			bls.CopyBigNum(&coset[i], &z)
+			var z bls.Fr // a value of the coset list
+			bls.MulModFr(&z, &x, &ks.expandedRootsOfUnity[i*stride])
+			bls.CopyFr(&coset[i], &z)
 			bls.EvalPolyAt(&ys2[i], polynomial, &z)
 		}
 		// permanently change order of ys values
-		reverseBitOrderBig(ys)
+		reverseBitOrderFr(ys)
 		for i := 0; i < len(ys); i++ {
-			if !bls.EqualBig(&ys[i], &ys2[i]) {
+			if !bls.EqualFr(&ys[i], &ys2[i]) {
 				t.Fatal("failed to reproduce matching y values for subgroup")
 			}
 		}

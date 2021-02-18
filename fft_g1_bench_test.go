@@ -14,7 +14,7 @@ func benchFFTG1(scale uint8, b *testing.B) {
 	for i := uint64(0); i < fs.maxWidth; i++ {
 		var tmpG1 bls.G1
 		bls.CopyG1(&tmpG1, &bls.GenG1)
-		bls.MulG1(&data[i], &tmpG1, bls.RandomBig())
+		bls.MulG1(&data[i], &tmpG1, bls.RandomFr())
 	}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {

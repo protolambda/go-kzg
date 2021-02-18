@@ -7,12 +7,12 @@ package kzg
 import "github.com/protolambda/go-kzg/bls"
 
 // KZG commitment to polynomial in coefficient form
-func (ks *KZGSettings) CommitToPoly(coeffs []bls.Big) *bls.G1 {
+func (ks *KZGSettings) CommitToPoly(coeffs []bls.Fr) *bls.G1 {
 	return bls.LinCombG1(ks.secretG1[:len(coeffs)], coeffs)
 }
 
 // KZG commitment to polynomial in coefficient form, unoptimized version
-func (ks *KZGSettings) CommitToPolyUnoptimized(coeffs []bls.Big) *bls.G1 {
+func (ks *KZGSettings) CommitToPolyUnoptimized(coeffs []bls.Fr) *bls.G1 {
 	// Do so by computing the linear combination with the shared secret.
 	var out bls.G1
 	bls.ClearG1(&out)
@@ -26,20 +26,20 @@ func (ks *KZGSettings) CommitToPolyUnoptimized(coeffs []bls.Big) *bls.G1 {
 }
 
 // Compute KZG proof for polynomial in coefficient form at position x
-func (ks *KZGSettings) ComputeProofSingle(poly []bls.Big, x uint64) *bls.G1 {
+func (ks *KZGSettings) ComputeProofSingle(poly []bls.Fr, x uint64) *bls.G1 {
 	// divisor = [-x, 1]
-	divisor := [2]bls.Big{}
-	var tmp bls.Big
-	bls.AsBig(&tmp, x)
-	bls.SubModBig(&divisor[0], &bls.ZERO, &tmp)
-	bls.CopyBigNum(&divisor[1], &bls.ONE)
+	divisor := [2]bls.Fr{}
+	var tmp bls.Fr
+	bls.AsFr(&tmp, x)
+	bls.SubModFr(&divisor[0], &bls.ZERO, &tmp)
+	bls.CopyFr(&divisor[1], &bls.ONE)
 	//for i := 0; i < 2; i++ {
-	//	fmt.Printf("div poly %d: %s\n", i, BigStr(&divisor[i]))
+	//	fmt.Printf("div poly %d: %s\n", i, FrStr(&divisor[i]))
 	//}
 	// quot = poly / divisor
 	quotientPolynomial := polyLongDiv(poly, divisor[:])
 	//for i := 0; i < len(quotientPolynomial); i++ {
-	//	fmt.Printf("quot poly %d: %s\n", i, BigStr(&quotientPolynomial[i]))
+	//	fmt.Printf("quot poly %d: %s\n", i, FrStr(&quotientPolynomial[i]))
 	//}
 
 	// evaluate quotient poly at shared secret, in G1
@@ -47,7 +47,7 @@ func (ks *KZGSettings) ComputeProofSingle(poly []bls.Big, x uint64) *bls.G1 {
 }
 
 // Check a proof for a KZG commitment for an evaluation f(x) = y
-func (ks *KZGSettings) CheckProofSingle(commitment *bls.G1, proof *bls.G1, x *bls.Big, y *bls.Big) bool {
+func (ks *KZGSettings) CheckProofSingle(commitment *bls.G1, proof *bls.G1, x *bls.Fr, y *bls.Fr) bool {
 	// Verify the pairing equation
 	var xG2 bls.G2
 	bls.MulG2(&xG2, &bls.GenG2, x)
