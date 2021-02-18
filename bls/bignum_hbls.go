@@ -4,6 +4,7 @@ package bls
 
 import (
 	hbls "github.com/herumi/bls-eth-go-binary/bls"
+	"unsafe"
 )
 
 func init() {
