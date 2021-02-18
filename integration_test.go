@@ -14,7 +14,7 @@ import (
 // change to reverse bit order
 // extend data
 // compute commitment over extended data
-func integrationTestSetup(scale uint8, seed int64) (data []byte, extended []bls.Fr, extendedAsPoly []bls.Fr, commit *bls.G1, ks *KZGSettings) {
+func integrationTestSetup(scale uint8, seed int64) (data []byte, extended []bls.Fr, extendedAsPoly []bls.Fr, commit *bls.G1Point, ks *KZGSettings) {
 	points := 1 << scale
 	size := points * 31
 	data = make([]byte, size, size)
@@ -60,7 +60,7 @@ func integrationTestSetup(scale uint8, seed int64) (data []byte, extended []bls.
 }
 
 type sample struct {
-	proof *bls.G1
+	proof *bls.G1Point
 	sub   []bls.Fr
 }
 

@@ -9,13 +9,13 @@ import (
 	"unsafe"
 )
 
-var ZERO_G1 G1
+var ZERO_G1 G1Point
 
-var GenG1 G1
-var GenG2 G2
+var GenG1 G1Point
+var GenG2 G2Point
 
-var ZeroG1 G1
-var ZeroG2 G2
+var ZeroG1 G1Point
+var ZeroG2 G2Point
 
 // Herumi BLS doesn't offer these points to us, so we have to work around it by declaring them ourselves.
 func initG1G2() {
@@ -43,117 +43,86 @@ func initG1G2() {
 }
 
 // TODO types file, swap BLS with build args
-type G1 hbls.G1
+type G1Point hbls.G1
 
-func ClearG1(x *G1) {
+func ClearG1(x *G1Point) {
 	(*hbls.G1)(x).Clear()
 }
 
-func CopyG1(dst *G1, v *G1) {
+func CopyG1(dst *G1Point, v *G1Point) {
 	*dst = *v
 }
 
-func MulG1(dst *G1, a *G1, b *Fr) {
+func MulG1(dst *G1Point, a *G1Point, b *Fr) {
 	hbls.G1Mul((*hbls.G1)(dst), (*hbls.G1)(a), (*hbls.Fr)(b))
 }
 
-func AddG1(dst *G1, a *G1, b *G1) {
+func AddG1(dst *G1Point, a *G1Point, b *G1Point) {
 	hbls.G1Add((*hbls.G1)(dst), (*hbls.G1)(a), (*hbls.G1)(b))
 }
 
-func SubG1(dst *G1, a *G1, b *G1) {
+func SubG1(dst *G1Point, a *G1Point, b *G1Point) {
 	hbls.G1Sub((*hbls.G1)(dst), (*hbls.G1)(a), (*hbls.G1)(b))
 }
 
-func StrG1(v *G1) string {
+func StrG1(v *G1Point) string {
 	return (*hbls.G1)(v).GetString(10)
 }
 
-func NegG1(dst *G1) {
+func NegG1(dst *G1Point) {
 	// in-place should be safe here (TODO double check)
 	hbls.G1Neg((*hbls.G1)(dst), (*hbls.G1)(dst))
 }
 
-type G2 hbls.G2
+type G2Point hbls.G2
 
-func ClearG2(x *G2) {
+func ClearG2(x *G2Point) {
 	(*hbls.G2)(x).Clear()
 }
 
-func CopyG2(dst *G2, v *G2) {
+func CopyG2(dst *G2Point, v *G2Point) {
 	*dst = *v
 }
 
-func MulG2(dst *G2, a *G2, b *Fr) {
+func MulG2(dst *G2Point, a *G2Point, b *Fr) {
 	hbls.G2Mul((*hbls.G2)(dst), (*hbls.G2)(a), (*hbls.Fr)(b))
 }
 
-func AddG2(dst *G2, a *G2, b *G2) {
+func AddG2(dst *G2Point, a *G2Point, b *G2Point) {
 	hbls.G2Add((*hbls.G2)(dst), (*hbls.G2)(a), (*hbls.G2)(b))
 }
 
-func SubG2(dst *G2, a *G2, b *G2) {
+func SubG2(dst *G2Point, a *G2Point, b *G2Point) {
 	hbls.G2Sub((*hbls.G2)(dst), (*hbls.G2)(a), (*hbls.G2)(b))
 }
 
-func NegG2(dst *G2) {
+func NegG2(dst *G2Point) {
 	// in-place should be safe here (TODO double check)
 	hbls.G2Neg((*hbls.G2)(dst), (*hbls.G2)(dst))
 }
 
-func StrG2(v *G2) string {
+func StrG2(v *G2Point) string {
 	return (*hbls.G2)(v).GetString(10)
 }
 
-func EqualG1(a *G1, b *G1) bool {
+func EqualG1(a *G1Point, b *G1Point) bool {
 	return (*hbls.G1)(a).IsEqual((*hbls.G1)(b))
 }
 
-func EqualG2(a *G2, b *G2) bool {
+func EqualG2(a *G2Point, b *G2Point) bool {
 	return (*hbls.G2)(a).IsEqual((*hbls.G2)(b))
 }
 
-func LinCombG1(numbers []G1, factors []Fr) *G1 {
-	var out G1
+func LinCombG1(numbers []G1Point, factors []Fr) *G1Point {
+	var out G1Point
 	// We're just using unsafe to cast elements that are an alias anyway, no problem.
 	// Go doesn't let us do the cast otherwise without copy.
 	hbls.G1MulVec((*hbls.G1)(&out), *(*[]hbls.G1)(unsafe.Pointer(&numbers)), *(*[]hbls.Fr)(unsafe.Pointer(&factors)))
 	return &out
 }
 
-func EvalPolyAtUnoptimized(dst *Fr, coeffs []Fr, x *Fr) {
-	if len(coeffs) == 0 {
-		CopyFr(dst, &ZERO)
-		return
-	}
-	if EqualZero(x) {
-		CopyFr(dst, &coeffs[0])
-		return
-	}
-	// Horner's method: work backwards, avoid doing more than N multiplications
-	// https://en.wikipedia.org/wiki/Horner%27s_method
-	var last Fr
-	CopyFr(&last, &coeffs[len(coeffs)-1])
-	var tmp Fr
-	for i := len(coeffs) - 2; i >= 0; i-- {
-		MulModFr(&tmp, &last, x)
-		AddModFr(&last, &tmp, &coeffs[i])
-	}
-	CopyFr(dst, &last)
-}
-
-func EvalPolyAt(dst *Fr, p []Fr, x *Fr) {
-	if err := hbls.FrEvaluatePolynomial(
-		(*hbls.Fr)(dst),
-		*(*[]hbls.Fr)(unsafe.Pointer(&p)),
-		(*hbls.Fr)(x),
-	); err != nil {
-		panic(err) // TODO: why does the herumi API return an error? When coefficients are empty?
-	}
-}
-
 // e(a1^(-1), a2) * e(b1,  b2) = 1_T
-func PairingsVerify(a1 *G1, a2 *G2, b1 *G1, b2 *G2) bool {
+func PairingsVerify(a1 *G1Point, a2 *G2Point, b1 *G1Point, b2 *G2Point) bool {
 	var tmp hbls.GT
 	hbls.Pairing(&tmp, (*hbls.G1)(a1), (*hbls.G2)(a2))
 	//fmt.Println("tmp", tmp.GetString(10))
@@ -180,7 +149,7 @@ func PairingsVerify(a1 *G1, a2 *G2, b1 *G1, b2 *G2) bool {
 	//return tmp.IsEqual(&tmp2)
 }
 
-func DebugG1s(msg string, values []G1) {
+func DebugG1s(msg string, values []G1Point) {
 	var out strings.Builder
 	for i := range values {
 		out.WriteString(fmt.Sprintf("%s %d: %s\n", msg, i, StrG1(&values[i])))

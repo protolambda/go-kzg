@@ -149,7 +149,7 @@ BenchmarkFFTSettings_FFT/scale_14-8        	     288	  43007504 ns/op
 BenchmarkFFTSettings_FFT/scale_15-8        	     130	  89666704 ns/op
 ```
 
-And with Go native fr numbers (`fr.Int`):
+And with Go native fr numbers (`Fr`):
 ```
 BenchmarkFFTSettings_FFT/scale_4-8         	  276931	     42424 ns/op
 BenchmarkFFTSettings_FFT/scale_5-8         	  116278	     96975 ns/op

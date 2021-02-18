@@ -6,6 +6,7 @@ import (
 	"crypto/rand"
 	"encoding/binary"
 	kbls "github.com/kilic/bls12-381"
+	"math/big"
 )
 
 func init() {
@@ -17,7 +18,7 @@ func init() {
 type Fr kbls.Fr
 
 func SetFr(dst *Fr, v string) {
-	var bv fr.Int
+	var bv big.Int
 	bv.SetString(v, 10)
 	(*kbls.Fr)(dst).FromBytes(bv.Bytes())
 }
@@ -49,7 +50,7 @@ func CopyFr(dst *Fr, v *Fr) {
 
 func AsFr(dst *Fr, i uint64) {
 	var data [8]byte
-	binary.FrEndian.PutUint64(data[:], i)
+	binary.BigEndian.PutUint64(data[:], i)
 	(*kbls.Fr)(dst).FromBytes(data[:])
 }
 
@@ -57,7 +58,7 @@ func FrStr(b *Fr) string {
 	if b == nil {
 		return "<nil>"
 	}
-	return (*kbls.Fr)(b).ToFr().String()
+	return (*kbls.Fr)(b).ToBig().String()
 }
 
 func EqualOne(v *Fr) bool {
@@ -105,3 +106,8 @@ func InvModFr(dst *Fr, v *Fr) {
 //func SqrModFr(dst *Fr, v *Fr) {
 //	kbls.FrSqr((*kbls.Fr)(dst), (*kbls.Fr)(v))
 //}
+
+func EvalPolyAt(dst *Fr, p []Fr, x *Fr) {
+	// TODO: kilic BLS has no optimized evaluation function
+	EvalPolyAtUnoptimized(dst, p, x)
+}

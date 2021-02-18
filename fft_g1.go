@@ -7,11 +7,11 @@ import (
 	"github.com/protolambda/go-kzg/bls"
 )
 
-func (fs *FFTSettings) simpleFTG1(vals []bls.G1, valsOffset uint64, valsStride uint64, rootsOfUnity []bls.Fr, rootsOfUnityStride uint64, out []bls.G1) {
+func (fs *FFTSettings) simpleFTG1(vals []bls.G1Point, valsOffset uint64, valsStride uint64, rootsOfUnity []bls.Fr, rootsOfUnityStride uint64, out []bls.G1Point) {
 	l := uint64(len(out))
-	var v bls.G1
-	var tmp bls.G1
-	var last bls.G1
+	var v bls.G1Point
+	var tmp bls.G1Point
+	var last bls.G1Point
 	for i := uint64(0); i < l; i++ {
 		jv := &vals[valsOffset]
 		r := &rootsOfUnity[0]
@@ -29,7 +29,7 @@ func (fs *FFTSettings) simpleFTG1(vals []bls.G1, valsOffset uint64, valsStride u
 	}
 }
 
-func (fs *FFTSettings) _fftG1(vals []bls.G1, valsOffset uint64, valsStride uint64, rootsOfUnity []bls.Fr, rootsOfUnityStride uint64, out []bls.G1) {
+func (fs *FFTSettings) _fftG1(vals []bls.G1Point, valsOffset uint64, valsStride uint64, rootsOfUnity []bls.Fr, rootsOfUnityStride uint64, out []bls.G1Point) {
 	if len(out) <= 4 { // if the value count is small, run the unoptimized version instead. // TODO tune threshold. (can be different for G1)
 		fs.simpleFTG1(vals, valsOffset, valsStride, rootsOfUnity, rootsOfUnityStride, out)
 		return
@@ -41,8 +41,8 @@ func (fs *FFTSettings) _fftG1(vals []bls.G1, valsOffset uint64, valsStride uint6
 	// R will be the right half of out
 	fs._fftG1(vals, valsOffset+valsStride, valsStride<<1, rootsOfUnity, rootsOfUnityStride<<1, out[half:]) // just take even again
 
-	var yTimesRoot bls.G1
-	var x, y bls.G1
+	var yTimesRoot bls.G1Point
+	var x, y bls.G1Point
 	for i := uint64(0); i < half; i++ {
 		// temporary copies, so that writing to output doesn't conflict with input
 		bls.CopyG1(&x, &out[i])
@@ -54,7 +54,7 @@ func (fs *FFTSettings) _fftG1(vals []bls.G1, valsOffset uint64, valsStride uint6
 	}
 }
 
-func (fs *FFTSettings) FFTG1(vals []bls.G1, inv bool) ([]bls.G1, error) {
+func (fs *FFTSettings) FFTG1(vals []bls.G1Point, inv bool) ([]bls.G1Point, error) {
 	n := uint64(len(vals))
 	if n > fs.maxWidth {
 		return nil, fmt.Errorf("got %d values but only have %d roots of unity", n, fs.maxWidth)
@@ -63,7 +63,7 @@ func (fs *FFTSettings) FFTG1(vals []bls.G1, inv bool) ([]bls.G1, error) {
 		return nil, fmt.Errorf("got %d values but not a power of two", n)
 	}
 	// We make a copy so we can mutate it during the work.
-	valsCopy := make([]bls.G1, n, n)
+	valsCopy := make([]bls.G1Point, n, n)
 	for i := 0; i < len(vals); i++ { // TODO: maybe optimize this away, and write back to original input array?
 		bls.CopyG1(&valsCopy[i], &vals[i])
 	}
@@ -74,16 +74,16 @@ func (fs *FFTSettings) FFTG1(vals []bls.G1, inv bool) ([]bls.G1, error) {
 		rootz := fs.reverseRootsOfUnity[:fs.maxWidth]
 		stride := fs.maxWidth / n
 
-		out := make([]bls.G1, n, n)
+		out := make([]bls.G1Point, n, n)
 		fs._fftG1(valsCopy, 0, 1, rootz, stride, out)
-		var tmp bls.G1
+		var tmp bls.G1Point
 		for i := 0; i < len(out); i++ {
 			bls.MulG1(&tmp, &out[i], &invLen)
 			bls.CopyG1(&out[i], &tmp)
 		}
 		return out, nil
 	} else {
-		out := make([]bls.G1, n, n)
+		out := make([]bls.G1Point, n, n)
 		rootz := fs.expandedRootsOfUnity[:fs.maxWidth]
 		stride := fs.maxWidth / n
 		// Regular FFT
@@ -93,11 +93,11 @@ func (fs *FFTSettings) FFTG1(vals []bls.G1, inv bool) ([]bls.G1, error) {
 }
 
 // rearrange G1 elements in reverse bit order. Supports 2**31 max element count.
-func reverseBitOrderG1(values []bls.G1) {
+func reverseBitOrderG1(values []bls.G1Point) {
 	if len(values) > (1 << 31) {
 		panic("list too large")
 	}
-	var tmp bls.G1
+	var tmp bls.G1Point
 	reverseBitOrder(uint32(len(values)), func(i, j uint32) {
 		bls.CopyG1(&tmp, &values[i])
 		bls.CopyG1(&values[i], &values[j])

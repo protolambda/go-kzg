@@ -12,13 +12,13 @@ type KZGSettings struct {
 
 	// setup values
 	// [b.multiply(b.G1, pow(s, i, MODULUS)) for i in range(WIDTH+1)],
-	secretG1         []bls.G1
-	extendedSecretG1 []bls.G1
+	secretG1         []bls.G1Point
+	extendedSecretG1 []bls.G1Point
 	// [b.multiply(b.G2, pow(s, i, MODULUS)) for i in range(WIDTH+1)],
-	secretG2 []bls.G2
+	secretG2 []bls.G2Point
 }
 
-func NewKZGSettings(fs *FFTSettings, secretG1 []bls.G1, secretG2 []bls.G2) *KZGSettings {
+func NewKZGSettings(fs *FFTSettings, secretG1 []bls.G1Point, secretG2 []bls.G2Point) *KZGSettings {
 	if len(secretG1) != len(secretG2) {
 		panic("secret list lengths don't match")
 	}
@@ -38,7 +38,7 @@ func NewKZGSettings(fs *FFTSettings, secretG1 []bls.G1, secretG2 []bls.G2) *KZGS
 
 type FK20SingleSettings struct {
 	*KZGSettings
-	xExtFFT []bls.G1
+	xExtFFT []bls.G1Point
 }
 
 func NewFK20SingleSettings(ks *KZGSettings, n2 uint64) *FK20SingleSettings {
@@ -55,7 +55,7 @@ func NewFK20SingleSettings(ks *KZGSettings, n2 uint64) *FK20SingleSettings {
 	fk := &FK20SingleSettings{
 		KZGSettings: ks,
 	}
-	x := make([]bls.G1, n, n)
+	x := make([]bls.G1Point, n, n)
 	for i, j := uint64(0), n-2; i < n-1; i, j = i+1, j-1 {
 		bls.CopyG1(&x[i], &ks.secretG1[j])
 	}
@@ -68,7 +68,7 @@ type FK20MultiSettings struct {
 	*KZGSettings
 	chunkLen uint64
 	// chunkLen files, each of size maxWidth
-	xExtFFTFiles [][]bls.G1
+	xExtFFTFiles [][]bls.G1Point
 }
 
 func NewFK20MultiSettings(ks *KZGSettings, n2 uint64, chunkLen uint64) *FK20MultiSettings {
@@ -93,7 +93,7 @@ func NewFK20MultiSettings(ks *KZGSettings, n2 uint64, chunkLen uint64) *FK20Mult
 	fk := &FK20MultiSettings{
 		KZGSettings:  ks,
 		chunkLen:     chunkLen,
-		xExtFFTFiles: make([][]bls.G1, chunkLen, chunkLen),
+		xExtFFTFiles: make([][]bls.G1Point, chunkLen, chunkLen),
 	}
 	// xext_fft = []
 	// for i in range(l):
@@ -101,8 +101,8 @@ func NewFK20MultiSettings(ks *KZGSettings, n2 uint64, chunkLen uint64) *FK20Mult
 	//   xext_fft.append(toeplitz_part1(x))
 	n := n2 / 2
 	k := n / chunkLen
-	xExtFFTPrecompute := func(offset uint64) []bls.G1 {
-		x := make([]bls.G1, k, k)
+	xExtFFTPrecompute := func(offset uint64) []bls.G1Point {
+		x := make([]bls.G1Point, k, k)
 		start := n - chunkLen - 1 - offset
 		for i, j := uint64(0), start; i+1 < k; i, j = i+1, j-chunkLen {
 			bls.CopyG1(&x[i], &ks.secretG1[j])

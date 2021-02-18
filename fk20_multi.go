@@ -21,7 +21,7 @@ import (
 // 	   ...
 // 	   proof[i]: w^(i*l + 0), w^(i*l + 1), ... w^(i*l + l - 1)
 // 	   ...
-func (ks *FK20MultiSettings) FK20Multi(polynomial []bls.Fr) []bls.G1 {
+func (ks *FK20MultiSettings) FK20Multi(polynomial []bls.Fr) []bls.G1Point {
 	n := uint64(len(polynomial))
 	n2 := n * 2
 	if ks.maxWidth < n2 {
@@ -29,12 +29,12 @@ func (ks *FK20MultiSettings) FK20Multi(polynomial []bls.Fr) []bls.G1 {
 			ks.maxWidth, n))
 	}
 
-	hExtFFT := make([]bls.G1, n2, n2)
+	hExtFFT := make([]bls.G1Point, n2, n2)
 	for i := uint64(0); i < n2; i++ {
 		bls.CopyG1(&hExtFFT[i], &bls.ZeroG1)
 	}
 
-	var tmp bls.G1
+	var tmp bls.G1Point
 	for i := uint64(0); i < ks.chunkLen; i++ {
 		toeplitzCoeffs := ks.toeplitzCoeffsStepStrided(polynomial, i, ks.chunkLen)
 		hExtFFTFile := ks.ToeplitzPart2(toeplitzCoeffs, ks.xExtFFTFiles[i])
@@ -54,7 +54,7 @@ func (ks *FK20MultiSettings) FK20Multi(polynomial []bls.Fr) []bls.G1 {
 
 // FK20 multi-proof method, optimized for dava availability where the top half of polynomial
 // coefficients == 0
-func (ks *FK20MultiSettings) FK20MultiDAOptimized(polynomial []bls.Fr) []bls.G1 {
+func (ks *FK20MultiSettings) FK20MultiDAOptimized(polynomial []bls.Fr) []bls.G1Point {
 	n2 := uint64(len(polynomial))
 	if ks.maxWidth < n2 {
 		panic(fmt.Errorf("KZGSettings are set to maxWidth %d but got polynomial of length %d",
@@ -69,13 +69,13 @@ func (ks *FK20MultiSettings) FK20MultiDAOptimized(polynomial []bls.Fr) []bls.G1 
 
 	k := n / ks.chunkLen
 	k2 := k * 2
-	hExtFFT := make([]bls.G1, k2, k2)
+	hExtFFT := make([]bls.G1Point, k2, k2)
 	for i := uint64(0); i < k2; i++ {
 		bls.CopyG1(&hExtFFT[i], &bls.ZeroG1)
 	}
 
 	reducedPoly := polynomial[:n]
-	var tmp bls.G1
+	var tmp bls.G1Point
 	for i := uint64(0); i < ks.chunkLen; i++ {
 		toeplitzCoeffs := ks.toeplitzCoeffsStepStrided(reducedPoly, i, ks.chunkLen)
 		//debugFrs(fmt.Sprintf("toeplitz_coefficients %d:", i), toeplitzCoeffs)
@@ -109,7 +109,7 @@ func (ks *FK20MultiSettings) FK20MultiDAOptimized(polynomial []bls.Fr) []bls.G1 
 
 // Computes all the KZG proofs for data availability checks. This involves sampling on the double domain
 // and reordering according to reverse bit order
-func (ks *FK20MultiSettings) DAUsingFK20Multi(polynomial []bls.Fr) []bls.G1 {
+func (ks *FK20MultiSettings) DAUsingFK20Multi(polynomial []bls.Fr) []bls.G1Point {
 	n := uint64(len(polynomial))
 	if n > ks.maxWidth/2 {
 		panic("expected poly contents not bigger than half the size of the FK20-multi settings")

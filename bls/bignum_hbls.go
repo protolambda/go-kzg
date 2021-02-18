@@ -94,3 +94,13 @@ func InvModFr(dst *Fr, v *Fr) {
 //func SqrModFr(dst *Fr, v *Fr) {
 //	hbls.FrSqr((*hbls.Fr)(dst), (*hbls.Fr)(v))
 //}
+
+func EvalPolyAt(dst *Fr, p []Fr, x *Fr) {
+	if err := hbls.FrEvaluatePolynomial(
+		(*hbls.Fr)(dst),
+		*(*[]hbls.Fr)(unsafe.Pointer(&p)),
+		(*hbls.Fr)(x),
+	); err != nil {
+		panic(err) // TODO: why does the herumi API return an error? When coefficients are empty?
+	}
+}

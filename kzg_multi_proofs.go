@@ -9,7 +9,7 @@ import "github.com/protolambda/go-kzg/bls"
 // Compute KZG proof for polynomial in coefficient form at positions x * w^y where w is
 // an n-th root of unity (this is the proof for one data availability sample, which consists
 // of several polynomial evaluations)
-func (ks *KZGSettings) ComputeProofMulti(poly []bls.Fr, x uint64, n uint64) *bls.G1 {
+func (ks *KZGSettings) ComputeProofMulti(poly []bls.Fr, x uint64, n uint64) *bls.G1Point {
 	// divisor = [-pow(x, n, MODULUS)] + [0] * (n - 1) + [1]
 	divisor := make([]bls.Fr, n+1, n+1)
 	var xFr bls.Fr
@@ -43,7 +43,7 @@ func (ks *KZGSettings) ComputeProofMulti(poly []bls.Fr, x uint64, n uint64) *bls
 
 // Check a proof for a KZG commitment for an evaluation f(x w^i) = y_i
 // The ys must have a power of 2 length
-func (ks *KZGSettings) CheckProofMulti(commitment *bls.G1, proof *bls.G1, x *bls.Fr, ys []bls.Fr) bool {
+func (ks *KZGSettings) CheckProofMulti(commitment *bls.G1Point, proof *bls.G1Point, x *bls.Fr, ys []bls.Fr) bool {
 	// Interpolate at a coset. Note because it is a coset, not the subgroup, we have to multiply the
 	// polynomial coefficients by x^i
 	interpolationPoly, err := ks.FFT(ys, true)
@@ -64,16 +64,16 @@ func (ks *KZGSettings) CheckProofMulti(commitment *bls.G1, proof *bls.G1, x *bls
 		bls.CopyFr(&xPow, &tmp)
 	}
 	// [x^n]_2
-	var xn2 bls.G2
+	var xn2 bls.G2Point
 	bls.MulG2(&xn2, &bls.GenG2, &xPow)
 	// [s^n - x^n]_2
-	var xnMinusYn bls.G2
+	var xnMinusYn bls.G2Point
 	bls.SubG2(&xnMinusYn, &ks.secretG2[len(ys)], &xn2)
 
 	// [interpolation_polynomial(s)]_1
 	is1 := bls.LinCombG1(ks.secretG1[:len(interpolationPoly)], interpolationPoly)
 	// [commitment - interpolation_polynomial(s)]_1 = [commit]_1 - [interpolation_polynomial(s)]_1
-	var commitMinusInterpolation bls.G1
+	var commitMinusInterpolation bls.G1Point
 	bls.SubG1(&commitMinusInterpolation, commitment, is1)
 
 	// Verify the pairing equation

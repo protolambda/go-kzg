@@ -5,6 +5,7 @@ package bls
 import (
 	"crypto/rand"
 	u256 "github.com/holiman/uint256"
+	"math/big"
 )
 
 var _modulus u256.Int
@@ -17,11 +18,11 @@ func init() {
 }
 
 func SetFr(dst *Fr, v string) {
-	var b fr.Int
+	var b big.Int
 	if err := b.UnmarshalText([]byte(v)); err != nil {
 		panic(err)
 	}
-	if overflow := (*u256.Int)(dst).SetFromFr(&b); overflow {
+	if overflow := (*u256.Int)(dst).SetFromBig(&b); overflow {
 		panic("overflow")
 	}
 }
@@ -59,7 +60,7 @@ func FrStr(b *Fr) string {
 	if b == nil {
 		return "<nil>"
 	}
-	return (*u256.Int)(b).ToFr().String()
+	return (*u256.Int)(b).ToBig().String()
 }
 
 func EqualOne(v *Fr) bool {
@@ -75,12 +76,12 @@ func EqualFr(a *Fr, b *Fr) bool {
 }
 
 func RandomFr() *Fr {
-	v, err := rand.Int(rand.Reader, _modulus.ToFr())
+	v, err := rand.Int(rand.Reader, _modulus.ToBig())
 	if err != nil {
 		panic(err)
 	}
 	var out u256.Int
-	out.SetFromFr(v)
+	out.SetFromBig(v)
 	return (*Fr)(&out)
 }
 
@@ -109,11 +110,15 @@ func MulModFr(dst *Fr, a, b *Fr) {
 // TODO not optimized, but also not used as much
 func InvModFr(dst *Fr, v *Fr) {
 	// pow(x, n - 2, n)
-	var tmp fr.Int
-	tmp.ModInverse((*u256.Int)(v).ToFr(), (&_modulus).ToFr())
-	(*u256.Int)(dst).SetFromFr(&tmp)
+	var tmp big.Int
+	tmp.ModInverse((*u256.Int)(v).ToBig(), (&_modulus).ToBig())
+	(*u256.Int)(dst).SetFromBig(&tmp)
 }
 
 //func SqrModFr(dst *Fr, v *Fr) {
 //
 //}
+
+func EvalPolyAt(dst *Fr, p []Fr, x *Fr) {
+	EvalPolyAtUnoptimized(dst, p, x)
+}

@@ -64,3 +64,24 @@ func initGlobals() {
 func IsPowerOfTwo(v uint64) bool {
 	return v&(v-1) == 0
 }
+
+func EvalPolyAtUnoptimized(dst *Fr, coeffs []Fr, x *Fr) {
+	if len(coeffs) == 0 {
+		CopyFr(dst, &ZERO)
+		return
+	}
+	if EqualZero(x) {
+		CopyFr(dst, &coeffs[0])
+		return
+	}
+	// Horner's method: work backwards, avoid doing more than N multiplications
+	// https://en.wikipedia.org/wiki/Horner%27s_method
+	var last Fr
+	CopyFr(&last, &coeffs[len(coeffs)-1])
+	var tmp Fr
+	for i := len(coeffs) - 2; i >= 0; i-- {
+		MulModFr(&tmp, &last, x)
+		AddModFr(&last, &tmp, &coeffs[i])
+	}
+	CopyFr(dst, &last)
+}
