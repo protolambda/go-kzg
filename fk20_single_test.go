@@ -2,7 +2,10 @@
 
 package kzg
 
-import "testing"
+import (
+	"github.com/protolambda/go-kzg/bls"
+	"testing"
+)
 
 func TestKZGSettings_DAUsingFK20(t *testing.T) {
 	fs := NewFFTSettings(5)
@@ -13,24 +16,24 @@ func TestKZGSettings_DAUsingFK20(t *testing.T) {
 	polynomial := testPoly(1, 2, 3, 4, 7, 7, 7, 7, 13, 13, 13, 13, 13, 13, 13, 13)
 
 	commitment := ks.CommitToPoly(polynomial)
-	t.Log("commitment\n", strG1(commitment))
+	t.Log("commitment\n", bls.StrG1(commitment))
 
 	allProofs := fk.DAUsingFK20(polynomial)
 	t.Log("All KZG proofs computed")
 	for i := 0; i < len(allProofs); i++ {
-		t.Logf("%d: %s", i, strG1(&allProofs[i]))
+		t.Logf("%d: %s", i, bls.StrG1(&allProofs[i]))
 	}
 
 	// Now check a random position
 	pos := uint64(9)
-	var posBig Big
-	asBig(&posBig, pos)
-	var x Big
-	CopyBigNum(&x, &ks.expandedRootsOfUnity[pos])
-	t.Log("x:\n", bigStr(&x))
-	var y Big
-	EvalPolyAt(&y, polynomial, &x)
-	t.Log("y:\n", bigStr(&y))
+	var posFr bls.Fr
+	bls.AsFr(&posFr, pos)
+	var x bls.Fr
+	bls.CopyFr(&x, &ks.expandedRootsOfUnity[pos])
+	t.Log("x:\n", bls.FrStr(&x))
+	var y bls.Fr
+	bls.EvalPolyAt(&y, polynomial, &x)
+	t.Log("y:\n", bls.FrStr(&y))
 
 	proof := &allProofs[reverseBitsLimited(uint32(2*16), uint32(pos))]
 

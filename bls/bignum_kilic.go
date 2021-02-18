@@ -1,6 +1,6 @@
 // +build bignum_kilic
 
-package kzg
+package bls
 
 import (
 	"crypto/rand"
@@ -15,16 +15,16 @@ func init() {
 	initG1G2()
 }
 
-type Big kbls.Fr
+type Fr kbls.Fr
 
-func bigNum(dst *Big, v string) {
+func SetFr(dst *Fr, v string) {
 	var bv big.Int
 	bv.SetString(v, 10)
 	(*kbls.Fr)(dst).FromBytes(bv.Bytes())
 }
 
-// BigNumFrom32 mutates the big num. The value v is little-endian 32-bytes.
-func BigNumFrom32(dst *Big, v [32]byte) {
+// FrFrom32 mutates the fr num. The value v is little-endian 32-bytes.
+func FrFrom32(dst *Fr, v [32]byte) {
 	// reverse endianness, Kilic Fr takes big-endian bytes
 	for i := 0; i < 16; i++ {
 		v[i], v[31-i] = v[31-i], v[i]
@@ -32,8 +32,8 @@ func BigNumFrom32(dst *Big, v [32]byte) {
 	(*kbls.Fr)(dst).FromBytes(v[:])
 }
 
-// BigNumTo32 serializes a big number to 32 bytes. Encoded little-endian.
-func BigNumTo32(src *Big) (v [32]byte) {
+// FrTo32 serializes a fr number to 32 bytes. Encoded little-endian.
+func FrTo32(src *Fr) (v [32]byte) {
 	b := (*kbls.Fr)(src).ToBytes()
 	last := len(b) - 1
 	// reverse endianness, Kilic Fr outputs big-endian bytes
@@ -44,65 +44,70 @@ func BigNumTo32(src *Big) (v [32]byte) {
 	return
 }
 
-func CopyBigNum(dst *Big, v *Big) {
+func CopyFr(dst *Fr, v *Fr) {
 	*dst = *v
 }
 
-func asBig(dst *Big, i uint64) {
+func AsFr(dst *Fr, i uint64) {
 	var data [8]byte
 	binary.BigEndian.PutUint64(data[:], i)
 	(*kbls.Fr)(dst).FromBytes(data[:])
 }
 
-func bigStr(b *Big) string {
+func FrStr(b *Fr) string {
 	if b == nil {
 		return "<nil>"
 	}
 	return (*kbls.Fr)(b).ToBig().String()
 }
 
-func equalOne(v *Big) bool {
+func EqualOne(v *Fr) bool {
 	return (*kbls.Fr)(v).IsOne()
 }
 
-func equalZero(v *Big) bool {
+func EqualZero(v *Fr) bool {
 	return (*kbls.Fr)(v).IsZero()
 }
 
-func equalBig(a *Big, b *Big) bool {
+func EqualFr(a *Fr, b *Fr) bool {
 	return (*kbls.Fr)(a).Equal((*kbls.Fr)(b))
 }
 
-func randomBig() *Big {
+func RandomFr() *Fr {
 	var out kbls.Fr
 	if _, err := out.Rand(rand.Reader); err != nil {
 		panic(err)
 	}
-	return (*Big)(&out)
+	return (*Fr)(&out)
 }
 
-func subModBig(dst *Big, a, b *Big) {
+func SubModFr(dst *Fr, a, b *Fr) {
 	(*kbls.Fr)(dst).Sub((*kbls.Fr)(a), (*kbls.Fr)(b))
 }
 
-func addModBig(dst *Big, a, b *Big) {
+func AddModFr(dst *Fr, a, b *Fr) {
 	(*kbls.Fr)(dst).Add((*kbls.Fr)(a), (*kbls.Fr)(b))
 }
 
-func divModBig(dst *Big, a, b *Big) {
+func DivModFr(dst *Fr, a, b *Fr) {
 	var tmp kbls.Fr
 	tmp.Inverse((*kbls.Fr)(b))
 	(*kbls.Fr)(dst).Mul(&tmp, (*kbls.Fr)(a))
 }
 
-func mulModBig(dst *Big, a, b *Big) {
+func MulModFr(dst *Fr, a, b *Fr) {
 	(*kbls.Fr)(dst).Mul((*kbls.Fr)(a), (*kbls.Fr)(b))
 }
 
-func invModBig(dst *Big, v *Big) {
+func InvModFr(dst *Fr, v *Fr) {
 	(*kbls.Fr)(dst).Inverse((*kbls.Fr)(v))
 }
 
-//func sqrModBig(dst *Big, v *Big) {
+//func SqrModFr(dst *Fr, v *Fr) {
 //	kbls.FrSqr((*kbls.Fr)(dst), (*kbls.Fr)(v))
 //}
+
+func EvalPolyAt(dst *Fr, p []Fr, x *Fr) {
+	// TODO: kilic BLS has no optimized evaluation function
+	EvalPolyAtUnoptimized(dst, p, x)
+}

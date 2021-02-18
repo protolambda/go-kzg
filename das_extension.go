@@ -1,19 +1,21 @@
 package kzg
 
+import "github.com/protolambda/go-kzg/bls"
+
 // warning: the values in `a` are modified in-place to become the outputs.
 // Make a deep copy first if you need to use them later.
-func (fs *FFTSettings) dASFFTExtension(ab []Big, domainStride uint64) {
+func (fs *FFTSettings) dASFFTExtension(ab []bls.Fr, domainStride uint64) {
 	if len(ab) == 2 {
 		aHalf0 := &ab[0]
 		aHalf1 := &ab[1]
-		var x Big
-		addModBig(&x, aHalf0, aHalf1)
-		var y Big
-		subModBig(&y, aHalf0, aHalf1)
-		var tmp Big
-		mulModBig(&tmp, &y, &fs.expandedRootsOfUnity[domainStride])
-		addModBig(&ab[0], &x, &tmp)
-		subModBig(&ab[1], &x, &tmp)
+		var x bls.Fr
+		bls.AddModFr(&x, aHalf0, aHalf1)
+		var y bls.Fr
+		bls.SubModFr(&y, aHalf0, aHalf1)
+		var tmp bls.Fr
+		bls.MulModFr(&tmp, &y, &fs.expandedRootsOfUnity[domainStride])
+		bls.AddModFr(&ab[0], &x, &tmp)
+		bls.SubModFr(&ab[1], &x, &tmp)
 		return
 	}
 
@@ -28,14 +30,14 @@ func (fs *FFTSettings) dASFFTExtension(ab []Big, domainStride uint64) {
 	// Instead of allocating L0 and L1, just modify a in-place.
 	//L0[i] = (((a_half0 + a_half1) % modulus) * inv2) % modulus
 	//R0[i] = (((a_half0 - L0[i]) % modulus) * inverse_domain[i * 2]) % modulus
-	var tmp1, tmp2 Big
+	var tmp1, tmp2 bls.Fr
 	for i := uint64(0); i < halfHalf; i++ {
 		aHalf0 := &abHalf0s[i]
 		aHalf1 := &abHalf1s[i]
-		addModBig(&tmp1, aHalf0, aHalf1)
-		subModBig(&tmp2, aHalf0, aHalf1)
-		mulModBig(aHalf1, &tmp2, &fs.reverseRootsOfUnity[i*2*domainStride])
-		CopyBigNum(aHalf0, &tmp1)
+		bls.AddModFr(&tmp1, aHalf0, aHalf1)
+		bls.SubModFr(&tmp2, aHalf0, aHalf1)
+		bls.MulModFr(aHalf1, &tmp2, &fs.reverseRootsOfUnity[i*2*domainStride])
+		bls.CopyFr(aHalf0, &tmp1)
 	}
 
 	// L will be the left half of out
@@ -48,35 +50,35 @@ func (fs *FFTSettings) dASFFTExtension(ab []Big, domainStride uint64) {
 	// R1 = b[halfHalf:]
 
 	// Half the work of a regular FFT: only deal with uneven-index outputs
-	var yTimesRoot Big
-	var x, y Big
+	var yTimesRoot bls.Fr
+	var x, y bls.Fr
 	for i := uint64(0); i < halfHalf; i++ {
 		// Temporary copies, so that writing to output doesn't conflict with input.
 		// Note that one hand is from L1, the other R1
-		CopyBigNum(&x, &abHalf0s[i])
-		CopyBigNum(&y, &abHalf1s[i])
+		bls.CopyFr(&x, &abHalf0s[i])
+		bls.CopyFr(&y, &abHalf1s[i])
 		root := &fs.expandedRootsOfUnity[(1+2*i)*domainStride]
-		mulModBig(&yTimesRoot, &y, root)
+		bls.MulModFr(&yTimesRoot, &y, root)
 		// write outputs in place, avoid unnecessary list allocations
-		addModBig(&abHalf0s[i], &x, &yTimesRoot)
-		subModBig(&abHalf1s[i], &x, &yTimesRoot)
+		bls.AddModFr(&abHalf0s[i], &x, &yTimesRoot)
+		bls.SubModFr(&abHalf1s[i], &x, &yTimesRoot)
 	}
 }
 
 // Takes vals as input, the values of the even indices.
 // Then computes the values for the odd indices, which combined would make the right half of coefficients zero.
 // Warning: the odd results are written back to the vals slice.
-func (fs *FFTSettings) DASFFTExtension(vals []Big) {
+func (fs *FFTSettings) DASFFTExtension(vals []bls.Fr) {
 	if uint64(len(vals))*2 > fs.maxWidth {
 		panic("domain too small for extending requested values")
 	}
 	fs.dASFFTExtension(vals, 1)
 	// The above function didn't perform the divide by 2 on every layer.
 	// So now do it all at once, by dividing by 2**depth (=length).
-	var invLen Big
-	asBig(&invLen, uint64(len(vals)))
-	invModBig(&invLen, &invLen)
+	var invLen bls.Fr
+	bls.AsFr(&invLen, uint64(len(vals)))
+	bls.InvModFr(&invLen, &invLen)
 	for i := 0; i < len(vals); i++ {
-		mulModBig(&vals[i], &vals[i], &invLen)
+		bls.MulModFr(&vals[i], &vals[i], &invLen)
 	}
 }

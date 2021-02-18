@@ -4,7 +4,10 @@
 
 package kzg
 
-import "fmt"
+import (
+	"fmt"
+	"github.com/protolambda/go-kzg/bls"
+)
 
 // FK20 Method to compute all proofs
 // Toeplitz multiplication via http://www.netlib.org/utk/people/JackDongarra/etemplates/node384.html
@@ -18,7 +21,7 @@ import "fmt"
 // 	   ...
 // 	   proof[i]: w^(i*l + 0), w^(i*l + 1), ... w^(i*l + l - 1)
 // 	   ...
-func (ks *FK20MultiSettings) FK20Multi(polynomial []Big) []G1 {
+func (ks *FK20MultiSettings) FK20Multi(polynomial []bls.Fr) []bls.G1Point {
 	n := uint64(len(polynomial))
 	n2 := n * 2
 	if ks.maxWidth < n2 {
@@ -26,18 +29,18 @@ func (ks *FK20MultiSettings) FK20Multi(polynomial []Big) []G1 {
 			ks.maxWidth, n))
 	}
 
-	hExtFFT := make([]G1, n2, n2)
+	hExtFFT := make([]bls.G1Point, n2, n2)
 	for i := uint64(0); i < n2; i++ {
-		CopyG1(&hExtFFT[i], &zeroG1)
+		bls.CopyG1(&hExtFFT[i], &bls.ZeroG1)
 	}
 
-	var tmp G1
+	var tmp bls.G1Point
 	for i := uint64(0); i < ks.chunkLen; i++ {
 		toeplitzCoeffs := ks.toeplitzCoeffsStepStrided(polynomial, i, ks.chunkLen)
 		hExtFFTFile := ks.ToeplitzPart2(toeplitzCoeffs, ks.xExtFFTFiles[i])
 		for j := uint64(0); j < n2; j++ {
-			addG1(&tmp, &hExtFFT[j], &hExtFFTFile[j])
-			CopyG1(&hExtFFT[j], &tmp)
+			bls.AddG1(&tmp, &hExtFFT[j], &hExtFFTFile[j])
+			bls.CopyG1(&hExtFFT[j], &tmp)
 		}
 	}
 	h := ks.ToeplitzPart3(hExtFFT)
@@ -51,7 +54,7 @@ func (ks *FK20MultiSettings) FK20Multi(polynomial []Big) []G1 {
 
 // FK20 multi-proof method, optimized for dava availability where the top half of polynomial
 // coefficients == 0
-func (ks *FK20MultiSettings) FK20MultiDAOptimized(polynomial []Big) []G1 {
+func (ks *FK20MultiSettings) FK20MultiDAOptimized(polynomial []bls.Fr) []bls.G1Point {
 	n2 := uint64(len(polynomial))
 	if ks.maxWidth < n2 {
 		panic(fmt.Errorf("KZGSettings are set to maxWidth %d but got polynomial of length %d",
@@ -59,35 +62,35 @@ func (ks *FK20MultiSettings) FK20MultiDAOptimized(polynomial []Big) []G1 {
 	}
 	n := n2 / 2
 	for i := n; i < n2; i++ {
-		if !equalZero(&polynomial[i]) {
+		if !bls.EqualZero(&polynomial[i]) {
 			panic("bad input, second half should be zeroed")
 		}
 	}
 
 	k := n / ks.chunkLen
 	k2 := k * 2
-	hExtFFT := make([]G1, k2, k2)
+	hExtFFT := make([]bls.G1Point, k2, k2)
 	for i := uint64(0); i < k2; i++ {
-		CopyG1(&hExtFFT[i], &zeroG1)
+		bls.CopyG1(&hExtFFT[i], &bls.ZeroG1)
 	}
 
 	reducedPoly := polynomial[:n]
-	var tmp G1
+	var tmp bls.G1Point
 	for i := uint64(0); i < ks.chunkLen; i++ {
 		toeplitzCoeffs := ks.toeplitzCoeffsStepStrided(reducedPoly, i, ks.chunkLen)
-		//debugBigs(fmt.Sprintf("toeplitz_coefficients %d:", i), toeplitzCoeffs)
-		//debugG1s(fmt.Sprintf("xext_fft file %d:", i), ks.xExtFFTFiles[i])
+		//debugFrs(fmt.Sprintf("toeplitz_coefficients %d:", i), toeplitzCoeffs)
+		//DebugG1s(fmt.Sprintf("xext_fft file %d:", i), ks.xExtFFTFiles[i])
 		hExtFFTFile := ks.ToeplitzPart2(toeplitzCoeffs, ks.xExtFFTFiles[i])
-		//debugG1s(fmt.Sprintf("hext_fft file %d:", i), hExtFFTFile)
+		//DebugG1s(fmt.Sprintf("hext_fft file %d:", i), hExtFFTFile)
 		for j := uint64(0); j < k2; j++ {
-			addG1(&tmp, &hExtFFT[j], &hExtFFTFile[j])
-			CopyG1(&hExtFFT[j], &tmp)
+			bls.AddG1(&tmp, &hExtFFT[j], &hExtFFTFile[j])
+			bls.CopyG1(&hExtFFT[j], &tmp)
 		}
-		//debugG1s(fmt.Sprintf("hext_fft %d:", i), hExtFFT)
+		//DebugG1s(fmt.Sprintf("hext_fft %d:", i), hExtFFT)
 	}
-	//debugG1s("hext_fft final", hExtFFT)
+	//DebugG1s("hext_fft final", hExtFFT)
 	h := ks.ToeplitzPart3(hExtFFT)
-	//debugG1s("h", h)
+	//DebugG1s("h", h)
 
 	// TODO: maybe use a G1 version of the DAS extension FFT to perform the h -> output conversion?
 
@@ -95,7 +98,7 @@ func (ks *FK20MultiSettings) FK20MultiDAOptimized(polynomial []Big) []G1 {
 	// Instead of copying h into a new extended array, just reuse the old capacity.
 	h = h[:k2]
 	for i := k; i < k2; i++ {
-		CopyG1(&h[i], &zeroG1)
+		bls.CopyG1(&h[i], &bls.ZeroG1)
 	}
 	out, err := ks.FFTG1(h, false)
 	if err != nil {
@@ -106,21 +109,21 @@ func (ks *FK20MultiSettings) FK20MultiDAOptimized(polynomial []Big) []G1 {
 
 // Computes all the KZG proofs for data availability checks. This involves sampling on the double domain
 // and reordering according to reverse bit order
-func (ks *FK20MultiSettings) DAUsingFK20Multi(polynomial []Big) []G1 {
+func (ks *FK20MultiSettings) DAUsingFK20Multi(polynomial []bls.Fr) []bls.G1Point {
 	n := uint64(len(polynomial))
 	if n > ks.maxWidth/2 {
 		panic("expected poly contents not bigger than half the size of the FK20-multi settings")
 	}
-	if !isPowerOfTwo(n) {
+	if !bls.IsPowerOfTwo(n) {
 		panic("expected poly length to be power of two")
 	}
 	n2 := n * 2
-	extendedPolynomial := make([]Big, n2, n2)
+	extendedPolynomial := make([]bls.Fr, n2, n2)
 	for i := uint64(0); i < n; i++ {
-		CopyBigNum(&extendedPolynomial[i], &polynomial[i])
+		bls.CopyFr(&extendedPolynomial[i], &polynomial[i])
 	}
 	for i := n; i < n2; i++ {
-		CopyBigNum(&extendedPolynomial[i], &ZERO)
+		bls.CopyFr(&extendedPolynomial[i], &bls.ZERO)
 	}
 	allProofs := ks.FK20MultiDAOptimized(extendedPolynomial)
 	// change to reverse bit order.
