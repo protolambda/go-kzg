@@ -1,6 +1,6 @@
 // +build !bignum_pure,!bignum_hol256,!bignum_kilic
 
-package kzg
+package bls
 
 import (
 	"fmt"
@@ -11,35 +11,35 @@ import (
 
 var ZERO_G1 G1
 
-var genG1 G1
-var genG2 G2
+var GenG1 G1
+var GenG2 G2
 
-var zeroG1 G1
-var zeroG2 G2
+var ZeroG1 G1
+var ZeroG2 G2
 
 // Herumi BLS doesn't offer these points to us, so we have to work around it by declaring them ourselves.
 func initG1G2() {
-	genG1.X.SetString("3685416753713387016781088315183077757961620795782546409894578378688607592378376318836054947676345821548104185464507", 10)
-	genG1.Y.SetString("1339506544944476473020471379941921221584933875938349620426543736416511423956333506472724655353366534992391756441569", 10)
-	genG1.Z.SetInt64(1)
+	GenG1.X.SetString("3685416753713387016781088315183077757961620795782546409894578378688607592378376318836054947676345821548104185464507", 10)
+	GenG1.Y.SetString("1339506544944476473020471379941921221584933875938349620426543736416511423956333506472724655353366534992391756441569", 10)
+	GenG1.Z.SetInt64(1)
 
-	genG2.X.D[0].SetString("352701069587466618187139116011060144890029952792775240219908644239793785735715026873347600343865175952761926303160", 10)
-	genG2.X.D[1].SetString("3059144344244213709971259814753781636986470325476647558659373206291635324768958432433509563104347017837885763365758", 10)
-	genG2.Y.D[0].SetString("1985150602287291935568054521177171638300868978215655730859378665066344726373823718423869104263333984641494340347905", 10)
-	genG2.Y.D[1].SetString("927553665492332455747201965776037880757740193453592970025027978793976877002675564980949289727957565575433344219582", 10)
-	genG2.Z.D[0].SetInt64(1)
-	genG2.Z.D[1].Clear()
+	GenG2.X.D[0].SetString("352701069587466618187139116011060144890029952792775240219908644239793785735715026873347600343865175952761926303160", 10)
+	GenG2.X.D[1].SetString("3059144344244213709971259814753781636986470325476647558659373206291635324768958432433509563104347017837885763365758", 10)
+	GenG2.Y.D[0].SetString("1985150602287291935568054521177171638300868978215655730859378665066344726373823718423869104263333984641494340347905", 10)
+	GenG2.Y.D[1].SetString("927553665492332455747201965776037880757740193453592970025027978793976877002675564980949289727957565575433344219582", 10)
+	GenG2.Z.D[0].SetInt64(1)
+	GenG2.Z.D[1].Clear()
 
-	zeroG1.X.SetInt64(1)
-	zeroG1.Y.SetInt64(1)
-	zeroG1.Z.SetInt64(0)
+	ZeroG1.X.SetInt64(1)
+	ZeroG1.Y.SetInt64(1)
+	ZeroG1.Z.SetInt64(0)
 
-	zeroG2.X.D[0].SetInt64(1)
-	zeroG2.X.D[1].SetInt64(0)
-	zeroG2.Y.D[0].SetInt64(1)
-	zeroG2.Y.D[1].SetInt64(0)
-	zeroG2.Z.D[0].SetInt64(0)
-	zeroG2.Z.D[1].SetInt64(0)
+	ZeroG2.X.D[0].SetInt64(1)
+	ZeroG2.X.D[1].SetInt64(0)
+	ZeroG2.Y.D[0].SetInt64(1)
+	ZeroG2.Y.D[1].SetInt64(0)
+	ZeroG2.Z.D[0].SetInt64(0)
+	ZeroG2.Z.D[1].SetInt64(0)
 }
 
 // TODO types file, swap BLS with build args
@@ -53,23 +53,23 @@ func CopyG1(dst *G1, v *G1) {
 	*dst = *v
 }
 
-func mulG1(dst *G1, a *G1, b *Big) {
+func MulG1(dst *G1, a *G1, b *Big) {
 	hbls.G1Mul((*hbls.G1)(dst), (*hbls.G1)(a), (*hbls.Fr)(b))
 }
 
-func addG1(dst *G1, a *G1, b *G1) {
+func AddG1(dst *G1, a *G1, b *G1) {
 	hbls.G1Add((*hbls.G1)(dst), (*hbls.G1)(a), (*hbls.G1)(b))
 }
 
-func subG1(dst *G1, a *G1, b *G1) {
+func SubG1(dst *G1, a *G1, b *G1) {
 	hbls.G1Sub((*hbls.G1)(dst), (*hbls.G1)(a), (*hbls.G1)(b))
 }
 
-func strG1(v *G1) string {
+func StrG1(v *G1) string {
 	return (*hbls.G1)(v).GetString(10)
 }
 
-func negG1(dst *G1) {
+func NegG1(dst *G1) {
 	// in-place should be safe here (TODO double check)
 	hbls.G1Neg((*hbls.G1)(dst), (*hbls.G1)(dst))
 }
@@ -84,32 +84,32 @@ func CopyG2(dst *G2, v *G2) {
 	*dst = *v
 }
 
-func mulG2(dst *G2, a *G2, b *Big) {
+func MulG2(dst *G2, a *G2, b *Big) {
 	hbls.G2Mul((*hbls.G2)(dst), (*hbls.G2)(a), (*hbls.Fr)(b))
 }
 
-func addG2(dst *G2, a *G2, b *G2) {
+func AddG2(dst *G2, a *G2, b *G2) {
 	hbls.G2Add((*hbls.G2)(dst), (*hbls.G2)(a), (*hbls.G2)(b))
 }
 
-func subG2(dst *G2, a *G2, b *G2) {
+func SubG2(dst *G2, a *G2, b *G2) {
 	hbls.G2Sub((*hbls.G2)(dst), (*hbls.G2)(a), (*hbls.G2)(b))
 }
 
-func negG2(dst *G2) {
+func NegG2(dst *G2) {
 	// in-place should be safe here (TODO double check)
 	hbls.G2Neg((*hbls.G2)(dst), (*hbls.G2)(dst))
 }
 
-func strG2(v *G2) string {
+func StrG2(v *G2) string {
 	return (*hbls.G2)(v).GetString(10)
 }
 
-func equalG1(a *G1, b *G1) bool {
+func EqualG1(a *G1, b *G1) bool {
 	return (*hbls.G1)(a).IsEqual((*hbls.G1)(b))
 }
 
-func equalG2(a *G2, b *G2) bool {
+func EqualG2(a *G2, b *G2) bool {
 	return (*hbls.G2)(a).IsEqual((*hbls.G2)(b))
 }
 
@@ -126,7 +126,7 @@ func EvalPolyAtUnoptimized(dst *Big, coeffs []Big, x *Big) {
 		CopyBigNum(dst, &ZERO)
 		return
 	}
-	if equalZero(x) {
+	if EqualZero(x) {
 		CopyBigNum(dst, &coeffs[0])
 		return
 	}
@@ -136,8 +136,8 @@ func EvalPolyAtUnoptimized(dst *Big, coeffs []Big, x *Big) {
 	CopyBigNum(&last, &coeffs[len(coeffs)-1])
 	var tmp Big
 	for i := len(coeffs) - 2; i >= 0; i-- {
-		mulModBig(&tmp, &last, x)
-		addModBig(&last, &tmp, &coeffs[i])
+		MulModBig(&tmp, &last, x)
+		AddModBig(&last, &tmp, &coeffs[i])
 	}
 	CopyBigNum(dst, &last)
 }
@@ -180,10 +180,10 @@ func PairingsVerify(a1 *G1, a2 *G2, b1 *G1, b2 *G2) bool {
 	//return tmp.IsEqual(&tmp2)
 }
 
-func debugG1s(msg string, values []G1) {
+func DebugG1s(msg string, values []G1) {
 	var out strings.Builder
 	for i := range values {
-		out.WriteString(fmt.Sprintf("%s %d: %s\n", msg, i, strG1(&values[i])))
+		out.WriteString(fmt.Sprintf("%s %d: %s\n", msg, i, StrG1(&values[i])))
 	}
 	fmt.Println(out.String())
 }

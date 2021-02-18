@@ -1,6 +1,6 @@
 // +build bignum_pure
 
-package kzg
+package bls
 
 import (
 	"crypto/rand"
@@ -10,7 +10,7 @@ import (
 var _modulus big.Int
 
 func init() {
-	bigNum((*Big)(&_modulus), "52435875175126190479447740508185965837690552500527637822603658699938581184513")
+	BigNum((*Big)(&_modulus), "52435875175126190479447740508185965837690552500527637822603658699938581184513")
 	initGlobals()
 }
 
@@ -41,33 +41,33 @@ func CopyBigNum(dst *Big, v *Big) {
 	(*big.Int)(dst).Set((*big.Int)(v))
 }
 
-func bigNum(dst *Big, v string) {
+func BigNum(dst *Big, v string) {
 	if err := (*big.Int)(dst).UnmarshalText([]byte(v)); err != nil {
 		panic(err)
 	}
 }
 
-func asBig(dst *Big, i uint64) {
+func AsBig(dst *Big, i uint64) {
 	(*big.Int)(dst).SetUint64(i)
 }
 
-func bigStr(b *Big) string {
+func BigStr(b *Big) string {
 	return (*big.Int)(b).String()
 }
 
-func equalOne(v *Big) bool {
+func EqualOne(v *Big) bool {
 	return (*big.Int)(v).Cmp((*big.Int)(&ONE)) == 0
 }
 
-func equalZero(v *Big) bool {
+func EqualZero(v *Big) bool {
 	return (*big.Int)(v).Cmp((*big.Int)(&ZERO)) == 0
 }
 
-func equalBig(a *Big, b *Big) bool {
+func EqualBig(a *Big, b *Big) bool {
 	return (*big.Int)(a).Cmp((*big.Int)(b)) == 0
 }
 
-func randomBig() *Big {
+func RandomBig() *Big {
 	v, err := rand.Int(rand.Reader, &_modulus)
 	if err != nil {
 		panic(err)
@@ -75,30 +75,30 @@ func randomBig() *Big {
 	return (*Big)(v)
 }
 
-func subModBig(dst *Big, a, b *Big) {
+func SubModBig(dst *Big, a, b *Big) {
 	(*big.Int)(dst).Sub((*big.Int)(a), (*big.Int)(b))
 	(*big.Int)(dst).Mod((*big.Int)(dst), &_modulus)
 }
 
-func addModBig(dst *Big, a, b *Big) {
+func AddModBig(dst *Big, a, b *Big) {
 	(*big.Int)(dst).Add((*big.Int)(a), (*big.Int)(b))
 	(*big.Int)(dst).Mod((*big.Int)(dst), &_modulus)
 }
 
-func divModBig(dst *Big, a, b *Big) {
+func DivModBig(dst *Big, a, b *Big) {
 	(*big.Int)(dst).DivMod((*big.Int)(a), (*big.Int)(b))
 }
 
-func mulModBig(dst *Big, a, b *Big) {
+func MulModBig(dst *Big, a, b *Big) {
 	(*big.Int)(dst).Mul((*big.Int)(a), (*big.Int)(b))
 	(*big.Int)(dst).Mod((*big.Int)(dst), &_modulus)
 }
 
-func powModBig(dst *Big, a, b *Big) {
+func PowModBig(dst *Big, a, b *Big) {
 	(*big.Int)(dst).Exp((*big.Int)(a), (*big.Int)(b), &_modulus)
 }
 
-func invModBig(dst *Big, v *Big) {
+func InvModBig(dst *Big, v *Big) {
 	(*big.Int)(dst).ModInverse((*big.Int)(v), &_modulus)
 }
 

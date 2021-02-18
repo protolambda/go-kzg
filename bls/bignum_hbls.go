@@ -1,6 +1,6 @@
 // +build !bignum_pure,!bignum_hol256,!bignum_kilic
 
-package kzg
+package bls
 
 import (
 	hbls "github.com/herumi/bls-eth-go-binary/bls"
@@ -15,7 +15,7 @@ func init() {
 
 type Big hbls.Fr
 
-func bigNum(dst *Big, v string) {
+func BigNum(dst *Big, v string) {
 	if err := (*hbls.Fr)(dst).SetString(v, 10); err != nil {
 		panic(err)
 	}
@@ -42,55 +42,55 @@ func CopyBigNum(dst *Big, v *Big) {
 	*dst = *v
 }
 
-func asBig(dst *Big, i uint64) {
+func AsBig(dst *Big, i uint64) {
 	(*hbls.Fr)(dst).SetInt64(int64(i))
 }
 
-func bigStr(b *Big) string {
+func BigStr(b *Big) string {
 	if b == nil {
 		return "<nil>"
 	}
 	return (*hbls.Fr)(b).GetString(10)
 }
 
-func equalOne(v *Big) bool {
+func EqualOne(v *Big) bool {
 	return (*hbls.Fr)(v).IsOne()
 }
 
-func equalZero(v *Big) bool {
+func EqualZero(v *Big) bool {
 	return (*hbls.Fr)(v).IsZero()
 }
 
-func equalBig(a *Big, b *Big) bool {
+func EqualBig(a *Big, b *Big) bool {
 	return (*hbls.Fr)(a).IsEqual((*hbls.Fr)(b))
 }
 
-func randomBig() *Big {
+func RandomBig() *Big {
 	var out hbls.Fr
 	out.SetByCSPRNG()
 	return (*Big)(&out)
 }
 
-func subModBig(dst *Big, a, b *Big) {
+func SubModBig(dst *Big, a, b *Big) {
 	hbls.FrSub((*hbls.Fr)(dst), (*hbls.Fr)(a), (*hbls.Fr)(b))
 }
 
-func addModBig(dst *Big, a, b *Big) {
+func AddModBig(dst *Big, a, b *Big) {
 	hbls.FrAdd((*hbls.Fr)(dst), (*hbls.Fr)(a), (*hbls.Fr)(b))
 }
 
-func divModBig(dst *Big, a, b *Big) {
+func DivModBig(dst *Big, a, b *Big) {
 	hbls.FrDiv((*hbls.Fr)(dst), (*hbls.Fr)(a), (*hbls.Fr)(b))
 }
 
-func mulModBig(dst *Big, a, b *Big) {
+func MulModBig(dst *Big, a, b *Big) {
 	hbls.FrMul((*hbls.Fr)(dst), (*hbls.Fr)(a), (*hbls.Fr)(b))
 }
 
-func invModBig(dst *Big, v *Big) {
+func InvModBig(dst *Big, v *Big) {
 	hbls.FrInv((*hbls.Fr)(dst), (*hbls.Fr)(v))
 }
 
-//func sqrModBig(dst *Big, v *Big) {
+//func SqrModBig(dst *Big, v *Big) {
 //	hbls.FrSqr((*hbls.Fr)(dst), (*hbls.Fr)(v))
 //}

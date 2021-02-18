@@ -1,6 +1,6 @@
 // +build bignum_kilic
 
-package kzg
+package bls
 
 import (
 	"crypto/rand"
@@ -17,7 +17,7 @@ func init() {
 
 type Big kbls.Fr
 
-func bigNum(dst *Big, v string) {
+func BigNum(dst *Big, v string) {
 	var bv big.Int
 	bv.SetString(v, 10)
 	(*kbls.Fr)(dst).FromBytes(bv.Bytes())
@@ -48,32 +48,32 @@ func CopyBigNum(dst *Big, v *Big) {
 	*dst = *v
 }
 
-func asBig(dst *Big, i uint64) {
+func AsBig(dst *Big, i uint64) {
 	var data [8]byte
 	binary.BigEndian.PutUint64(data[:], i)
 	(*kbls.Fr)(dst).FromBytes(data[:])
 }
 
-func bigStr(b *Big) string {
+func BigStr(b *Big) string {
 	if b == nil {
 		return "<nil>"
 	}
 	return (*kbls.Fr)(b).ToBig().String()
 }
 
-func equalOne(v *Big) bool {
+func EqualOne(v *Big) bool {
 	return (*kbls.Fr)(v).IsOne()
 }
 
-func equalZero(v *Big) bool {
+func EqualZero(v *Big) bool {
 	return (*kbls.Fr)(v).IsZero()
 }
 
-func equalBig(a *Big, b *Big) bool {
+func EqualBig(a *Big, b *Big) bool {
 	return (*kbls.Fr)(a).Equal((*kbls.Fr)(b))
 }
 
-func randomBig() *Big {
+func RandomBig() *Big {
 	var out kbls.Fr
 	if _, err := out.Rand(rand.Reader); err != nil {
 		panic(err)
@@ -81,28 +81,28 @@ func randomBig() *Big {
 	return (*Big)(&out)
 }
 
-func subModBig(dst *Big, a, b *Big) {
+func SubModBig(dst *Big, a, b *Big) {
 	(*kbls.Fr)(dst).Sub((*kbls.Fr)(a), (*kbls.Fr)(b))
 }
 
-func addModBig(dst *Big, a, b *Big) {
+func AddModBig(dst *Big, a, b *Big) {
 	(*kbls.Fr)(dst).Add((*kbls.Fr)(a), (*kbls.Fr)(b))
 }
 
-func divModBig(dst *Big, a, b *Big) {
+func DivModBig(dst *Big, a, b *Big) {
 	var tmp kbls.Fr
 	tmp.Inverse((*kbls.Fr)(b))
 	(*kbls.Fr)(dst).Mul(&tmp, (*kbls.Fr)(a))
 }
 
-func mulModBig(dst *Big, a, b *Big) {
+func MulModBig(dst *Big, a, b *Big) {
 	(*kbls.Fr)(dst).Mul((*kbls.Fr)(a), (*kbls.Fr)(b))
 }
 
-func invModBig(dst *Big, v *Big) {
+func InvModBig(dst *Big, v *Big) {
 	(*kbls.Fr)(dst).Inverse((*kbls.Fr)(v))
 }
 
-//func sqrModBig(dst *Big, v *Big) {
+//func SqrModBig(dst *Big, v *Big) {
 //	kbls.FrSqr((*kbls.Fr)(dst), (*kbls.Fr)(v))
 //}

@@ -7,37 +7,40 @@
 
 package kzg
 
-import "fmt"
+import (
+	"fmt"
+	"github.com/protolambda/go-kzg/bls"
+)
 
-type ZeroPolyFn func(missingIndices []uint64, length uint64) ([]Big, []Big)
+type ZeroPolyFn func(missingIndices []uint64, length uint64) ([]bls.Big, []bls.Big)
 
-func (fs *FFTSettings) makeZeroPolyMulLeaf(dst []Big, indices []uint64, domainStride uint64) {
+func (fs *FFTSettings) makeZeroPolyMulLeaf(dst []bls.Big, indices []uint64, domainStride uint64) {
 	if len(dst) < len(indices)+1 {
 		panic(fmt.Sprintf("expected bigger destination length: %d, got: %d", len(indices)+1, len(dst)))
 	}
 	// zero out the unused slots
 	for i := len(indices) + 1; i < len(dst); i++ {
-		CopyBigNum(&dst[i], &ZERO)
+		bls.CopyBigNum(&dst[i], &bls.ZERO)
 	}
-	CopyBigNum(&dst[len(indices)], &ONE)
-	var negDi Big
+	bls.CopyBigNum(&dst[len(indices)], &bls.ONE)
+	var negDi bls.Big
 	for i, v := range indices {
-		subModBig(&negDi, &ZERO, &fs.expandedRootsOfUnity[v*domainStride])
-		CopyBigNum(&dst[i], &negDi)
+		bls.SubModBig(&negDi, &bls.ZERO, &fs.expandedRootsOfUnity[v*domainStride])
+		bls.CopyBigNum(&dst[i], &negDi)
 		if i > 0 {
-			addModBig(&dst[i], &dst[i], &dst[i-1])
+			bls.AddModBig(&dst[i], &dst[i], &dst[i-1])
 			for j := i - 1; j > 0; j-- {
-				mulModBig(&dst[j], &dst[j], &negDi)
-				addModBig(&dst[j], &dst[j], &dst[j-1])
+				bls.MulModBig(&dst[j], &dst[j], &negDi)
+				bls.AddModBig(&dst[j], &dst[j], &dst[j-1])
 			}
-			mulModBig(&dst[0], &dst[0], &negDi)
+			bls.MulModBig(&dst[0], &dst[0], &negDi)
 		}
 	}
 }
 
-func (fs *FFTSettings) reduceLeaves(scratch []Big, dst []Big, ps [][]Big) {
+func (fs *FFTSettings) reduceLeaves(scratch []bls.Big, dst []bls.Big, ps [][]bls.Big) {
 	n := uint64(len(dst))
-	if !isPowerOfTwo(n) {
+	if !bls.IsPowerOfTwo(n) {
 		panic("destination must be a power of two")
 	}
 	if len(ps) == 0 {
@@ -54,10 +57,10 @@ func (fs *FFTSettings) reduceLeaves(scratch []Big, dst []Big, ps [][]Big) {
 	prep := func(pi uint64) {
 		p := ps[pi]
 		for i := 0; i < len(p); i++ {
-			CopyBigNum(&pPadded[i], &p[i])
+			bls.CopyBigNum(&pPadded[i], &p[i])
 		}
 		for i := uint64(len(p)); i < n; i++ {
-			CopyBigNum(&pPadded[i], &ZERO)
+			bls.CopyBigNum(&pPadded[i], &bls.ZERO)
 		}
 	}
 	mulEvalPs := scratch[n : 2*n]
@@ -72,7 +75,7 @@ func (fs *FFTSettings) reduceLeaves(scratch []Big, dst []Big, ps [][]Big) {
 			panic(err)
 		}
 		for j := uint64(0); j < n; j++ {
-			mulModBig(&mulEvalPs[j], &mulEvalPs[j], &pEval[j])
+			bls.MulModBig(&mulEvalPs[j], &mulEvalPs[j], &pEval[j])
 		}
 	}
 	if err := fs.InplaceFFT(mulEvalPs, dst, true); err != nil {
@@ -81,14 +84,14 @@ func (fs *FFTSettings) reduceLeaves(scratch []Big, dst []Big, ps [][]Big) {
 	return
 }
 
-func (fs *FFTSettings) ZeroPolyViaMultiplication(missingIndices []uint64, length uint64) ([]Big, []Big) {
+func (fs *FFTSettings) ZeroPolyViaMultiplication(missingIndices []uint64, length uint64) ([]bls.Big, []bls.Big) {
 	if len(missingIndices) == 0 {
-		return make([]Big, length, length), make([]Big, length, length)
+		return make([]bls.Big, length, length), make([]bls.Big, length, length)
 	}
 	if length > fs.maxWidth {
 		panic("too many ")
 	}
-	if !isPowerOfTwo(length) {
+	if !bls.IsPowerOfTwo(length) {
 		panic("length not a power of two")
 	}
 	domainStride := fs.maxWidth / length
@@ -96,7 +99,7 @@ func (fs *FFTSettings) ZeroPolyViaMultiplication(missingIndices []uint64, length
 	perLeafPoly := uint64(64)
 	perLeaf := perLeafPoly - 1
 	if uint64(len(missingIndices)) <= perLeaf {
-		zeroPoly := make([]Big, len(missingIndices)+1, length)
+		zeroPoly := make([]bls.Big, len(missingIndices)+1, length)
 		fs.makeZeroPolyMulLeaf(zeroPoly, missingIndices, domainStride)
 		// pad with zeroes (capacity is already there)
 		zeroPoly = zeroPoly[:length]
@@ -112,13 +115,13 @@ func (fs *FFTSettings) ZeroPolyViaMultiplication(missingIndices []uint64, length
 
 	// The assumption here is that if the output is a power of two length, matching the sum of child leaf lengths,
 	// then the space can be reused.
-	out := make([]Big, n, n)
+	out := make([]bls.Big, n, n)
 
 	// Build the leaves.
 
 	// Just the headers, a leaf re-uses the output space.
 	// Combining leaves can be done mostly in-place, using a scratchpad.
-	leaves := make([][]Big, leafCount, leafCount)
+	leaves := make([][]bls.Big, leafCount, leafCount)
 
 	offset := uint64(0)
 	outOffset := uint64(0)
@@ -138,7 +141,7 @@ func (fs *FFTSettings) ZeroPolyViaMultiplication(missingIndices []uint64, length
 
 	// must be a power of 2
 	reductionFactor := 4
-	scratch := make([]Big, n*3, n*3)
+	scratch := make([]bls.Big, n*3, n*3)
 
 	// from bottom to top, start reducing leaves.
 	for len(leaves) > 1 {
@@ -169,7 +172,7 @@ func (fs *FFTSettings) ZeroPolyViaMultiplication(missingIndices []uint64, length
 	}
 	zeroPoly := leaves[0]
 	if zl := uint64(len(zeroPoly)); zl < length {
-		zeroPoly = append(zeroPoly, make([]Big, length-zl, length-zl)...)
+		zeroPoly = append(zeroPoly, make([]bls.Big, length-zl, length-zl)...)
 	} else if zl > length {
 		panic("expected output smaller or equal to input length")
 	}

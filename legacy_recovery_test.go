@@ -2,6 +2,7 @@ package kzg
 
 import (
 	"fmt"
+	"github.com/protolambda/go-kzg/bls"
 	"math/rand"
 	"testing"
 )
@@ -9,12 +10,12 @@ import (
 func TestErasureCodeRecoverSimple(t *testing.T) {
 	// Create some random data, with padding...
 	fs := NewFFTSettings(5)
-	poly := make([]Big, fs.maxWidth, fs.maxWidth)
+	poly := make([]bls.Big, fs.maxWidth, fs.maxWidth)
 	for i := uint64(0); i < fs.maxWidth/2; i++ {
-		asBig(&poly[i], i)
+		bls.AsBig(&poly[i], i)
 	}
 	for i := fs.maxWidth / 2; i < fs.maxWidth; i++ {
-		poly[i] = ZERO
+		poly[i] = bls.ZERO
 	}
 	debugBigs("poly", poly)
 	// Get data for polynomial SLOW_INDICES
@@ -25,7 +26,7 @@ func TestErasureCodeRecoverSimple(t *testing.T) {
 	debugBigs("data", data)
 
 	// copy over the 2nd half, leave the first half as nils
-	subset := make([]*Big, fs.maxWidth, fs.maxWidth)
+	subset := make([]*bls.Big, fs.maxWidth, fs.maxWidth)
 	half := fs.maxWidth / 2
 	for i := half; i < fs.maxWidth; i++ {
 		subset[i] = &data[i]
@@ -38,8 +39,8 @@ func TestErasureCodeRecoverSimple(t *testing.T) {
 	}
 	debugBigs("recovered", recovered)
 	for i := range recovered {
-		if got := &recovered[i]; !equalBig(got, &data[i]) {
-			t.Errorf("recovery at index %d got %s but expected %s", i, bigStr(got), bigStr(&data[i]))
+		if got := &recovered[i]; !bls.EqualBig(got, &data[i]) {
+			t.Errorf("recovery at index %d got %s but expected %s", i, bls.BigStr(got), bls.BigStr(&data[i]))
 		}
 	}
 	// And recover the original coeffs for good measure
@@ -49,12 +50,12 @@ func TestErasureCodeRecoverSimple(t *testing.T) {
 	}
 	debugBigs("back", back)
 	for i := uint64(0); i < half; i++ {
-		if got := &back[i]; !equalBig(got, &poly[i]) {
-			t.Errorf("coeff at index %d got %s but expected %s", i, bigStr(got), bigStr(&poly[i]))
+		if got := &back[i]; !bls.EqualBig(got, &poly[i]) {
+			t.Errorf("coeff at index %d got %s but expected %s", i, bls.BigStr(got), bls.BigStr(&poly[i]))
 		}
 	}
 	for i := half; i < fs.maxWidth; i++ {
-		if got := &back[i]; !equalZero(got) {
+		if got := &back[i]; !bls.EqualZero(got) {
 			t.Errorf("expected zero padding in index %d", i)
 		}
 	}
@@ -63,12 +64,12 @@ func TestErasureCodeRecoverSimple(t *testing.T) {
 func TestErasureCodeRecover(t *testing.T) {
 	// Create some random poly, with padding so we get redundant data
 	fs := NewFFTSettings(7)
-	poly := make([]Big, fs.maxWidth, fs.maxWidth)
+	poly := make([]bls.Big, fs.maxWidth, fs.maxWidth)
 	for i := uint64(0); i < fs.maxWidth/2; i++ {
-		asBig(&poly[i], i)
+		bls.AsBig(&poly[i], i)
 	}
 	for i := fs.maxWidth / 2; i < fs.maxWidth; i++ {
-		poly[i] = ZERO
+		poly[i] = bls.ZERO
 	}
 	debugBigs("poly", poly)
 	// Get coefficients for polynomial SLOW_INDICES
@@ -79,8 +80,8 @@ func TestErasureCodeRecover(t *testing.T) {
 	debugBigs("data", data)
 
 	// Util to pick a random subnet of the values
-	randomSubset := func(known uint64, rngSeed uint64) []*Big {
-		withMissingValues := make([]*Big, fs.maxWidth, fs.maxWidth)
+	randomSubset := func(known uint64, rngSeed uint64) []*bls.Big {
+		withMissingValues := make([]*bls.Big, fs.maxWidth, fs.maxWidth)
 		for i := range data {
 			withMissingValues[i] = &data[i]
 		}
@@ -112,8 +113,8 @@ func TestErasureCodeRecover(t *testing.T) {
 				}
 				debugBigs("recovered", recovered)
 				for i := range recovered {
-					if got := &recovered[i]; !equalBig(got, &data[i]) {
-						t.Errorf("recovery at index %d got %s but expected %s", i, bigStr(got), bigStr(&data[i]))
+					if got := &recovered[i]; !bls.EqualBig(got, &data[i]) {
+						t.Errorf("recovery at index %d got %s but expected %s", i, bls.BigStr(got), bls.BigStr(&data[i]))
 					}
 				}
 				// And recover the original coeffs for good measure
@@ -124,12 +125,12 @@ func TestErasureCodeRecover(t *testing.T) {
 				debugBigs("back", back)
 				half := uint64(len(back)) / 2
 				for i := uint64(0); i < half; i++ {
-					if got := &back[i]; !equalBig(got, &poly[i]) {
-						t.Errorf("coeff at index %d got %s but expected %s", i, bigStr(got), bigStr(&poly[i]))
+					if got := &back[i]; !bls.EqualBig(got, &poly[i]) {
+						t.Errorf("coeff at index %d got %s but expected %s", i, bls.BigStr(got), bls.BigStr(&poly[i]))
 					}
 				}
 				for i := half; i < fs.maxWidth; i++ {
-					if got := &back[i]; !equalZero(got) {
+					if got := &back[i]; !bls.EqualZero(got) {
 						t.Errorf("expected zero padding in index %d", i)
 					}
 				}

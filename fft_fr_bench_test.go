@@ -2,14 +2,15 @@ package kzg
 
 import (
 	"fmt"
+	"github.com/protolambda/go-kzg/bls"
 	"testing"
 )
 
 func benchFFT(scale uint8, b *testing.B) {
 	fs := NewFFTSettings(scale)
-	data := make([]Big, fs.maxWidth, fs.maxWidth)
+	data := make([]bls.Big, fs.maxWidth, fs.maxWidth)
 	for i := uint64(0); i < fs.maxWidth; i++ {
-		CopyBigNum(&data[i], randomBig())
+		bls.CopyBigNum(&data[i], bls.RandomBig())
 	}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {

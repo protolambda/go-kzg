@@ -1,4 +1,4 @@
-package kzg
+package bls
 
 import "testing"
 
@@ -6,12 +6,12 @@ import "testing"
 // used actually handles dst/arg overlaps well.
 
 func TestInplaceAdd(t *testing.T) {
-	aVal := randomBig()
-	bVal := randomBig()
+	aVal := RandomBig()
+	bVal := RandomBig()
 	aPlusB := new(Big)
-	addModBig(aPlusB, aVal, bVal)
+	AddModBig(aPlusB, aVal, bVal)
 	twoA := new(Big)
-	mulModBig(twoA, aVal, &TWO)
+	MulModBig(twoA, aVal, &TWO)
 
 	check := func(name string, fn func(a, b *Big) bool) {
 		t.Run(name, func(t *testing.T) {
@@ -24,26 +24,26 @@ func TestInplaceAdd(t *testing.T) {
 		})
 	}
 	check("dst equals lhs", func(a *Big, b *Big) bool {
-		addModBig(a, a, b)
-		return equalBig(a, aPlusB)
+		AddModBig(a, a, b)
+		return EqualBig(a, aPlusB)
 	})
 	check("dst equals rhs", func(a *Big, b *Big) bool {
-		addModBig(b, a, b)
-		return equalBig(b, aPlusB)
+		AddModBig(b, a, b)
+		return EqualBig(b, aPlusB)
 	})
 	check("dst equals lhs and rhs", func(a *Big, b *Big) bool {
-		addModBig(a, a, a)
-		return equalBig(a, twoA)
+		AddModBig(a, a, a)
+		return EqualBig(a, twoA)
 	})
 }
 
 func TestInplaceMul(t *testing.T) {
-	aVal := randomBig()
-	bVal := randomBig()
+	aVal := RandomBig()
+	bVal := RandomBig()
 	aMulB := new(Big)
-	mulModBig(aMulB, aVal, bVal)
+	MulModBig(aMulB, aVal, bVal)
 	squareA := new(Big)
-	mulModBig(squareA, aVal, aVal)
+	MulModBig(squareA, aVal, aVal)
 
 	check := func(name string, fn func(a, b *Big) bool) {
 		t.Run(name, func(t *testing.T) {
@@ -56,15 +56,15 @@ func TestInplaceMul(t *testing.T) {
 		})
 	}
 	check("dst equals lhs", func(a *Big, b *Big) bool {
-		mulModBig(a, a, b)
-		return equalBig(a, aMulB)
+		MulModBig(a, a, b)
+		return EqualBig(a, aMulB)
 	})
 	check("dst equals rhs", func(a *Big, b *Big) bool {
-		mulModBig(b, a, b)
-		return equalBig(b, aMulB)
+		MulModBig(b, a, b)
+		return EqualBig(b, aMulB)
 	})
 	check("dst equals lhs and rhs", func(a *Big, b *Big) bool {
-		mulModBig(a, a, a)
-		return equalBig(a, squareA)
+		MulModBig(a, a, a)
+		return EqualBig(a, squareA)
 	})
 }

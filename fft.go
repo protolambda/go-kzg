@@ -2,7 +2,10 @@
 
 package kzg
 
-import "math/bits"
+import (
+	"github.com/protolambda/go-kzg/bls"
+	"math/bits"
+)
 
 // if not already a power of 2, return the next power of 2
 func nextPowOf2(v uint64) uint64 {
@@ -15,15 +18,15 @@ func nextPowOf2(v uint64) uint64 {
 // Expands the power circle for a given root of unity to WIDTH+1 values.
 // The first entry will be 1, the last entry will also be 1,
 // for convenience when reversing the array (useful for inverses)
-func expandRootOfUnity(rootOfUnity *Big) []Big {
-	rootz := make([]Big, 2)
-	rootz[0] = ONE // some unused number in py code
+func expandRootOfUnity(rootOfUnity *bls.Big) []bls.Big {
+	rootz := make([]bls.Big, 2)
+	rootz[0] = bls.ONE // some unused number in py code
 	rootz[1] = *rootOfUnity
-	for i := 1; !equalOne(&rootz[i]); {
-		rootz = append(rootz, Big{})
+	for i := 1; !bls.EqualOne(&rootz[i]); {
+		rootz = append(rootz, bls.Big{})
 		this := &rootz[i]
 		i++
-		mulModBig(&rootz[i], this, rootOfUnity)
+		bls.MulModBig(&rootz[i], this, rootOfUnity)
 	}
 	return rootz
 }
@@ -31,19 +34,19 @@ func expandRootOfUnity(rootOfUnity *Big) []Big {
 type FFTSettings struct {
 	maxWidth uint64
 	// the generator used to get all roots of unity
-	rootOfUnity *Big
+	rootOfUnity *bls.Big
 	// domain, starting and ending with 1 (duplicate!)
-	expandedRootsOfUnity []Big
+	expandedRootsOfUnity []bls.Big
 	// reverse domain, same as inverse values of domain. Also starting and ending with 1.
-	reverseRootsOfUnity []Big
+	reverseRootsOfUnity []bls.Big
 }
 
 func NewFFTSettings(maxScale uint8) *FFTSettings {
 	width := uint64(1) << maxScale
-	root := &scale2RootOfUnity[maxScale]
-	rootz := expandRootOfUnity(&scale2RootOfUnity[maxScale])
+	root := &bls.Scale2RootOfUnity[maxScale]
+	rootz := expandRootOfUnity(&bls.Scale2RootOfUnity[maxScale])
 	// reverse roots of unity
-	rootzReverse := make([]Big, len(rootz), len(rootz))
+	rootzReverse := make([]bls.Big, len(rootz), len(rootz))
 	copy(rootzReverse, rootz)
 	for i, j := uint64(0), uint64(len(rootz)-1); i < j; i, j = i+1, j-1 {
 		rootzReverse[i], rootzReverse[j] = rootzReverse[j], rootzReverse[i]
