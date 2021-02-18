@@ -29,23 +29,23 @@ Features:
   - generate/verify proofs for ranges (cosets) of points, using FK20
 - Data recovery: given an arbitrary subset of data (at least half), recover the rest
 - Optimized for Data-availability usage
-- Change Fr / BLS with build tags.
+- Change Bignum / BLS with build tags.
 
 ## BLS
 
 TODO: working with Herumi BLS currently as it exposes more functionality in Go API than BLST does. Still very limited compared to python.
 The BLS functionality is generalized, and simple `G1` and `G2` types are exposed to use it. In the future different BLS libraries could be supported.
 
-## Frs
+## Field elements (Fr)
 
 The BLS curve order is used for the modulo math, different libraries could be used to provide this functionality.
-Note: some of these libraries do not have full BLS functionality, only fr-num / uint256. The KZG code will be excluded when compiling with a non-BLS build tag.
+Note: some of these libraries do not have full BLS functionality, only Bignum / uint256. The KZG code will be excluded when compiling with a non-BLS build tag.
 
 Build tag options:
-- ` ` (default, empty): use Herumi BLS library. Previously used by `Fr_hbls` build tag. [`herumi/bls-eth-go-binary`](https://github.com/herumi/bls-eth-go-binary/)
-- `-tags Fr_kilic`: Use Kilic BLS library. [`kilic/bls12-381`](https://github.com/kilic/bls12-381)
-- `-tags Fr_hol256`: Use the uint256 code that Geth uses, [`holiman/uint256`](https://github.com/holiman/uint256)
-- `-tags Fr_pure`: Use the native Go Fr implementation.
+- ` ` (default, empty): use Herumi BLS library. Previously used by `bignum_hbls` build tag. [`herumi/bls-eth-go-binary`](https://github.com/herumi/bls-eth-go-binary/)
+- `-tags bignum_kilic`: Use Kilic BLS library. [`kilic/bls12-381`](https://github.com/kilic/bls12-381)
+- `-tags bignum_hol256`: Use the uint256 code that Geth uses, [`holiman/uint256`](https://github.com/holiman/uint256)
+- `-tags bignum_pure`: Use the native Go Bignum implementation.
 
 
 ## Benchmarks
@@ -149,7 +149,7 @@ BenchmarkFFTSettings_FFT/scale_14-8        	     288	  43007504 ns/op
 BenchmarkFFTSettings_FFT/scale_15-8        	     130	  89666704 ns/op
 ```
 
-And with Go native fr numbers (`Fr`):
+And with Go native big numbers (`big.Int`):
 ```
 BenchmarkFFTSettings_FFT/scale_4-8         	  276931	     42424 ns/op
 BenchmarkFFTSettings_FFT/scale_5-8         	  116278	     96975 ns/op
