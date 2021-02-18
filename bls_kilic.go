@@ -42,19 +42,19 @@ func CopyG1(dst *G1, v *G1) {
 	*dst = *v
 }
 
-func mulG1(dst *G1, a *G1, b *Big) {
+func MulG1(dst *G1, a *G1, b *Big) {
 	curveG1.MulScalar((*kbls.PointG1)(dst), (*kbls.PointG1)(a), (*kbls.Fr)(b))
 }
 
-func addG1(dst *G1, a *G1, b *G1) {
+func AddG1(dst *G1, a *G1, b *G1) {
 	curveG1.Add((*kbls.PointG1)(dst), (*kbls.PointG1)(a), (*kbls.PointG1)(b))
 }
 
-func subG1(dst *G1, a *G1, b *G1) {
+func SubG1(dst *G1, a *G1, b *G1) {
 	curveG1.Sub((*kbls.PointG1)(dst), (*kbls.PointG1)(a), (*kbls.PointG1)(b))
 }
 
-func strG1(v *G1) string {
+func StrG1(v *G1) string {
 	data := curveG1.ToUncompressed((*kbls.PointG1)(v))
 	var a, b big.Int
 	a.SetBytes(data[:48])
@@ -62,7 +62,7 @@ func strG1(v *G1) string {
 	return a.String() + "\n" + b.String()
 }
 
-func negG1(dst *G1) {
+func NegG1(dst *G1) {
 	// in-place should be safe here (TODO double check)
 	curveG1.Neg((*kbls.PointG1)(dst), (*kbls.PointG1)(dst))
 }
@@ -78,24 +78,24 @@ func CopyG2(dst *G2, v *G2) {
 	*dst = *v
 }
 
-func mulG2(dst *G2, a *G2, b *Big) {
+func MulG2(dst *G2, a *G2, b *Big) {
 	curveG2.MulScalar((*kbls.PointG2)(dst), (*kbls.PointG2)(a), (*kbls.Fr)(b))
 }
 
-func addG2(dst *G2, a *G2, b *G2) {
+func AddG2(dst *G2, a *G2, b *G2) {
 	curveG2.Add((*kbls.PointG2)(dst), (*kbls.PointG2)(a), (*kbls.PointG2)(b))
 }
 
-func subG2(dst *G2, a *G2, b *G2) {
+func SubG2(dst *G2, a *G2, b *G2) {
 	curveG2.Sub((*kbls.PointG2)(dst), (*kbls.PointG2)(a), (*kbls.PointG2)(b))
 }
 
-func negG2(dst *G2) {
+func NegG2(dst *G2) {
 	// in-place should be safe here (TODO double check)
 	curveG2.Neg((*kbls.PointG2)(dst), (*kbls.PointG2)(dst))
 }
 
-func strG2(v *G2) string {
+func StrG2(v *G2) string {
 	data := curveG2.ToUncompressed((*kbls.PointG2)(v))
 	var a, b big.Int
 	a.SetBytes(data[:96])
@@ -103,11 +103,11 @@ func strG2(v *G2) string {
 	return a.String() + "\n" + b.String()
 }
 
-func equalG1(a *G1, b *G1) bool {
+func EqualG1(a *G1, b *G1) bool {
 	return curveG1.Equal((*kbls.PointG1)(a), (*kbls.PointG1)(b))
 }
 
-func equalG2(a *G2, b *G2) bool {
+func EqualG2(a *G2, b *G2) bool {
 	return curveG2.Equal((*kbls.PointG2)(a), (*kbls.PointG2)(b))
 }
 
