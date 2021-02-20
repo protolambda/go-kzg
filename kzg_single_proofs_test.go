@@ -9,7 +9,7 @@ import (
 
 func TestKZGSettings_CheckProofSingle(t *testing.T) {
 	fs := NewFFTSettings(4)
-	s1, s2 := generateSetup("1927409816240961209460912649124", 16+1)
+	s1, s2 := GenerateTestingSetup("1927409816240961209460912649124", 16+1)
 	ks := NewKZGSettings(fs, s1, s2)
 	for i := 0; i < len(ks.secretG1); i++ {
 		t.Logf("secret g1 %d: %s", i, bls.StrG1(&ks.secretG1[i]))
@@ -44,23 +44,4 @@ func testPoly(polynomial ...uint64) []bls.Fr {
 		bls.AsFr(&polynomialFr[i], polynomial[i])
 	}
 	return polynomialFr
-}
-
-func generateSetup(secret string, n uint64) ([]bls.G1Point, []bls.G2Point) {
-	var s bls.Fr
-	bls.SetFr(&s, secret)
-
-	var sPow bls.Fr
-	bls.CopyFr(&sPow, &bls.ONE)
-
-	s1Out := make([]bls.G1Point, n, n)
-	s2Out := make([]bls.G2Point, n, n)
-	for i := uint64(0); i < n; i++ {
-		bls.MulG1(&s1Out[i], &bls.GenG1, &sPow)
-		bls.MulG2(&s2Out[i], &bls.GenG2, &sPow)
-		var tmp bls.Fr
-		bls.CopyFr(&tmp, &sPow)
-		bls.MulModFr(&sPow, &tmp, &s)
-	}
-	return s1Out, s2Out
 }

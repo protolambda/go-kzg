@@ -9,7 +9,7 @@ import (
 
 func TestKZGSettings_DAUsingFK20(t *testing.T) {
 	fs := NewFFTSettings(5)
-	s1, s2 := generateSetup("1927409816240961209460912649124", 32+1)
+	s1, s2 := GenerateTestingSetup("1927409816240961209460912649124", 32+1)
 	ks := NewKZGSettings(fs, s1, s2)
 	fk := NewFK20SingleSettings(ks, 32)
 

@@ -10,7 +10,7 @@ import (
 
 func TestKZGSettings_CheckProofMulti(t *testing.T) {
 	fs := NewFFTSettings(4)
-	s1, s2 := generateSetup("1927409816240961209460912649124", 16+1)
+	s1, s2 := GenerateTestingSetup("1927409816240961209460912649124", 16+1)
 	ks := NewKZGSettings(fs, s1, s2)
 	for i := 0; i < len(ks.secretG1); i++ {
 		t.Logf("secret g1 %d: %s", i, bls.StrG1(&ks.secretG1[i]))
@@ -29,7 +29,7 @@ func TestKZGSettings_CheckProofMulti(t *testing.T) {
 	bls.AsFr(&xFr, x)
 	cosetScale := uint8(3)
 	coset := make([]bls.Fr, 1<<cosetScale, 1<<cosetScale)
-	s1, s2 = generateSetup("1927409816240961209460912649124", 8+1)
+	s1, s2 = GenerateTestingSetup("1927409816240961209460912649124", 8+1)
 	ks = NewKZGSettings(NewFFTSettings(cosetScale), s1, s2)
 	for i := 0; i < len(coset); i++ {
 		fmt.Printf("rootz %d: %s\n", i, bls.FrStr(&ks.expandedRootsOfUnity[i]))

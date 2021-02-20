@@ -45,7 +45,7 @@ func integrationTestSetup(scale uint8, seed int64) (data []byte, extended []bls.
 		bls.CopyFr(&extended[i], &evenPoints[i/2])
 		bls.CopyFr(&extended[i+1], &oddPoints[i/2])
 	}
-	s1, s2 := generateSetup("1927409816240961209460912649124", uint64(len(extended)))
+	s1, s2 := GenerateTestingSetup("1927409816240961209460912649124", uint64(len(extended)))
 	ks = NewKZGSettings(fs, s1, s2)
 	// get coefficient form (half of this is zeroes, but ok)
 	coeffs, err := ks.FFT(extended, true)

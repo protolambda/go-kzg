@@ -12,7 +12,7 @@ func TestKZGSettings_DAUsingFK20Multi(t *testing.T) {
 	chunkLen := uint64(16)
 	chunkCount := uint64(32)
 	n := chunkLen * chunkCount
-	s1, s2 := generateSetup("1927409816240961209460912649124", chunkLen*chunkCount*2)
+	s1, s2 := GenerateTestingSetup("1927409816240961209460912649124", chunkLen*chunkCount*2)
 	ks := NewKZGSettings(fs, s1, s2)
 	fk := NewFK20MultiSettings(ks, n*2, chunkLen)
 
