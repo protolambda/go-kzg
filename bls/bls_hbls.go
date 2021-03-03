@@ -113,6 +113,10 @@ func EqualG2(a *G2Point, b *G2Point) bool {
 	return (*hbls.G2)(a).IsEqual((*hbls.G2)(b))
 }
 
+func ToCompressedG1(p *G1Point) []byte {
+	return hbls.CastToPublicKey((*hbls.G1)(p)).Serialize()
+}
+
 func LinCombG1(numbers []G1Point, factors []Fr) *G1Point {
 	var out G1Point
 	// We're just using unsafe to cast elements that are an alias anyway, no problem.

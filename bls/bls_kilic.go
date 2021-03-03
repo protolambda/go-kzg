@@ -111,6 +111,10 @@ func EqualG2(a *G2Point, b *G2Point) bool {
 	return curveG2.Equal((*kbls.PointG2)(a), (*kbls.PointG2)(b))
 }
 
+func ToCompressedG1(p *G1Point) []byte {
+	return curveG1.ToCompressed((*kbls.PointG1)(p))
+}
+
 func LinCombG1(numbers []G1Point, factors []Fr) *G1Point {
 	if len(numbers) != len(factors) {
 		panic("got LinCombG1 numbers/factors length mismatch")
