@@ -94,6 +94,7 @@ func DivModFr(dst *Fr, a, b *Fr) {
 	var tmp Fr
 	InvModFr(&tmp, b)
 	(*big.Int)(dst).Mul((*big.Int)(a), (*big.Int)(&tmp))
+	(*big.Int)(dst).Mod((*big.Int)(dst), &_modulus)
 }
 
 func MulModFr(dst *Fr, a, b *Fr) {
