@@ -28,12 +28,17 @@ func SetFr(dst *Fr, v string) {
 }
 
 // FrFrom32 mutates the fr num. The value v is little-endian 32-bytes.
-func FrFrom32(dst *Fr, v [32]byte) {
+// Returns false, without modifying dst, if the value is out of range.
+func FrFrom32(dst *Fr, v [32]byte) (ok bool) {
+	if !ValidFr(v) {
+		return false
+	}
 	// reverse endianness, u256.Int takes big-endian bytes
 	for i := 0; i < 16; i++ {
 		v[i], v[31-i] = v[31-i], v[i]
 	}
 	(*u256.Int)(dst).SetBytes(v[:])
+	return true
 }
 
 // FrTo32 serializes a fr number to 32 bytes. Encoded little-endian.

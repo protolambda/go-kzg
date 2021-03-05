@@ -87,3 +87,30 @@ func TestDivModFr(t *testing.T) {
 		t.Fatalf("div num not equal to mul inv: %s, %s", FrStr(&div), FrStr(&mulInv))
 	}
 }
+
+func TestValidFr(t *testing.T) {
+	data := FrTo32(&MODULUS_MINUS1)
+	if !ValidFr(data) {
+		t.Fatal("expected mod-1 to be valid")
+	}
+	var tmp [32]byte
+	for i := 0; i < 32; i++ {
+		if data[i] == 0xff {
+			continue
+		}
+		tmp = data
+		tmp[i] += 1
+		if ValidFr(tmp) {
+			t.Fatal("expected anything larger than mod-1 to be invalid")
+		}
+	}
+	v := RandomFr()
+	data = FrTo32(v)
+	if !ValidFr(data) {
+		t.Fatalf("expected generated Fr %s to be valid", v)
+	}
+	data = [32]byte{}
+	if !ValidFr(data) {
+		t.Fatal("expected zero to be valid")
+	}
+}

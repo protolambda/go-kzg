@@ -21,4 +21,3 @@ func GenerateTestingSetup(secret string, n uint64) ([]bls.G1Point, []bls.G2Point
 	}
 	return s1Out, s2Out
 }
-
