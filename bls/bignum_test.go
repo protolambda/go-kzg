@@ -68,3 +68,49 @@ func TestInplaceMul(t *testing.T) {
 		return EqualFr(a, squareA)
 	})
 }
+
+// Sanity check the mod div function, some libraries do regular integer div.
+func TestDivModFr(t *testing.T) {
+	var aVal Fr
+	SetFr(&aVal, "26444158170683616486493062254748234829545368615823006596610545696213139843950")
+	var bVal Fr
+	SetFr(&bVal, "44429412392042760961177795624245903017634520927909329890010277843232676752272")
+	var div Fr
+	DivModFr(&div, &aVal, &bVal)
+
+	var invB Fr
+	InvModFr(&invB, &bVal)
+	var mulInv Fr
+	MulModFr(&mulInv, &aVal, &invB)
+
+	if !EqualFr(&div, &mulInv) {
+		t.Fatalf("div num not equal to mul inv: %s, %s", FrStr(&div), FrStr(&mulInv))
+	}
+}
+
+func TestValidFr(t *testing.T) {
+	data := FrTo32(&MODULUS_MINUS1)
+	if !ValidFr(data) {
+		t.Fatal("expected mod-1 to be valid")
+	}
+	var tmp [32]byte
+	for i := 0; i < 32; i++ {
+		if data[i] == 0xff {
+			continue
+		}
+		tmp = data
+		tmp[i] += 1
+		if ValidFr(tmp) {
+			t.Fatal("expected anything larger than mod-1 to be invalid")
+		}
+	}
+	v := RandomFr()
+	data = FrTo32(v)
+	if !ValidFr(data) {
+		t.Fatalf("expected generated Fr %s to be valid", v)
+	}
+	data = [32]byte{}
+	if !ValidFr(data) {
+		t.Fatal("expected zero to be valid")
+	}
+}
