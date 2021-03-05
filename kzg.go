@@ -15,8 +15,6 @@ type KZGSettings struct {
 	SecretG1 []bls.G1Point
 	// [b.multiply(b.G2, pow(s, i, MODULUS)) for i in range(WIDTH+1)],
 	SecretG2 []bls.G2Point
-
-	SecretG1IFFT []bls.G1Point
 }
 
 func NewKZGSettings(fs *FFTSettings, secretG1 []bls.G1Point, secretG2 []bls.G2Point) *KZGSettings {
@@ -26,16 +24,11 @@ func NewKZGSettings(fs *FFTSettings, secretG1 []bls.G1Point, secretG2 []bls.G2Po
 	if uint64(len(secretG1)) < fs.MaxWidth {
 		panic(fmt.Errorf("expected more values for secrets, MaxWidth: %d, got: %d", fs.MaxWidth, len(secretG1)))
 	}
-	s1IFFT, err := fs.FFTG1(secretG1, true)
-	if err != nil {
-		panic(fmt.Errorf("expected to compute IFFT(secretG1) with sufficient size, but failed: %v", err))
-	}
 
 	ks := &KZGSettings{
-		FFTSettings:  fs,
-		SecretG1:     secretG1,
-		SecretG2:     secretG2,
-		SecretG1IFFT: s1IFFT,
+		FFTSettings: fs,
+		SecretG1:    secretG1,
+		SecretG2:    secretG2,
 	}
 
 	return ks

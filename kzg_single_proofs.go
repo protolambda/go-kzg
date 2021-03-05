@@ -6,6 +6,12 @@ package kzg
 
 import "github.com/protolambda/go-kzg/bls"
 
+// KZG commitment to polynomial in evaluation form, i.e. eval = FFT(coeffs).
+// The eval length must match the prepared KZG settings width.
+func CommitToEvalPoly(secretG1IFFT []bls.G1Point, eval []bls.Fr) *bls.G1Point {
+	return bls.LinCombG1(secretG1IFFT, eval)
+}
+
 // KZG commitment to polynomial in coefficient form
 func (ks *KZGSettings) CommitToPoly(coeffs []bls.Fr) *bls.G1Point {
 	return bls.LinCombG1(ks.SecretG1[:len(coeffs)], coeffs)
