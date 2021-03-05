@@ -43,7 +43,9 @@ func CopyG1(dst *G1Point, v *G1Point) {
 }
 
 func MulG1(dst *G1Point, a *G1Point, b *Fr) {
-	curveG1.MulScalar((*kbls.PointG1)(dst), (*kbls.PointG1)(a), (*kbls.Fr)(b))
+	tmp := (kbls.Fr)(*b) // copy, we want to leave the original in mont-red form
+	(&tmp).FromRed()
+	curveG1.MulScalar((*kbls.PointG1)(dst), (*kbls.PointG1)(a), &tmp)
 }
 
 func AddG1(dst *G1Point, a *G1Point, b *G1Point) {
@@ -79,7 +81,9 @@ func CopyG2(dst *G2Point, v *G2Point) {
 }
 
 func MulG2(dst *G2Point, a *G2Point, b *Fr) {
-	curveG2.MulScalar((*kbls.PointG2)(dst), (*kbls.PointG2)(a), (*kbls.Fr)(b))
+	tmp := (kbls.Fr)(*b) // copy, we want to leave the original in mont-red form
+	(&tmp).FromRed()
+	curveG2.MulScalar((*kbls.PointG2)(dst), (*kbls.PointG2)(a), &tmp)
 }
 
 func AddG2(dst *G2Point, a *G2Point, b *G2Point) {
@@ -126,7 +130,10 @@ func LinCombG1(numbers []G1Point, factors []Fr) *G1Point {
 	}
 	tmpFrs := make([]*kbls.Fr, len(factors), len(factors))
 	for i := 0; i < len(factors); i++ {
-		tmpFrs[i] = (*kbls.Fr)(&factors[i])
+		// copy, since we have to change from mont-red form to regular again, and don't want to mutate the input.
+		v := *(*kbls.Fr)(&factors[i])
+		v.FromRed()
+		tmpFrs[i] = &v
 	}
 	_, _ = curveG1.MultiExp((*kbls.PointG1)(&out), tmpG1s, tmpFrs)
 	return &out
