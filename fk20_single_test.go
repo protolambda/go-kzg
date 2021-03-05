@@ -29,7 +29,7 @@ func TestKZGSettings_DAUsingFK20(t *testing.T) {
 	var posFr bls.Fr
 	bls.AsFr(&posFr, pos)
 	var x bls.Fr
-	bls.CopyFr(&x, &ks.expandedRootsOfUnity[pos])
+	bls.CopyFr(&x, &ks.ExpandedRootsOfUnity[pos])
 	t.Log("x:\n", bls.FrStr(&x))
 	var y bls.Fr
 	bls.EvalPolyAt(&y, polynomial, &x)

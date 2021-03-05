@@ -24,9 +24,9 @@ import (
 func (ks *FK20MultiSettings) FK20Multi(polynomial []bls.Fr) []bls.G1Point {
 	n := uint64(len(polynomial))
 	n2 := n * 2
-	if ks.maxWidth < n2 {
-		panic(fmt.Errorf("KZGSettings are set to maxWidth %d but got half polynomial of length %d",
-			ks.maxWidth, n))
+	if ks.MaxWidth < n2 {
+		panic(fmt.Errorf("KZGSettings are set to MaxWidth %d but got half polynomial of length %d",
+			ks.MaxWidth, n))
 	}
 
 	hExtFFT := make([]bls.G1Point, n2, n2)
@@ -56,9 +56,9 @@ func (ks *FK20MultiSettings) FK20Multi(polynomial []bls.Fr) []bls.G1Point {
 // coefficients == 0
 func (ks *FK20MultiSettings) FK20MultiDAOptimized(polynomial []bls.Fr) []bls.G1Point {
 	n2 := uint64(len(polynomial))
-	if ks.maxWidth < n2 {
-		panic(fmt.Errorf("KZGSettings are set to maxWidth %d but got polynomial of length %d",
-			ks.maxWidth, n2))
+	if ks.MaxWidth < n2 {
+		panic(fmt.Errorf("KZGSettings are set to MaxWidth %d but got polynomial of length %d",
+			ks.MaxWidth, n2))
 	}
 	n := n2 / 2
 	for i := n; i < n2; i++ {
@@ -111,7 +111,7 @@ func (ks *FK20MultiSettings) FK20MultiDAOptimized(polynomial []bls.Fr) []bls.G1P
 // and reordering according to reverse bit order
 func (ks *FK20MultiSettings) DAUsingFK20Multi(polynomial []bls.Fr) []bls.G1Point {
 	n := uint64(len(polynomial))
-	if n > ks.maxWidth/2 {
+	if n > ks.MaxWidth/2 {
 		panic("expected poly contents not bigger than half the size of the FK20-multi settings")
 	}
 	if !bls.IsPowerOfTwo(n) {

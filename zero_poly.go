@@ -25,7 +25,7 @@ func (fs *FFTSettings) makeZeroPolyMulLeaf(dst []bls.Fr, indices []uint64, domai
 	bls.CopyFr(&dst[len(indices)], &bls.ONE)
 	var negDi bls.Fr
 	for i, v := range indices {
-		bls.SubModFr(&negDi, &bls.ZERO, &fs.expandedRootsOfUnity[v*domainStride])
+		bls.SubModFr(&negDi, &bls.ZERO, &fs.ExpandedRootsOfUnity[v*domainStride])
 		bls.CopyFr(&dst[i], &negDi)
 		if i > 0 {
 			bls.AddModFr(&dst[i], &dst[i], &dst[i-1])
@@ -88,13 +88,13 @@ func (fs *FFTSettings) ZeroPolyViaMultiplication(missingIndices []uint64, length
 	if len(missingIndices) == 0 {
 		return make([]bls.Fr, length, length), make([]bls.Fr, length, length)
 	}
-	if length > fs.maxWidth {
+	if length > fs.MaxWidth {
 		panic("too many ")
 	}
 	if !bls.IsPowerOfTwo(length) {
 		panic("length not a power of two")
 	}
-	domainStride := fs.maxWidth / length
+	domainStride := fs.MaxWidth / length
 	// just under a power of two, since the leaf gets 1 bigger after building a poly for it
 	perLeafPoly := uint64(64)
 	perLeaf := perLeafPoly - 1

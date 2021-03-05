@@ -9,13 +9,13 @@ import (
 
 func benchRecoverPolyFromSamples(scale uint8, seed int64, b *testing.B) {
 	fs := NewFFTSettings(scale)
-	poly := make([]bls.Fr, fs.maxWidth, fs.maxWidth)
-	for i := uint64(0); i < fs.maxWidth/2; i++ {
+	poly := make([]bls.Fr, fs.MaxWidth, fs.MaxWidth)
+	for i := uint64(0); i < fs.MaxWidth/2; i++ {
 		bls.AsFr(&poly[i], i)
 	}
 	rng := rand.New(rand.NewSource(seed))
 	data, _ := fs.FFT(poly, false)
-	samples := make([]*bls.Fr, fs.maxWidth, fs.maxWidth)
+	samples := make([]*bls.Fr, fs.MaxWidth, fs.MaxWidth)
 	for i := 0; i < len(data); i++ {
 		samples[i] = &data[i]
 	}

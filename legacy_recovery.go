@@ -8,7 +8,7 @@ import (
 )
 
 func (fs *FFTSettings) mulPolysWithFFT(a []bls.Fr, b []bls.Fr, rootsOfUnityStride uint64) []bls.Fr {
-	size := fs.maxWidth / rootsOfUnityStride
+	size := fs.MaxWidth / rootsOfUnityStride
 	aVals := make([]bls.Fr, size, size)
 	bVals := make([]bls.Fr, size, size)
 	for i := 0; i < len(a); i++ {
@@ -23,7 +23,7 @@ func (fs *FFTSettings) mulPolysWithFFT(a []bls.Fr, b []bls.Fr, rootsOfUnityStrid
 	for i := len(b); i < len(bVals); i++ {
 		bVals[i] = bls.ZERO
 	}
-	rootz := fs.expandedRootsOfUnity[:fs.maxWidth]
+	rootz := fs.ExpandedRootsOfUnity[:fs.MaxWidth]
 	// Get FFT of a and b
 	x1 := make([]bls.Fr, len(aVals), len(aVals))
 	fs._fft(aVals, 0, 1, rootz, rootsOfUnityStride, x1)
@@ -37,7 +37,7 @@ func (fs *FFTSettings) mulPolysWithFFT(a []bls.Fr, b []bls.Fr, rootsOfUnityStrid
 		bls.CopyFr(&tmp, &x1[i])
 		bls.MulModFr(&x1[i], &tmp, &x2[i])
 	}
-	revRootz := fs.reverseRootsOfUnity[:fs.maxWidth]
+	revRootz := fs.ReverseRootsOfUnity[:fs.MaxWidth]
 
 	out := make([]bls.Fr, len(x1), len(x1))
 	// compute the FFT of the multiplied values.
@@ -109,7 +109,7 @@ func (fs *FFTSettings) _zPoly(positions []uint64, rootsOfUnityStride uint64) []b
 		var v bls.Fr
 		var tmp bls.Fr
 		for _, pos := range positions {
-			x := &fs.expandedRootsOfUnity[pos*rootsOfUnityStride]
+			x := &fs.ExpandedRootsOfUnity[pos*rootsOfUnityStride]
 			root[i] = bls.ZERO
 			for j := i; j >= 1; j-- {
 				bls.MulModFr(&v, &root[j-1], x)
@@ -130,7 +130,7 @@ func (fs *FFTSettings) _zPoly(positions []uint64, rootsOfUnityStride uint64) []b
 	evenPositions, oddPositions := inefficientOddEvenDiv2(positions)
 	left := fs._zPoly(evenPositions, rootsOfUnityStride<<1)
 	right := fs._zPoly(oddPositions, rootsOfUnityStride<<1)
-	invRoot := &fs.reverseRootsOfUnity[rootsOfUnityStride]
+	invRoot := &fs.ReverseRootsOfUnity[rootsOfUnityStride]
 	// Offset the result for the odd indices, and combine the two
 	out := fs.mulPolysWithFFT(left, pOfKX(right, invRoot), rootsOfUnityStride)
 	// Deal with the special case where mul_polys returns zero
@@ -169,7 +169,7 @@ func (fs *FFTSettings) ErasureCodeRecover(vals []*bls.Fr) ([]bls.Fr, error) {
 		}
 	}
 	// TODO: handle len(positions)==0 case
-	z := fs._zPoly(positions, fs.maxWidth/uint64(len(vals)))
+	z := fs._zPoly(positions, fs.MaxWidth/uint64(len(vals)))
 	//debugFrs("z", z)
 	zVals, err := fs.FFT(z, false)
 	if err != nil {

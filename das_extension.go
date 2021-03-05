@@ -13,7 +13,7 @@ func (fs *FFTSettings) dASFFTExtension(ab []bls.Fr, domainStride uint64) {
 		var y bls.Fr
 		bls.SubModFr(&y, aHalf0, aHalf1)
 		var tmp bls.Fr
-		bls.MulModFr(&tmp, &y, &fs.expandedRootsOfUnity[domainStride])
+		bls.MulModFr(&tmp, &y, &fs.ExpandedRootsOfUnity[domainStride])
 		bls.AddModFr(&ab[0], &x, &tmp)
 		bls.SubModFr(&ab[1], &x, &tmp)
 		return
@@ -36,7 +36,7 @@ func (fs *FFTSettings) dASFFTExtension(ab []bls.Fr, domainStride uint64) {
 		aHalf1 := &abHalf1s[i]
 		bls.AddModFr(&tmp1, aHalf0, aHalf1)
 		bls.SubModFr(&tmp2, aHalf0, aHalf1)
-		bls.MulModFr(aHalf1, &tmp2, &fs.reverseRootsOfUnity[i*2*domainStride])
+		bls.MulModFr(aHalf1, &tmp2, &fs.ReverseRootsOfUnity[i*2*domainStride])
 		bls.CopyFr(aHalf0, &tmp1)
 	}
 
@@ -57,7 +57,7 @@ func (fs *FFTSettings) dASFFTExtension(ab []bls.Fr, domainStride uint64) {
 		// Note that one hand is from L1, the other R1
 		bls.CopyFr(&x, &abHalf0s[i])
 		bls.CopyFr(&y, &abHalf1s[i])
-		root := &fs.expandedRootsOfUnity[(1+2*i)*domainStride]
+		root := &fs.ExpandedRootsOfUnity[(1+2*i)*domainStride]
 		bls.MulModFr(&yTimesRoot, &y, root)
 		// write outputs in place, avoid unnecessary list allocations
 		bls.AddModFr(&abHalf0s[i], &x, &yTimesRoot)
@@ -69,7 +69,7 @@ func (fs *FFTSettings) dASFFTExtension(ab []bls.Fr, domainStride uint64) {
 // Then computes the values for the odd indices, which combined would make the right half of coefficients zero.
 // Warning: the odd results are written back to the vals slice.
 func (fs *FFTSettings) DASFFTExtension(vals []bls.Fr) {
-	if uint64(len(vals))*2 > fs.maxWidth {
+	if uint64(len(vals))*2 > fs.MaxWidth {
 		panic("domain too small for extending requested values")
 	}
 	fs.dASFFTExtension(vals, 1)

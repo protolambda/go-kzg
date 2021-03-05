@@ -10,11 +10,11 @@ import (
 func TestErasureCodeRecoverSimple(t *testing.T) {
 	// Create some random data, with padding...
 	fs := NewFFTSettings(5)
-	poly := make([]bls.Fr, fs.maxWidth, fs.maxWidth)
-	for i := uint64(0); i < fs.maxWidth/2; i++ {
+	poly := make([]bls.Fr, fs.MaxWidth, fs.MaxWidth)
+	for i := uint64(0); i < fs.MaxWidth/2; i++ {
 		bls.AsFr(&poly[i], i)
 	}
-	for i := fs.maxWidth / 2; i < fs.maxWidth; i++ {
+	for i := fs.MaxWidth / 2; i < fs.MaxWidth; i++ {
 		poly[i] = bls.ZERO
 	}
 	debugFrs("poly", poly)
@@ -26,9 +26,9 @@ func TestErasureCodeRecoverSimple(t *testing.T) {
 	debugFrs("data", data)
 
 	// copy over the 2nd half, leave the first half as nils
-	subset := make([]*bls.Fr, fs.maxWidth, fs.maxWidth)
-	half := fs.maxWidth / 2
-	for i := half; i < fs.maxWidth; i++ {
+	subset := make([]*bls.Fr, fs.MaxWidth, fs.MaxWidth)
+	half := fs.MaxWidth / 2
+	for i := half; i < fs.MaxWidth; i++ {
 		subset[i] = &data[i]
 	}
 
@@ -54,7 +54,7 @@ func TestErasureCodeRecoverSimple(t *testing.T) {
 			t.Errorf("coeff at index %d got %s but expected %s", i, bls.FrStr(got), bls.FrStr(&poly[i]))
 		}
 	}
-	for i := half; i < fs.maxWidth; i++ {
+	for i := half; i < fs.MaxWidth; i++ {
 		if got := &back[i]; !bls.EqualZero(got) {
 			t.Errorf("expected zero padding in index %d", i)
 		}
@@ -64,11 +64,11 @@ func TestErasureCodeRecoverSimple(t *testing.T) {
 func TestErasureCodeRecover(t *testing.T) {
 	// Create some random poly, with padding so we get redundant data
 	fs := NewFFTSettings(7)
-	poly := make([]bls.Fr, fs.maxWidth, fs.maxWidth)
-	for i := uint64(0); i < fs.maxWidth/2; i++ {
+	poly := make([]bls.Fr, fs.MaxWidth, fs.MaxWidth)
+	for i := uint64(0); i < fs.MaxWidth/2; i++ {
 		bls.AsFr(&poly[i], i)
 	}
-	for i := fs.maxWidth / 2; i < fs.maxWidth; i++ {
+	for i := fs.MaxWidth / 2; i < fs.MaxWidth; i++ {
 		poly[i] = bls.ZERO
 	}
 	debugFrs("poly", poly)
@@ -81,13 +81,13 @@ func TestErasureCodeRecover(t *testing.T) {
 
 	// Util to pick a random subnet of the values
 	randomSubset := func(known uint64, rngSeed uint64) []*bls.Fr {
-		withMissingValues := make([]*bls.Fr, fs.maxWidth, fs.maxWidth)
+		withMissingValues := make([]*bls.Fr, fs.MaxWidth, fs.MaxWidth)
 		for i := range data {
 			withMissingValues[i] = &data[i]
 		}
 		rng := rand.New(rand.NewSource(int64(rngSeed)))
-		missing := fs.maxWidth - known
-		pruned := rng.Perm(int(fs.maxWidth))[:missing]
+		missing := fs.MaxWidth - known
+		pruned := rng.Perm(int(fs.MaxWidth))[:missing]
 		for _, i := range pruned {
 			withMissingValues[i] = nil
 		}
@@ -97,7 +97,7 @@ func TestErasureCodeRecover(t *testing.T) {
 	// Try different amounts of known indices, and try it in multiple random ways
 	var lastKnown uint64 = 0
 	for knownRatio := 0.7; knownRatio < 1.0; knownRatio += 0.05 {
-		known := uint64(float64(fs.maxWidth) * knownRatio)
+		known := uint64(float64(fs.MaxWidth) * knownRatio)
 		if known == lastKnown {
 			continue
 		}
@@ -129,7 +129,7 @@ func TestErasureCodeRecover(t *testing.T) {
 						t.Errorf("coeff at index %d got %s but expected %s", i, bls.FrStr(got), bls.FrStr(&poly[i]))
 					}
 				}
-				for i := half; i < fs.maxWidth; i++ {
+				for i := half; i < fs.MaxWidth; i++ {
 					if got := &back[i]; !bls.EqualZero(got) {
 						t.Errorf("expected zero padding in index %d", i)
 					}

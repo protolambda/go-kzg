@@ -54,8 +54,8 @@ func (fs *FFTSettings) _fft(vals []bls.Fr, valsOffset uint64, valsStride uint64,
 
 func (fs *FFTSettings) FFT(vals []bls.Fr, inv bool) ([]bls.Fr, error) {
 	n := uint64(len(vals))
-	if n > fs.maxWidth {
-		return nil, fmt.Errorf("got %d values but only have %d roots of unity", n, fs.maxWidth)
+	if n > fs.MaxWidth {
+		return nil, fmt.Errorf("got %d values but only have %d roots of unity", n, fs.MaxWidth)
 	}
 	n = nextPowOf2(n)
 	// We make a copy so we can mutate it during the work.
@@ -75,8 +75,8 @@ func (fs *FFTSettings) FFT(vals []bls.Fr, inv bool) ([]bls.Fr, error) {
 
 func (fs *FFTSettings) InplaceFFT(vals []bls.Fr, out []bls.Fr, inv bool) error {
 	n := uint64(len(vals))
-	if n > fs.maxWidth {
-		return fmt.Errorf("got %d values but only have %d roots of unity", n, fs.maxWidth)
+	if n > fs.MaxWidth {
+		return fmt.Errorf("got %d values but only have %d roots of unity", n, fs.MaxWidth)
 	}
 	if !bls.IsPowerOfTwo(n) {
 		return fmt.Errorf("got %d values but not a power of two", n)
@@ -85,8 +85,8 @@ func (fs *FFTSettings) InplaceFFT(vals []bls.Fr, out []bls.Fr, inv bool) error {
 		var invLen bls.Fr
 		bls.AsFr(&invLen, n)
 		bls.InvModFr(&invLen, &invLen)
-		rootz := fs.reverseRootsOfUnity[:fs.maxWidth]
-		stride := fs.maxWidth / n
+		rootz := fs.ReverseRootsOfUnity[:fs.MaxWidth]
+		stride := fs.MaxWidth / n
 
 		fs._fft(vals, 0, 1, rootz, stride, out)
 		var tmp bls.Fr
@@ -96,8 +96,8 @@ func (fs *FFTSettings) InplaceFFT(vals []bls.Fr, out []bls.Fr, inv bool) error {
 		}
 		return nil
 	} else {
-		rootz := fs.expandedRootsOfUnity[:fs.maxWidth]
-		stride := fs.maxWidth / n
+		rootz := fs.ExpandedRootsOfUnity[:fs.MaxWidth]
+		stride := fs.MaxWidth / n
 		// Regular FFT
 		fs._fft(vals, 0, 1, rootz, stride, out)
 		return nil

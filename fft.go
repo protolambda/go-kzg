@@ -32,13 +32,13 @@ func expandRootOfUnity(rootOfUnity *bls.Fr) []bls.Fr {
 }
 
 type FFTSettings struct {
-	maxWidth uint64
+	MaxWidth uint64
 	// the generator used to get all roots of unity
-	rootOfUnity *bls.Fr
+	RootOfUnity *bls.Fr
 	// domain, starting and ending with 1 (duplicate!)
-	expandedRootsOfUnity []bls.Fr
+	ExpandedRootsOfUnity []bls.Fr
 	// reverse domain, same as inverse values of domain. Also starting and ending with 1.
-	reverseRootsOfUnity []bls.Fr
+	ReverseRootsOfUnity []bls.Fr
 }
 
 func NewFFTSettings(maxScale uint8) *FFTSettings {
@@ -53,9 +53,9 @@ func NewFFTSettings(maxScale uint8) *FFTSettings {
 	}
 
 	return &FFTSettings{
-		maxWidth:             width,
-		rootOfUnity:          root,
-		expandedRootsOfUnity: rootz,
-		reverseRootsOfUnity:  rootzReverse,
+		MaxWidth:             width,
+		RootOfUnity:          root,
+		ExpandedRootsOfUnity: rootz,
+		ReverseRootsOfUnity:  rootzReverse,
 	}
 }

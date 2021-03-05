@@ -38,7 +38,7 @@ func (ks *KZGSettings) ComputeProofMulti(poly []bls.Fr, x uint64, n uint64) *bls
 	//}
 
 	// evaluate quotient poly at shared secret, in G1
-	return bls.LinCombG1(ks.secretG1[:len(quotientPolynomial)], quotientPolynomial)
+	return bls.LinCombG1(ks.SecretG1[:len(quotientPolynomial)], quotientPolynomial)
 }
 
 // Check a proof for a KZG commitment for an evaluation f(x w^i) = y_i
@@ -68,10 +68,10 @@ func (ks *KZGSettings) CheckProofMulti(commitment *bls.G1Point, proof *bls.G1Poi
 	bls.MulG2(&xn2, &bls.GenG2, &xPow)
 	// [s^n - x^n]_2
 	var xnMinusYn bls.G2Point
-	bls.SubG2(&xnMinusYn, &ks.secretG2[len(ys)], &xn2)
+	bls.SubG2(&xnMinusYn, &ks.SecretG2[len(ys)], &xn2)
 
 	// [interpolation_polynomial(s)]_1
-	is1 := bls.LinCombG1(ks.secretG1[:len(interpolationPoly)], interpolationPoly)
+	is1 := bls.LinCombG1(ks.SecretG1[:len(interpolationPoly)], interpolationPoly)
 	// [commitment - interpolation_polynomial(s)]_1 = [commit]_1 - [interpolation_polynomial(s)]_1
 	var commitMinusInterpolation bls.G1Point
 	bls.SubG1(&commitMinusInterpolation, commitment, is1)

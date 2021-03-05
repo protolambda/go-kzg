@@ -10,11 +10,11 @@ import (
 func TestFFTSettings_RecoverPolyFromSamples_Simple(t *testing.T) {
 	// Create some random data, with padding...
 	fs := NewFFTSettings(2)
-	poly := make([]bls.Fr, fs.maxWidth, fs.maxWidth)
-	for i := uint64(0); i < fs.maxWidth/2; i++ {
+	poly := make([]bls.Fr, fs.MaxWidth, fs.MaxWidth)
+	for i := uint64(0); i < fs.MaxWidth/2; i++ {
 		bls.AsFr(&poly[i], i)
 	}
-	for i := fs.maxWidth / 2; i < fs.maxWidth; i++ {
+	for i := fs.MaxWidth / 2; i < fs.MaxWidth; i++ {
 		poly[i] = bls.ZERO
 	}
 	debugFrs("poly", poly)
@@ -25,7 +25,7 @@ func TestFFTSettings_RecoverPolyFromSamples_Simple(t *testing.T) {
 	}
 	debugFrs("data", data)
 
-	subset := make([]*bls.Fr, fs.maxWidth, fs.maxWidth)
+	subset := make([]*bls.Fr, fs.MaxWidth, fs.MaxWidth)
 	subset[0] = &data[0]
 	subset[3] = &data[3]
 
@@ -46,12 +46,12 @@ func TestFFTSettings_RecoverPolyFromSamples_Simple(t *testing.T) {
 		t.Fatal(err)
 	}
 	debugFrs("back", back)
-	for i := uint64(0); i < fs.maxWidth/2; i++ {
+	for i := uint64(0); i < fs.MaxWidth/2; i++ {
 		if got := &back[i]; !bls.EqualFr(got, &poly[i]) {
 			t.Errorf("coeff at index %d got %s but expected %s", i, bls.FrStr(got), bls.FrStr(&poly[i]))
 		}
 	}
-	for i := fs.maxWidth / 2; i < fs.maxWidth; i++ {
+	for i := fs.MaxWidth / 2; i < fs.MaxWidth; i++ {
 		if got := &back[i]; !bls.EqualZero(got) {
 			t.Errorf("expected zero padding in index %d", i)
 		}
@@ -61,11 +61,11 @@ func TestFFTSettings_RecoverPolyFromSamples_Simple(t *testing.T) {
 func TestFFTSettings_RecoverPolyFromSamples(t *testing.T) {
 	// Create some random poly, with padding so we get redundant data
 	fs := NewFFTSettings(10)
-	poly := make([]bls.Fr, fs.maxWidth, fs.maxWidth)
-	for i := uint64(0); i < fs.maxWidth/2; i++ {
+	poly := make([]bls.Fr, fs.MaxWidth, fs.MaxWidth)
+	for i := uint64(0); i < fs.MaxWidth/2; i++ {
 		bls.AsFr(&poly[i], i)
 	}
-	for i := fs.maxWidth / 2; i < fs.maxWidth; i++ {
+	for i := fs.MaxWidth / 2; i < fs.MaxWidth; i++ {
 		poly[i] = bls.ZERO
 	}
 	debugFrs("poly", poly)
@@ -78,13 +78,13 @@ func TestFFTSettings_RecoverPolyFromSamples(t *testing.T) {
 
 	// Util to pick a random subnet of the values
 	randomSubset := func(known uint64, rngSeed uint64) []*bls.Fr {
-		withMissingValues := make([]*bls.Fr, fs.maxWidth, fs.maxWidth)
+		withMissingValues := make([]*bls.Fr, fs.MaxWidth, fs.MaxWidth)
 		for i := range data {
 			withMissingValues[i] = &data[i]
 		}
 		rng := rand.New(rand.NewSource(int64(rngSeed)))
-		missing := fs.maxWidth - known
-		pruned := rng.Perm(int(fs.maxWidth))[:missing]
+		missing := fs.MaxWidth - known
+		pruned := rng.Perm(int(fs.MaxWidth))[:missing]
 		for _, i := range pruned {
 			withMissingValues[i] = nil
 		}
@@ -94,7 +94,7 @@ func TestFFTSettings_RecoverPolyFromSamples(t *testing.T) {
 	// Try different amounts of known indices, and try it in multiple random ways
 	var lastKnown uint64 = 0
 	for knownRatio := 0.7; knownRatio < 1.0; knownRatio += 0.05 {
-		known := uint64(float64(fs.maxWidth) * knownRatio)
+		known := uint64(float64(fs.MaxWidth) * knownRatio)
 		if known == lastKnown {
 			continue
 		}
@@ -126,7 +126,7 @@ func TestFFTSettings_RecoverPolyFromSamples(t *testing.T) {
 						t.Errorf("coeff at index %d got %s but expected %s", i, bls.FrStr(got), bls.FrStr(&poly[i]))
 					}
 				}
-				for i := half; i < fs.maxWidth; i++ {
+				for i := half; i < fs.MaxWidth; i++ {
 					if got := &back[i]; !bls.EqualZero(got) {
 						t.Errorf("expected zero padding in index %d", i)
 					}

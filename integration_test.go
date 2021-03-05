@@ -71,7 +71,7 @@ func TestFullDAS(t *testing.T) {
 	debugFrs("extended data (reordered to original)", extended)
 
 	cosetWidth := uint64(128)
-	fk := NewFK20MultiSettings(ks, ks.maxWidth, cosetWidth)
+	fk := NewFK20MultiSettings(ks, ks.MaxWidth, cosetWidth)
 	// compute proofs for cosets
 	proofs := fk.FK20MultiDAOptimized(extendedAsPoly)
 
@@ -97,11 +97,11 @@ func TestFullDAS(t *testing.T) {
 
 	// verify cosets individually
 	extSize := sampleCount * cosetWidth
-	domainStride := ks.maxWidth / extSize
+	domainStride := ks.MaxWidth / extSize
 	for i, sample := range samples {
 		var x bls.Fr
 		domainPos := uint64(reverseBitsLimited(uint32(sampleCount), uint32(i)))
-		bls.CopyFr(&x, &ks.expandedRootsOfUnity[domainPos*domainStride])
+		bls.CopyFr(&x, &ks.ExpandedRootsOfUnity[domainPos*domainStride])
 		reverseBitOrderFr(sample.sub) // match poly order
 		if !ks.CheckProofMulti(commit, sample.proof, &x, sample.sub) {
 			t.Fatalf("failed to verify proof of sample %d", i)
