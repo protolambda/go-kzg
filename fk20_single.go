@@ -136,10 +136,10 @@ func (fk *FK20SingleSettings) FK20Single(polynomial []bls.Fr) []bls.G1Point {
 // The upper half of the polynomial coefficients is always 0, so we do not need to extend to twice the size
 // for Toeplitz matrix multiplication
 func (fk *FK20SingleSettings) FK20SingleDAOptimized(polynomial []bls.Fr) []bls.G1Point {
-	if uint64(len(polynomial)) > fk.maxWidth {
+	if uint64(len(polynomial)) > fk.MaxWidth {
 		panic(fmt.Errorf(
 			"expected input of length %d (incl half of zeroes) to not exceed precomputed settings length %d",
-			len(polynomial), fk.maxWidth))
+			len(polynomial), fk.MaxWidth))
 	}
 	n2 := uint64(len(polynomial))
 	if !bls.IsPowerOfTwo(n2) {
@@ -174,7 +174,7 @@ func (fk *FK20SingleSettings) FK20SingleDAOptimized(polynomial []bls.Fr) []bls.G
 // and reordering according to reverse bit order
 func (fk *FK20SingleSettings) DAUsingFK20(polynomial []bls.Fr) []bls.G1Point {
 	n := uint64(len(polynomial))
-	if n > fk.maxWidth/2 {
+	if n > fk.MaxWidth/2 {
 		panic("expected poly contents not bigger than half the size of the FK20-single settings")
 	}
 	if !bls.IsPowerOfTwo(n) {

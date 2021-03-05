@@ -56,8 +56,8 @@ func (fs *FFTSettings) _fftG1(vals []bls.G1Point, valsOffset uint64, valsStride 
 
 func (fs *FFTSettings) FFTG1(vals []bls.G1Point, inv bool) ([]bls.G1Point, error) {
 	n := uint64(len(vals))
-	if n > fs.maxWidth {
-		return nil, fmt.Errorf("got %d values but only have %d roots of unity", n, fs.maxWidth)
+	if n > fs.MaxWidth {
+		return nil, fmt.Errorf("got %d values but only have %d roots of unity", n, fs.MaxWidth)
 	}
 	if !bls.IsPowerOfTwo(n) {
 		return nil, fmt.Errorf("got %d values but not a power of two", n)
@@ -71,8 +71,8 @@ func (fs *FFTSettings) FFTG1(vals []bls.G1Point, inv bool) ([]bls.G1Point, error
 		var invLen bls.Fr
 		bls.AsFr(&invLen, n)
 		bls.InvModFr(&invLen, &invLen)
-		rootz := fs.reverseRootsOfUnity[:fs.maxWidth]
-		stride := fs.maxWidth / n
+		rootz := fs.ReverseRootsOfUnity[:fs.MaxWidth]
+		stride := fs.MaxWidth / n
 
 		out := make([]bls.G1Point, n, n)
 		fs._fftG1(valsCopy, 0, 1, rootz, stride, out)
@@ -84,8 +84,8 @@ func (fs *FFTSettings) FFTG1(vals []bls.G1Point, inv bool) ([]bls.G1Point, error
 		return out, nil
 	} else {
 		out := make([]bls.G1Point, n, n)
-		rootz := fs.expandedRootsOfUnity[:fs.maxWidth]
-		stride := fs.maxWidth / n
+		rootz := fs.ExpandedRootsOfUnity[:fs.MaxWidth]
+		stride := fs.MaxWidth / n
 		// Regular FFT
 		fs._fftG1(valsCopy, 0, 1, rootz, stride, out)
 		return out, nil

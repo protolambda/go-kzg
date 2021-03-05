@@ -109,7 +109,7 @@ func testReduceLeaves(scale uint8, missingRatio float64, seed int64, t *testing.
 	var fromDirect []bls.Fr
 	{
 		dst := make([]bls.Fr, missingCount+1, missingCount+1)
-		fs.makeZeroPolyMulLeaf(dst, missing, fs.maxWidth/pointCount)
+		fs.makeZeroPolyMulLeaf(dst, missing, fs.MaxWidth/pointCount)
 		fromDirect = dst
 	}
 
@@ -198,7 +198,7 @@ func testZeroPoly(t *testing.T, scale uint8, seed int64) {
 
 	rng := rand.New(rand.NewSource(seed))
 
-	exists := make([]bool, fs.maxWidth, fs.maxWidth)
+	exists := make([]bool, fs.MaxWidth, fs.MaxWidth)
 	var missingIndices []uint64
 	missingStr := ""
 	for i := 0; i < len(exists); i++ {
@@ -219,7 +219,7 @@ func testZeroPoly(t *testing.T, scale uint8, seed int64) {
 	for i, v := range exists {
 		if !v {
 			var at bls.Fr
-			bls.CopyFr(&at, &fs.expandedRootsOfUnity[i])
+			bls.CopyFr(&at, &fs.ExpandedRootsOfUnity[i])
 			var out bls.Fr
 			bls.EvalPolyAt(&out, zeroPoly, &at)
 			if !bls.EqualZero(&out) {

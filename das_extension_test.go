@@ -9,7 +9,7 @@ import (
 
 func TestDASFFTExtension(t *testing.T) {
 	fs := NewFFTSettings(4)
-	half := fs.maxWidth / 2
+	half := fs.MaxWidth / 2
 	data := make([]bls.Fr, half, half)
 	for i := uint64(0); i < half; i++ {
 		bls.AsFr(&data[i], i)
@@ -41,14 +41,14 @@ func TestDASFFTExtension(t *testing.T) {
 func TestParametrizedDASFFTExtension(t *testing.T) {
 	testScale := func(seed int64, scale uint8, t *testing.T) {
 		fs := NewFFTSettings(scale)
-		evenData := make([]bls.Fr, fs.maxWidth/2, fs.maxWidth/2)
+		evenData := make([]bls.Fr, fs.MaxWidth/2, fs.MaxWidth/2)
 		rng := rand.New(rand.NewSource(seed))
-		for i := uint64(0); i < fs.maxWidth/2; i++ {
+		for i := uint64(0); i < fs.MaxWidth/2; i++ {
 			bls.AsFr(&evenData[i], rng.Uint64()) // TODO could be a full random F_r instead of uint64
 		}
 		debugFrs("input data", evenData)
 		// we don't want to modify the original input, and the inner function would modify it in-place, so make a copy.
-		oddData := make([]bls.Fr, fs.maxWidth/2, fs.maxWidth/2)
+		oddData := make([]bls.Fr, fs.MaxWidth/2, fs.MaxWidth/2)
 		for i := 0; i < len(oddData); i++ {
 			bls.CopyFr(&oddData[i], &evenData[i])
 		}
@@ -56,8 +56,8 @@ func TestParametrizedDASFFTExtension(t *testing.T) {
 		debugFrs("output data", oddData)
 
 		// reconstruct data
-		data := make([]bls.Fr, fs.maxWidth, fs.maxWidth)
-		for i := uint64(0); i < fs.maxWidth; i += 2 {
+		data := make([]bls.Fr, fs.MaxWidth, fs.MaxWidth)
+		for i := uint64(0); i < fs.MaxWidth; i += 2 {
 			bls.CopyFr(&data[i], &evenData[i>>1])
 			bls.CopyFr(&data[i+1], &oddData[i>>1])
 		}
@@ -69,7 +69,7 @@ func TestParametrizedDASFFTExtension(t *testing.T) {
 		}
 		debugFrs("coeffs data", coeffs)
 		// second half of all coefficients should be zero
-		for i := fs.maxWidth / 2; i < fs.maxWidth; i++ {
+		for i := fs.MaxWidth / 2; i < fs.MaxWidth; i++ {
 			if !bls.EqualZero(&coeffs[i]) {
 				t.Errorf("expected zero coefficient on index %d", i)
 			}

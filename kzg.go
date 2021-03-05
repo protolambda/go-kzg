@@ -12,25 +12,30 @@ type KZGSettings struct {
 
 	// setup values
 	// [b.multiply(b.G1, pow(s, i, MODULUS)) for i in range(WIDTH+1)],
-	secretG1         []bls.G1Point
-	extendedSecretG1 []bls.G1Point
+	SecretG1 []bls.G1Point
 	// [b.multiply(b.G2, pow(s, i, MODULUS)) for i in range(WIDTH+1)],
-	secretG2 []bls.G2Point
+	SecretG2 []bls.G2Point
+
+	SecretG1IFFT []bls.G1Point
 }
 
 func NewKZGSettings(fs *FFTSettings, secretG1 []bls.G1Point, secretG2 []bls.G2Point) *KZGSettings {
 	if len(secretG1) != len(secretG2) {
 		panic("secret list lengths don't match")
 	}
-	if uint64(len(secretG1)) < fs.maxWidth {
-		panic(fmt.Errorf("expected more values for secrets, maxWidth: %d, got: %d", fs.maxWidth, len(secretG1)))
+	if uint64(len(secretG1)) < fs.MaxWidth {
+		panic(fmt.Errorf("expected more values for secrets, MaxWidth: %d, got: %d", fs.MaxWidth, len(secretG1)))
+	}
+	s1IFFT, err := fs.FFTG1(secretG1, true)
+	if err != nil {
+		panic(fmt.Errorf("expected to compute IFFT(secretG1) with sufficient size, but failed: %v", err))
 	}
 
 	ks := &KZGSettings{
-		FFTSettings:      fs,
-		secretG1:         secretG1,
-		extendedSecretG1: nil,
-		secretG2:         secretG2,
+		FFTSettings:  fs,
+		SecretG1:     secretG1,
+		SecretG2:     secretG2,
+		SecretG1IFFT: s1IFFT,
 	}
 
 	return ks
@@ -42,7 +47,7 @@ type FK20SingleSettings struct {
 }
 
 func NewFK20SingleSettings(ks *KZGSettings, n2 uint64) *FK20SingleSettings {
-	if n2 > ks.maxWidth {
+	if n2 > ks.MaxWidth {
 		panic("extended size is larger than kzg settings supports")
 	}
 	if !bls.IsPowerOfTwo(n2) {
@@ -57,7 +62,7 @@ func NewFK20SingleSettings(ks *KZGSettings, n2 uint64) *FK20SingleSettings {
 	}
 	x := make([]bls.G1Point, n, n)
 	for i, j := uint64(0), n-2; i < n-1; i, j = i+1, j-1 {
-		bls.CopyG1(&x[i], &ks.secretG1[j])
+		bls.CopyG1(&x[i], &ks.SecretG1[j])
 	}
 	bls.CopyG1(&x[n-1], &bls.ZeroG1)
 	fk.xExtFFT = fk.toeplitzPart1(x)
@@ -67,12 +72,12 @@ func NewFK20SingleSettings(ks *KZGSettings, n2 uint64) *FK20SingleSettings {
 type FK20MultiSettings struct {
 	*KZGSettings
 	chunkLen uint64
-	// chunkLen files, each of size maxWidth
+	// chunkLen files, each of size MaxWidth
 	xExtFFTFiles [][]bls.G1Point
 }
 
 func NewFK20MultiSettings(ks *KZGSettings, n2 uint64, chunkLen uint64) *FK20MultiSettings {
-	if n2 > ks.maxWidth {
+	if n2 > ks.MaxWidth {
 		panic("extended size is larger than kzg settings supports")
 	}
 	if !bls.IsPowerOfTwo(n2) {
@@ -105,7 +110,7 @@ func NewFK20MultiSettings(ks *KZGSettings, n2 uint64, chunkLen uint64) *FK20Mult
 		x := make([]bls.G1Point, k, k)
 		start := n - chunkLen - 1 - offset
 		for i, j := uint64(0), start; i+1 < k; i, j = i+1, j-chunkLen {
-			bls.CopyG1(&x[i], &ks.secretG1[j])
+			bls.CopyG1(&x[i], &ks.SecretG1[j])
 		}
 		bls.CopyG1(&x[k-1], &bls.ZeroG1)
 		return ks.toeplitzPart1(x)

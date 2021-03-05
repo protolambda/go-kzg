@@ -7,8 +7,8 @@ import (
 
 func TestFFTRoundtrip(t *testing.T) {
 	fs := NewFFTSettings(4)
-	data := make([]bls.Fr, fs.maxWidth, fs.maxWidth)
-	for i := uint64(0); i < fs.maxWidth; i++ {
+	data := make([]bls.Fr, fs.MaxWidth, fs.MaxWidth)
+	for i := uint64(0); i < fs.MaxWidth; i++ {
 		bls.AsFr(&data[i], i)
 	}
 	coeffs, err := fs.FFT(data, false)
@@ -30,8 +30,8 @@ func TestFFTRoundtrip(t *testing.T) {
 
 func TestInvFFT(t *testing.T) {
 	fs := NewFFTSettings(4)
-	data := make([]bls.Fr, fs.maxWidth, fs.maxWidth)
-	for i := uint64(0); i < fs.maxWidth; i++ {
+	data := make([]bls.Fr, fs.MaxWidth, fs.MaxWidth)
+	for i := uint64(0); i < fs.MaxWidth; i++ {
 		bls.AsFr(&data[i], i)
 	}
 	debugFrs("input data", data)

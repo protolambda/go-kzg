@@ -8,7 +8,7 @@ import "github.com/protolambda/go-kzg/bls"
 
 // KZG commitment to polynomial in coefficient form
 func (ks *KZGSettings) CommitToPoly(coeffs []bls.Fr) *bls.G1Point {
-	return bls.LinCombG1(ks.secretG1[:len(coeffs)], coeffs)
+	return bls.LinCombG1(ks.SecretG1[:len(coeffs)], coeffs)
 }
 
 // KZG commitment to polynomial in coefficient form, unoptimized version
@@ -18,7 +18,7 @@ func (ks *KZGSettings) CommitToPolyUnoptimized(coeffs []bls.Fr) *bls.G1Point {
 	bls.ClearG1(&out)
 	var tmp, tmp2 bls.G1Point
 	for i := 0; i < len(coeffs); i++ {
-		bls.MulG1(&tmp, &ks.secretG1[i], &coeffs[i])
+		bls.MulG1(&tmp, &ks.SecretG1[i], &coeffs[i])
 		bls.AddG1(&tmp2, &out, &tmp)
 		bls.CopyG1(&out, &tmp2)
 	}
@@ -43,7 +43,7 @@ func (ks *KZGSettings) ComputeProofSingle(poly []bls.Fr, x uint64) *bls.G1Point 
 	//}
 
 	// evaluate quotient poly at shared secret, in G1
-	return bls.LinCombG1(ks.secretG1[:len(quotientPolynomial)], quotientPolynomial)
+	return bls.LinCombG1(ks.SecretG1[:len(quotientPolynomial)], quotientPolynomial)
 }
 
 // Check a proof for a KZG commitment for an evaluation f(x) = y
@@ -52,7 +52,7 @@ func (ks *KZGSettings) CheckProofSingle(commitment *bls.G1Point, proof *bls.G1Po
 	var xG2 bls.G2Point
 	bls.MulG2(&xG2, &bls.GenG2, x)
 	var sMinuxX bls.G2Point
-	bls.SubG2(&sMinuxX, &ks.secretG2[1], &xG2)
+	bls.SubG2(&sMinuxX, &ks.SecretG2[1], &xG2)
 	var yG1 bls.G1Point
 	bls.MulG1(&yG1, &bls.GenG1, y)
 	var commitmentMinusY bls.G1Point

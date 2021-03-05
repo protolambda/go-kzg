@@ -8,7 +8,7 @@ import (
 
 func benchZeroPoly(scale uint8, seed int64, b *testing.B) {
 	fs := NewFFTSettings(scale)
-	missing := make([]uint64, fs.maxWidth, fs.maxWidth)
+	missing := make([]uint64, fs.MaxWidth, fs.MaxWidth)
 	for i := uint64(0); i < uint64(len(missing)); i++ {
 		missing[i] = i
 	}
@@ -21,7 +21,7 @@ func benchZeroPoly(scale uint8, seed int64, b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		zeroEval, zeroPoly := fs.ZeroPolyViaMultiplication(missing, fs.maxWidth)
+		zeroEval, zeroPoly := fs.ZeroPolyViaMultiplication(missing, fs.MaxWidth)
 		if len(zeroEval) != len(zeroPoly) {
 			panic("sanity check failed, length mismatch")
 		}

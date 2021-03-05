@@ -11,8 +11,8 @@ func TestKZGSettings_CheckProofSingle(t *testing.T) {
 	fs := NewFFTSettings(4)
 	s1, s2 := GenerateTestingSetup("1927409816240961209460912649124", 16+1)
 	ks := NewKZGSettings(fs, s1, s2)
-	for i := 0; i < len(ks.secretG1); i++ {
-		t.Logf("secret g1 %d: %s", i, bls.StrG1(&ks.secretG1[i]))
+	for i := 0; i < len(ks.SecretG1); i++ {
+		t.Logf("secret g1 %d: %s", i, bls.StrG1(&ks.SecretG1[i]))
 	}
 
 	polynomial := testPoly(1, 2, 3, 4, 7, 7, 7, 7, 13, 13, 13, 13, 13, 13, 13, 13)

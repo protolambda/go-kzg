@@ -12,8 +12,8 @@ func TestKZGSettings_CheckProofMulti(t *testing.T) {
 	fs := NewFFTSettings(4)
 	s1, s2 := GenerateTestingSetup("1927409816240961209460912649124", 16+1)
 	ks := NewKZGSettings(fs, s1, s2)
-	for i := 0; i < len(ks.secretG1); i++ {
-		t.Logf("secret g1 %d: %s", i, bls.StrG1(&ks.secretG1[i]))
+	for i := 0; i < len(ks.SecretG1); i++ {
+		t.Logf("secret g1 %d: %s", i, bls.StrG1(&ks.SecretG1[i]))
 	}
 
 	polynomial := testPoly(1, 2, 3, 4, 7, 7, 7, 7, 13, 13, 13, 13, 13, 13, 13, 13)
@@ -32,8 +32,8 @@ func TestKZGSettings_CheckProofMulti(t *testing.T) {
 	s1, s2 = GenerateTestingSetup("1927409816240961209460912649124", 8+1)
 	ks = NewKZGSettings(NewFFTSettings(cosetScale), s1, s2)
 	for i := 0; i < len(coset); i++ {
-		fmt.Printf("rootz %d: %s\n", i, bls.FrStr(&ks.expandedRootsOfUnity[i]))
-		bls.MulModFr(&coset[i], &xFr, &ks.expandedRootsOfUnity[i])
+		fmt.Printf("rootz %d: %s\n", i, bls.FrStr(&ks.ExpandedRootsOfUnity[i]))
+		bls.MulModFr(&coset[i], &xFr, &ks.ExpandedRootsOfUnity[i])
 		fmt.Printf("coset %d: %s\n", i, bls.FrStr(&coset[i]))
 	}
 	ys := make([]bls.Fr, len(coset), len(coset))

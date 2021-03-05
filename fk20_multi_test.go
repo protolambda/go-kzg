@@ -56,20 +56,20 @@ func TestKZGSettings_DAUsingFK20Multi(t *testing.T) {
 	debugFrs("extended_data", extendedData)
 
 	n2 := n * 2
-	domainStride := fk.maxWidth / n2
+	domainStride := fk.MaxWidth / n2
 	for pos := uint64(0); pos < 2*chunkCount; pos++ {
 		domainPos := reverseBitsLimited(uint32(2*chunkCount), uint32(pos))
 		var x bls.Fr
-		bls.CopyFr(&x, &ks.expandedRootsOfUnity[uint64(domainPos)*domainStride])
+		bls.CopyFr(&x, &ks.ExpandedRootsOfUnity[uint64(domainPos)*domainStride])
 		ys := extendedData[chunkLen*pos : chunkLen*(pos+1)]
 		// ys, but constructed by evaluating the polynomial in the sub-domain range
 		ys2 := make([]bls.Fr, chunkLen, chunkLen)
 		// don't recompute the subgroup domain, just select it from the bigger domain by applying a stride
-		stride := ks.maxWidth / chunkLen
+		stride := ks.MaxWidth / chunkLen
 		coset := make([]bls.Fr, chunkLen, chunkLen)
 		for i := uint64(0); i < chunkLen; i++ {
 			var z bls.Fr // a value of the coset list
-			bls.MulModFr(&z, &x, &ks.expandedRootsOfUnity[i*stride])
+			bls.MulModFr(&z, &x, &ks.ExpandedRootsOfUnity[i*stride])
 			bls.CopyFr(&coset[i], &z)
 			bls.EvalPolyAt(&ys2[i], polynomial, &z)
 		}
