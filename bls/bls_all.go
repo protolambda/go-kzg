@@ -1,3 +1,5 @@
+// +build !bignum_pure,!bignum_hol256
+
 package bls
 
 func (p *G1Point) String() string {
