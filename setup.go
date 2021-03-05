@@ -1,3 +1,5 @@
+// +build !bignum_pure,!bignum_hol256
+
 package kzg
 
 import "github.com/protolambda/go-kzg/bls"
