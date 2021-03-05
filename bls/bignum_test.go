@@ -68,3 +68,22 @@ func TestInplaceMul(t *testing.T) {
 		return EqualFr(a, squareA)
 	})
 }
+
+// Sanity check the mod div function, some libraries do regular integer div.
+func TestDivModFr(t *testing.T) {
+	var aVal Fr
+	SetFr(&aVal, "26444158170683616486493062254748234829545368615823006596610545696213139843950")
+	var bVal Fr
+	SetFr(&bVal, "44429412392042760961177795624245903017634520927909329890010277843232676752272")
+	var div Fr
+	DivModFr(&div, &aVal, &bVal)
+
+	var invB Fr
+	InvModFr(&invB, &bVal)
+	var mulInv Fr
+	MulModFr(&mulInv, &aVal, &invB)
+
+	if !EqualFr(&div, &mulInv) {
+		t.Fatalf("div num not equal to mul inv: %s, %s", FrStr(&div), FrStr(&mulInv))
+	}
+}
