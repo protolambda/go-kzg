@@ -93,6 +93,7 @@ func TestValidFr(t *testing.T) {
 	if !ValidFr(data) {
 		t.Fatal("expected mod-1 to be valid")
 	}
+	t.Logf("data: %x", data[:])
 	var tmp [32]byte
 	for i := 0; i < 32; i++ {
 		if data[i] == 0xff {
@@ -101,7 +102,7 @@ func TestValidFr(t *testing.T) {
 		tmp = data
 		tmp[i] += 1
 		if ValidFr(tmp) {
-			t.Fatal("expected anything larger than mod-1 to be invalid")
+			t.Fatalf("expected anything larger than mod-1 to be invalid, failed at byte %d", i)
 		}
 	}
 	v := RandomFr()

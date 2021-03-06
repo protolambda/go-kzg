@@ -5,6 +5,7 @@ package bls
 import (
 	"crypto/rand"
 	"encoding/binary"
+	"fmt"
 	blst "github.com/supranational/blst/bindings/go"
 	"math/big"
 )
@@ -60,7 +61,7 @@ func CopyFr(dst *Fr, v *Fr) {
 
 func AsFr(dst *Fr, i uint64) {
 	var data [32]byte
-	binary.BigEndian.PutUint64(data[:8], i)
+	binary.BigEndian.PutUint64(data[24:32], i)
 	var tmp blst.Scalar
 	tmp.FromBEndian(data[:])
 	(*blst.Fr)(dst).FromScalar(&tmp)
@@ -111,7 +112,11 @@ func RandomFr() *Fr {
 }
 
 func SubModFr(dst *Fr, a, b *Fr) {
+	fmt.Printf("dst pre: %s\n", dst)
+	fmt.Printf("a pre: %s\n", a)
+	fmt.Printf("b pre: %s\n", b)
 	(*blst.Fr)(dst).Sub((*blst.Fr)(a), (*blst.Fr)(b))
+	fmt.Printf("dst: %s\n", dst)
 }
 
 func AddModFr(dst *Fr, a, b *Fr) {

@@ -9,6 +9,7 @@ import (
 	"strings"
 )
 
+// TODO duplicate
 var ZERO_G1 G1Point
 
 var GenG1 G1Point
@@ -18,11 +19,10 @@ var ZeroG1 G1Point
 var ZeroG2 G2Point
 
 func initG1G2() {
-	// TODO
-	//GenG1 = G1Point(*curveG1.One())
-	//GenG2 = G2Point(*curveG2.One())
-	//ZeroG1 = G1Point(*curveG1.Zero())
-	//ZeroG2 = G2Point(*curveG2.Zero())
+	GenG1 = *(*G1Point)(blst.GenP1())
+	GenG2 = *(*G2Point)(blst.GenP2())
+
+	// The ZERO_G1, ZeroG1 and ZeroG2 can be left as-is to make them zero.
 }
 
 type G1Point blst.P1
@@ -115,6 +115,10 @@ func EqualG2(a *G2Point, b *G2Point) bool {
 
 func ToCompressedG1(p *G1Point) []byte {
 	return (*blst.P1)(p).Compress()
+}
+
+func ToCompressedG2(p *G2Point) []byte {
+	return (*blst.P2)(p).Compress()
 }
 
 func LinCombG1(numbers []G1Point, factors []Fr) *G1Point {

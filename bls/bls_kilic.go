@@ -9,6 +9,7 @@ import (
 	"strings"
 )
 
+// TODO duplicate
 var ZERO_G1 G1Point
 
 var curveG1 kbls.G1
@@ -115,6 +116,10 @@ func EqualG2(a *G2Point, b *G2Point) bool {
 
 func ToCompressedG1(p *G1Point) []byte {
 	return curveG1.ToCompressed((*kbls.PointG1)(p))
+}
+
+func ToCompressedG2(p *G2Point) []byte {
+	return curveG2.ToCompressed((*kbls.PointG2)(p))
 }
 
 func LinCombG1(numbers []G1Point, factors []Fr) *G1Point {

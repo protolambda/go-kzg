@@ -9,6 +9,7 @@ import (
 	"unsafe"
 )
 
+// TODO duplicate
 var ZERO_G1 G1Point
 
 var GenG1 G1Point
@@ -114,6 +115,10 @@ func EqualG2(a *G2Point, b *G2Point) bool {
 
 func ToCompressedG1(p *G1Point) []byte {
 	return hbls.CastToPublicKey((*hbls.G1)(p)).Serialize()
+}
+
+func ToCompressedG2(p *G2Point) []byte {
+	return hbls.CastToSign((*hbls.G2)(p)).Serialize()
 }
 
 func LinCombG1(numbers []G1Point, factors []Fr) *G1Point {
