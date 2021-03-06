@@ -1,4 +1,4 @@
-// +build !bignum_pure,!bignum_hol256,!bignum_kilic
+// +build !bignum_pure,!bignum_hol256,!bignum_kilic,!bignum_blst
 
 package bls
 
@@ -42,7 +42,6 @@ func initG1G2() {
 	ZeroG2.Z.D[1].SetInt64(0)
 }
 
-// TODO types file, swap BLS with build args
 type G1Point hbls.G1
 
 func ClearG1(x *G1Point) {

@@ -20,7 +20,6 @@ var GenG2 G2Point
 var ZeroG1 G1Point
 var ZeroG2 G2Point
 
-// Herumi BLS doesn't offer these points to us, so we have to work around it by declaring them ourselves.
 func initG1G2() {
 	curveG1 = *kbls.NewG1()
 	curveG2 = *kbls.NewG2()
@@ -30,7 +29,6 @@ func initG1G2() {
 	ZeroG2 = G2Point(*curveG2.Zero())
 }
 
-// TODO types file, swap BLS with build args
 type G1Point kbls.PointG1
 
 // zeroes the point (like herumi BLS does with theirs). This is not co-factor clearing.

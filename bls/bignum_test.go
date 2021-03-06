@@ -19,7 +19,7 @@ func TestInplaceAdd(t *testing.T) {
 			CopyFr(&a, aVal)
 			CopyFr(&b, bVal)
 			if !fn(&a, &b) {
-				t.Error("fail")
+				t.Errorf("fail: a: %s, b: %s, 2a: %s", &a, &b, twoA)
 			}
 		})
 	}
