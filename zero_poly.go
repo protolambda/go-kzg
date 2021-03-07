@@ -38,7 +38,24 @@ func (fs *FFTSettings) makeZeroPolyMulLeaf(dst []bls.Fr, indices []uint64, domai
 	}
 }
 
-func (fs *FFTSettings) reduceLeaves(scratch []bls.Fr, dst []bls.Fr, ps [][]bls.Fr) {
+// Copy all of the values of poly into out, and fill the remainder of out with zeroes.
+func padPoly(out []bls.Fr, poly []bls.Fr) {
+	for i := 0; i < len(poly); i++ {
+		bls.CopyFr(&out[i], &poly[i])
+	}
+	for i := len(poly); i < len(out); i++ {
+		bls.CopyFr(&out[i], &bls.ZERO)
+	}
+}
+
+// Calculate the product of the input polynomials via convolution.
+// Pad the polynomials in ps, perform FFTs, point-wise multiply the results together,
+// and apply an inverse FFT to the result.
+//
+// The scratch space must be at least 3 times the output space.
+// The output must have a power of 2 length.
+// The input polynomials must not be empty, and sum to no larger than the output.
+func (fs *FFTSettings) reduceLeaves(scratch []bls.Fr, dst []bls.Fr, ps [][]bls.Fr) []bls.Fr {
 	n := uint64(len(dst))
 	if !bls.IsPowerOfTwo(n) {
 		panic("destination must be a power of two")
@@ -46,31 +63,34 @@ func (fs *FFTSettings) reduceLeaves(scratch []bls.Fr, dst []bls.Fr, ps [][]bls.F
 	if len(ps) == 0 {
 		panic("empty leaves")
 	}
-	if min := uint64(len(ps[0]) * len(ps)); min > n {
+	// The degree of the output polynomial is the sum of the degrees of the input polynomials.
+	outDegree := uint64(0)
+	for _, p := range ps {
+		if len(p) == 0 {
+			panic("empty input poly")
+		}
+		outDegree += uint64(len(p)) - 1
+	}
+	if min := outDegree + 1; min > n {
 		panic(fmt.Sprintf("expected larger destination length: %d, got: %d", min, n))
 	}
 	if uint64(len(scratch)) < 3*n {
 		panic("not enough scratch space")
 	}
-	// TODO: good to optimize, there's lots of padding
+	// Split `scratch` up into three equally sized working arrays
 	pPadded := scratch[:n]
-	prep := func(pi uint64) {
-		p := ps[pi]
-		for i := 0; i < len(p); i++ {
-			bls.CopyFr(&pPadded[i], &p[i])
-		}
-		for i := uint64(len(p)); i < n; i++ {
-			bls.CopyFr(&pPadded[i], &bls.ZERO)
-		}
-	}
 	mulEvalPs := scratch[n : 2*n]
 	pEval := scratch[2*n : 3*n]
-	prep(0)
+
+	// Do the last partial first: it is no longer than the others and the padding can remain in place for the rest.
+	last := uint64(len(ps) - 1)
+	padPoly(pPadded, ps[last])
 	if err := fs.InplaceFFT(pPadded, mulEvalPs, false); err != nil {
 		panic(err)
 	}
-	for i := uint64(1); i < uint64(len(ps)); i++ {
-		prep(i)
+	for i := uint64(0); i < last; i++ {
+		p := ps[i]
+		copy(pPadded[:len(p)], p) // TODO; seems better than iterating all, but assumes the Fr is shallow copyable
 		if err := fs.InplaceFFT(pPadded, pEval, false); err != nil {
 			panic(err)
 		}
@@ -81,23 +101,32 @@ func (fs *FFTSettings) reduceLeaves(scratch []bls.Fr, dst []bls.Fr, ps [][]bls.F
 	if err := fs.InplaceFFT(mulEvalPs, dst, true); err != nil {
 		panic(err)
 	}
-	return
+	return dst[:outDegree+1]
 }
 
+// Calculate the minimal polynomial that evaluates to zero for powers of roots of unity that correspond to missing
+// indices.
+//
+// This is done simply by multiplying together `(x - r^i)` for all the `i` that are missing indices, using a combination
+// of direct multiplication (makeZeroPolyMulLeaf) and iterated multiplication via convolution (reduceLeaves)
+//
+// Also calculates the FFT (the "evaluation polynomial").
 func (fs *FFTSettings) ZeroPolyViaMultiplication(missingIndices []uint64, length uint64) ([]bls.Fr, []bls.Fr) {
 	if len(missingIndices) == 0 {
 		return make([]bls.Fr, length, length), make([]bls.Fr, length, length)
 	}
 	if length > fs.MaxWidth {
-		panic("too many ")
+		panic("domain too small for requested length")
 	}
 	if !bls.IsPowerOfTwo(length) {
 		panic("length not a power of two")
 	}
 	domainStride := fs.MaxWidth / length
-	// just under a power of two, since the leaf gets 1 bigger after building a poly for it
 	perLeafPoly := uint64(64)
+	// just under a power of two, since the leaf gets 1 bigger after building a poly for it
 	perLeaf := perLeafPoly - 1
+
+	// If the work is as small as a single leaf, don't bother with tree reduction
 	if uint64(len(missingIndices)) <= perLeaf {
 		zeroPoly := make([]bls.Fr, len(missingIndices)+1, length)
 		fs.makeZeroPolyMulLeaf(zeroPoly, missingIndices, domainStride)
@@ -140,31 +169,31 @@ func (fs *FFTSettings) ZeroPolyViaMultiplication(missingIndices []uint64, length
 	// Now reduce all the leaves to a single poly
 
 	// must be a power of 2
-	reductionFactor := 4
+	reductionFactor := uint64(4)
 	scratch := make([]bls.Fr, n*3, n*3)
 
 	// from bottom to top, start reducing leaves.
 	for len(leaves) > 1 {
-		reducedCount := (len(leaves) + reductionFactor - 1) / reductionFactor
+		reducedCount := (uint64(len(leaves)) + reductionFactor - 1) / reductionFactor
 		// all the leaves are the same. Except possibly the last leaf, but that's ok.
-		leafSize := len(leaves[0])
-		for i := 0; i < reducedCount; i++ {
+		leafSize := nextPowOf2(uint64(len(leaves[0])))
+		for i := uint64(0); i < reducedCount; i++ {
 			start := i * reductionFactor
 			end := start + reductionFactor
 			// E.g. if we *started* with 2 leaves, we won't have more than that since it is already a power of 2.
 			// If we had 3, it would have been rounded up anyway. So just pick the end
 			outEnd := end * leafSize
-			if outEnd > len(out) {
-				outEnd = len(out)
+			if outEnd > uint64(len(out)) {
+				outEnd = uint64(len(out))
 			}
 			reduced := out[start*leafSize : outEnd]
 			// unlike reduced output, input may be smaller than the amount that aligns with powers of two
-			if end > len(leaves) {
-				end = len(leaves)
+			if end > uint64(len(leaves)) {
+				end = uint64(len(leaves))
 			}
 			leavesSlice := leaves[start:end]
 			if end > start+1 {
-				fs.reduceLeaves(scratch, reduced, leavesSlice)
+				reduced = fs.reduceLeaves(scratch, reduced, leavesSlice)
 			}
 			leaves[i] = reduced
 		}
