@@ -48,7 +48,7 @@ func TestFFTSettings_reduceLeaves(t *testing.T) {
 }
 
 func TestFFTSettings_reduceLeaves_parametrized(t *testing.T) {
-	ratios := []float64{0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7}
+	ratios := []float64{0.01, 0.1, 0.2, 0.4, 0.5, 0.7, 0.9, 0.99}
 	for scale := uint8(5); scale < 13; scale++ {
 		t.Run(fmt.Sprintf("scale_%d", scale), func(t *testing.T) {
 			for i, ratio := range ratios {
@@ -66,6 +66,9 @@ func testReduceLeaves(scale uint8, missingRatio float64, seed int64, t *testing.
 	rng := rand.New(rand.NewSource(seed))
 	pointCount := uint64(1) << scale
 	missingCount := uint64(int(float64(pointCount) * missingRatio))
+	if missingCount == 0 {
+		return // nothing missing
+	}
 
 	// select the missing points
 	missing := make([]uint64, pointCount, pointCount)
