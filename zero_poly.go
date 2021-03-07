@@ -90,7 +90,9 @@ func (fs *FFTSettings) reduceLeaves(scratch []bls.Fr, dst []bls.Fr, ps [][]bls.F
 	}
 	for i := uint64(0); i < last; i++ {
 		p := ps[i]
-		copy(pPadded[:len(p)], p) // TODO; seems better than iterating all, but assumes the Fr is shallow copyable
+		for j := 0; j < len(p); j++ {
+			bls.CopyFr(&pPadded[j], &p[j])
+		}
 		if err := fs.InplaceFFT(pPadded, pEval, false); err != nil {
 			panic(err)
 		}
