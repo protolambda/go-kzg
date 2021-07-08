@@ -1,4 +1,4 @@
-// +build bignum_pure
+// +build bignum_pure,bn254
 
 package bls
 
