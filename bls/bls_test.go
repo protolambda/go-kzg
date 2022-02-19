@@ -20,3 +20,47 @@ func TestPointCompression(t *testing.T) {
 		t.Fatalf("Invalid compression result, %v != %x", got, expected)
 	}
 }
+
+func TestPointG1Marshalling(t *testing.T) {
+	var x Fr
+	SetFr(&x, "44689111813071777962210527909085028157792767057343609826799812096627770269092")
+	var point G1Point
+	MulG1(&point, &GenG1, &x)
+
+	bytes, err := point.MarshalText()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var anotherPoint G1Point
+	err = anotherPoint.UnmarshalText(bytes)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if point != anotherPoint {
+		t.Fatal("G1 points did not match")
+	}
+}
+
+func TestPointG2Marshalling(t *testing.T) {
+	var x Fr
+	SetFr(&x, "44689111813071777962210527909085028157792767057343609826799812096627770269092")
+	var point G2Point
+	MulG2(&point, &GenG2, &x)
+
+	bytes, err := point.MarshalText()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var anotherPoint G2Point
+	err = anotherPoint.UnmarshalText(bytes)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if point != anotherPoint {
+		t.Fatal("G2 points did not match")
+	}
+}

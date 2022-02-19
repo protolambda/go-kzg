@@ -3,6 +3,8 @@
 package bls
 
 import (
+	"encoding/hex"
+	"errors"
 	"fmt"
 	kbls "github.com/kilic/bls12-381"
 	"math/big"
@@ -148,4 +150,66 @@ func DebugG1s(msg string, values []G1Point) {
 		out.WriteString(fmt.Sprintf("%s %d: %s\n", msg, i, StrG1(&values[i])))
 	}
 	fmt.Println(out.String())
+}
+
+// Encode G1Point into text
+func (p *G1Point) MarshalText() ([]byte, error) {
+	t := kbls.NewG1().ToCompressed((*kbls.PointG1)(p))
+	return []byte(hex.EncodeToString(t)), nil
+}
+
+// Decode text into a G1Point
+func (p *G1Point) UnmarshalText(text []byte) error {
+	if p == nil {
+		return errors.New("cannot decode into nil BLSPubkey")
+	}
+
+	g := kbls.NewG1()
+
+	data, err := hex.DecodeString(string(text))
+	if err != nil {
+		panic(err)
+	}
+
+	p0, err := g.FromCompressed(data)
+	if err != nil {
+		panic(err)
+	}
+
+	// Deep-copy the decoded point
+	p[0] = p0[0]
+	p[1] = p0[1]
+	p[2] = p0[2]
+	return nil
+}
+
+// Encode G2Point into text
+func (p *G2Point) MarshalText() ([]byte, error) {
+	t := kbls.NewG2().ToCompressed((*kbls.PointG2)(p))
+	return []byte(hex.EncodeToString(t)), nil
+}
+
+// Decode text into a G2Point
+func (p *G2Point) UnmarshalText(text []byte) error {
+	if p == nil {
+		return errors.New("cannot decode into nil BLSPubkey")
+	}
+
+	g := kbls.NewG2()
+
+	data, err := hex.DecodeString(string(text))
+	if err != nil {
+		panic(err)
+	}
+
+	p0, err := g.FromCompressed(data)
+	if err != nil {
+		panic(err)
+	}
+
+	// Deep-copy the decoded point
+	p[0] = p0[0]
+	p[1] = p0[1]
+	p[2] = p0[2]
+	return nil
 }
