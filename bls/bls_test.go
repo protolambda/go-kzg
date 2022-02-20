@@ -1,3 +1,4 @@
+//go:build !bignum_pure && !bignum_hol256
 // +build !bignum_pure,!bignum_hol256
 
 package bls
@@ -38,8 +39,8 @@ func TestPointG1Marshalling(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if point != anotherPoint {
-		t.Fatal("G1 points did not match")
+	if !EqualG1(&point, &anotherPoint) {
+		t.Fatalf("G1 points did not match:\n%s\n%s", StrG1(&point), StrG1(&anotherPoint))
 	}
 }
 
@@ -60,7 +61,7 @@ func TestPointG2Marshalling(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if point != anotherPoint {
-		t.Fatal("G2 points did not match")
+	if !EqualG2(&point, &anotherPoint) {
+		t.Fatalf("G2 points did not match:\n%s\n%s", StrG2(&point), StrG2(&anotherPoint))
 	}
 }

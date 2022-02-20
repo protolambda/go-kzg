@@ -1,3 +1,4 @@
+//go:build !bignum_pure && !bignum_hol256 && !bignum_kilic
 // +build !bignum_pure,!bignum_hol256,!bignum_kilic
 
 package bls
@@ -115,6 +116,28 @@ func EqualG2(a *G2Point, b *G2Point) bool {
 
 func ToCompressedG1(p *G1Point) []byte {
 	return hbls.CastToPublicKey((*hbls.G1)(p)).Serialize()
+}
+
+func FromCompressedG1(v []byte) (*G1Point, error) {
+	var pub hbls.PublicKey
+	if err := pub.Deserialize(v); err != nil {
+		return nil, err
+	}
+	p := hbls.CastFromPublicKey(&pub)
+	return (*G1Point)(p), nil
+}
+
+func ToCompressedG2(p *G2Point) []byte {
+	return hbls.CastToSign((*hbls.G2)(p)).Serialize()
+}
+
+func FromCompressedG2(v []byte) (*G2Point, error) {
+	var sig hbls.Sign
+	if err := sig.Deserialize(v); err != nil {
+		return nil, err
+	}
+	p := hbls.CastFromSign(&sig)
+	return (*G2Point)(p), nil
 }
 
 func LinCombG1(numbers []G1Point, factors []Fr) *G1Point {

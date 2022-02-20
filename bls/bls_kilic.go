@@ -1,10 +1,9 @@
+//go:build bignum_kilic
 // +build bignum_kilic
 
 package bls
 
 import (
-	"encoding/hex"
-	"errors"
 	"fmt"
 	kbls "github.com/kilic/bls12-381"
 	"math/big"
@@ -116,6 +115,20 @@ func ToCompressedG1(p *G1Point) []byte {
 	return kbls.NewG1().ToCompressed((*kbls.PointG1)(p))
 }
 
+func FromCompressedG1(v []byte) (*G1Point, error) {
+	p, err := kbls.NewG1().FromCompressed(v)
+	return (*G1Point)(p), err
+}
+
+func ToCompressedG2(p *G2Point) []byte {
+	return kbls.NewG2().ToCompressed((*kbls.PointG2)(p))
+}
+
+func FromCompressedG2(v []byte) (*G2Point, error) {
+	p, err := kbls.NewG2().FromCompressed(v)
+	return (*G2Point)(p), err
+}
+
 func LinCombG1(numbers []G1Point, factors []Fr) *G1Point {
 	if len(numbers) != len(factors) {
 		panic("got LinCombG1 numbers/factors length mismatch")
@@ -150,66 +163,4 @@ func DebugG1s(msg string, values []G1Point) {
 		out.WriteString(fmt.Sprintf("%s %d: %s\n", msg, i, StrG1(&values[i])))
 	}
 	fmt.Println(out.String())
-}
-
-// Encode G1Point into text
-func (p *G1Point) MarshalText() ([]byte, error) {
-	t := kbls.NewG1().ToCompressed((*kbls.PointG1)(p))
-	return []byte(hex.EncodeToString(t)), nil
-}
-
-// Decode text into a G1Point
-func (p *G1Point) UnmarshalText(text []byte) error {
-	if p == nil {
-		return errors.New("cannot decode into nil BLSPubkey")
-	}
-
-	g := kbls.NewG1()
-
-	data, err := hex.DecodeString(string(text))
-	if err != nil {
-		panic(err)
-	}
-
-	p0, err := g.FromCompressed(data)
-	if err != nil {
-		panic(err)
-	}
-
-	// Deep-copy the decoded point
-	p[0] = p0[0]
-	p[1] = p0[1]
-	p[2] = p0[2]
-	return nil
-}
-
-// Encode G2Point into text
-func (p *G2Point) MarshalText() ([]byte, error) {
-	t := kbls.NewG2().ToCompressed((*kbls.PointG2)(p))
-	return []byte(hex.EncodeToString(t)), nil
-}
-
-// Decode text into a G2Point
-func (p *G2Point) UnmarshalText(text []byte) error {
-	if p == nil {
-		return errors.New("cannot decode into nil BLSPubkey")
-	}
-
-	g := kbls.NewG2()
-
-	data, err := hex.DecodeString(string(text))
-	if err != nil {
-		panic(err)
-	}
-
-	p0, err := g.FromCompressed(data)
-	if err != nil {
-		panic(err)
-	}
-
-	// Deep-copy the decoded point
-	p[0] = p0[0]
-	p[1] = p0[1]
-	p[2] = p0[2]
-	return nil
 }
