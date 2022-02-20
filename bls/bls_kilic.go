@@ -168,12 +168,12 @@ func (p *G1Point) UnmarshalText(text []byte) error {
 
 	data, err := hex.DecodeString(string(text))
 	if err != nil {
-		panic(err)
+		return errors.New("cannot decode g1 string")
 	}
 
 	p0, err := g.FromCompressed(data)
 	if err != nil {
-		panic(err)
+		return errors.New("cannot parse g1 string")
 	}
 
 	// Deep-copy the decoded point
@@ -199,12 +199,38 @@ func (p *G2Point) UnmarshalText(text []byte) error {
 
 	data, err := hex.DecodeString(string(text))
 	if err != nil {
-		panic(err)
+		return errors.New("cannot decode g2 string")
 	}
 
 	p0, err := g.FromCompressed(data)
 	if err != nil {
-		panic(err)
+		return errors.New("cannot parse g2 point")
+	}
+
+	// Deep-copy the decoded point
+	p[0] = p0[0]
+	p[1] = p0[1]
+	p[2] = p0[2]
+	return nil
+}
+
+// Encode G1Point into binary
+func (p *G1Point) MarshalBinary() ([]byte, error) {
+	t := kbls.NewG1().ToCompressed((*kbls.PointG1)(p))
+	return t, nil
+}
+
+// Decode binary into a G1Point
+func (p *G1Point) UnmarshalBinary(b []byte) error {
+	if p == nil {
+		return errors.New("cannot decode into nil BLSPubkey")
+	}
+
+	g := kbls.NewG1()
+
+	p0, err := g.FromCompressed(b)
+	if err != nil {
+		return errors.New("cannot parse g1 point")
 	}
 
 	// Deep-copy the decoded point

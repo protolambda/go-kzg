@@ -3,8 +3,9 @@
 package bls
 
 import (
-	hbls "github.com/herumi/bls-eth-go-binary/bls"
 	"unsafe"
+
+	hbls "github.com/herumi/bls-eth-go-binary/bls"
 )
 
 func init() {
