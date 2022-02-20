@@ -1,3 +1,4 @@
+//go:build !bignum_pure && !bignum_hol256
 // +build !bignum_pure,!bignum_hol256
 
 package kzg
@@ -79,7 +80,7 @@ func NewFK20MultiSettings(ks *KZGSettings, n2 uint64, chunkLen uint64) *FK20Mult
 	if n2 < 2 {
 		panic("extended size is too small")
 	}
-	if chunkLen > n2 / 2 {
+	if chunkLen > n2/2 {
 		panic("chunk length is too large")
 	}
 	if !bls.IsPowerOfTwo(chunkLen) {

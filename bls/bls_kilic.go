@@ -1,5 +1,5 @@
-//go:build bignum_kilic
-// +build bignum_kilic
+//go:build !bignum_pure && !bignum_hol256 && !bignum_hbls
+// +build !bignum_pure,!bignum_hol256,!bignum_hbls
 
 package bls
 

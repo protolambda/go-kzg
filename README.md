@@ -33,7 +33,7 @@ Features:
 
 ## BLS
 
-Currently supported BLS implementations: Herumi BLS (default) and Kilic BLS.
+Currently supported BLS implementations: Herumi BLS and Kilic BLS (default).
 
 ## Field elements (Fr)
 
@@ -41,8 +41,8 @@ The BLS curve order is used for the modulo math, different libraries could be us
 Note: some of these libraries do not have full BLS functionality, only Bignum / uint256. The KZG code will be excluded when compiling with a non-BLS build tag.
 
 Build tag options:
-- ` ` (default, empty): use Herumi BLS library. Previously used by `bignum_hbls` build tag. [`herumi/bls-eth-go-binary`](https://github.com/herumi/bls-eth-go-binary/)
-- `-tags bignum_kilic`: Use Kilic BLS library. [`kilic/bls12-381`](https://github.com/kilic/bls12-381)
+- (no build tags, default): Use Kilic BLS library. Previously used by `bignum_kilic` build tag. [`kilic/bls12-381`](https://github.com/kilic/bls12-381)
+- `-tags bignum_hbls`: use Herumi BLS library. [`herumi/bls-eth-go-binary`](https://github.com/herumi/bls-eth-go-binary/)
 - `-tags bignum_hol256`: Use the uint256 code that Geth uses, [`holiman/uint256`](https://github.com/holiman/uint256)
 - `-tags bignum_pure`: Use the native Go Bignum implementation.
 

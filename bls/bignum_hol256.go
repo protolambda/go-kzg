@@ -1,3 +1,4 @@
+//go:build bignum_hol256
 // +build bignum_hol256
 
 package bls

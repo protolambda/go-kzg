@@ -1,3 +1,4 @@
+//go:build bignum_pure
 // +build bignum_pure
 
 package bls
