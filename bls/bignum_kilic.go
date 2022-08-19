@@ -6,8 +6,10 @@ package bls
 import (
 	"crypto/rand"
 	"encoding/binary"
-	kbls "github.com/kilic/bls12-381"
 	"math/big"
+	"unsafe"
+
+	kbls "github.com/kilic/bls12-381"
 )
 
 func init() {
@@ -110,6 +112,10 @@ func MulModFr(dst *Fr, a, b *Fr) {
 
 func InvModFr(dst *Fr, v *Fr) {
 	(*kbls.Fr)(dst).RedInverse((*kbls.Fr)(v))
+}
+
+func BatchInvModFr(f []Fr) {
+	kbls.RedInverseBatchFr(*(*[]kbls.Fr)(unsafe.Pointer(&f)))
 }
 
 //func SqrModFr(dst *Fr, v *Fr) {
