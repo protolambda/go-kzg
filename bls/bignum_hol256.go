@@ -14,7 +14,6 @@ var _modulus u256.Int
 type Fr u256.Int
 
 func init() {
-	SetFr((*Fr)(&_modulus), "52435875175126190479447740508185965837690552500527637822603658699938581184513")
 	initGlobals()
 }
 
@@ -82,7 +81,7 @@ func EqualFr(a *Fr, b *Fr) bool {
 }
 
 func RandomFr() *Fr {
-	v, err := rand.Int(rand.Reader, _modulus.ToBig())
+	v, err := rand.Int(rand.Reader, MODULUS.ToBig())
 	if err != nil {
 		panic(err)
 	}
@@ -95,12 +94,12 @@ func SubModFr(dst *Fr, a, b *Fr) {
 	if (*u256.Int)(dst).SubOverflow((*u256.Int)(a), (*u256.Int)(b)) {
 		var tmp u256.Int // hacky
 		tmp.Sub(new(u256.Int), (*u256.Int)(dst))
-		(*u256.Int)(dst).Sub(&_modulus, &tmp)
+		(*u256.Int)(dst).Sub(&MODULUS, &tmp)
 	}
 }
 
 func AddModFr(dst *Fr, a, b *Fr) {
-	(*u256.Int)(dst).AddMod((*u256.Int)(a), (*u256.Int)(b), &_modulus)
+	(*u256.Int)(dst).AddMod((*u256.Int)(a), (*u256.Int)(b), &MODULUS)
 }
 
 func DivModFr(dst *Fr, a, b *Fr) {
@@ -110,14 +109,14 @@ func DivModFr(dst *Fr, a, b *Fr) {
 }
 
 func MulModFr(dst *Fr, a, b *Fr) {
-	(*u256.Int)(dst).MulMod((*u256.Int)(a), (*u256.Int)(b), &_modulus)
+	(*u256.Int)(dst).MulMod((*u256.Int)(a), (*u256.Int)(b), &MODULUS)
 }
 
 // TODO not optimized, but also not used as much
 func InvModFr(dst *Fr, v *Fr) {
 	// pow(x, n - 2, n)
 	var tmp big.Int
-	tmp.ModInverse((*u256.Int)(v).ToBig(), (&_modulus).ToBig())
+	tmp.ModInverse((*u256.Int)(v).ToBig(), (&MODULUS).ToBig())
 	(*u256.Int)(dst).SetFromBig(&tmp)
 }
 

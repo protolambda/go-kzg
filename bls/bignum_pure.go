@@ -8,10 +8,7 @@ import (
 	"math/big"
 )
 
-var _modulus big.Int
-
 func init() {
-	SetFr((*Fr)(&_modulus), "52435875175126190479447740508185965837690552500527637822603658699938581184513")
 	initGlobals()
 }
 
@@ -74,7 +71,7 @@ func EqualFr(a *Fr, b *Fr) bool {
 }
 
 func RandomFr() *Fr {
-	v, err := rand.Int(rand.Reader, &_modulus)
+	v, err := rand.Int(rand.Reader, &MODULUS)
 	if err != nil {
 		panic(err)
 	}
@@ -83,36 +80,36 @@ func RandomFr() *Fr {
 
 func SubModFr(dst *Fr, a, b *Fr) {
 	(*big.Int)(dst).Sub((*big.Int)(a), (*big.Int)(b))
-	(*big.Int)(dst).Mod((*big.Int)(dst), &_modulus)
+	(*big.Int)(dst).Mod((*big.Int)(dst), &MODULUS)
 }
 
 func AddModFr(dst *Fr, a, b *Fr) {
 	(*big.Int)(dst).Add((*big.Int)(a), (*big.Int)(b))
-	(*big.Int)(dst).Mod((*big.Int)(dst), &_modulus)
+	(*big.Int)(dst).Mod((*big.Int)(dst), &MODULUS)
 }
 
 func DivModFr(dst *Fr, a, b *Fr) {
 	var tmp Fr
 	InvModFr(&tmp, b)
 	(*big.Int)(dst).Mul((*big.Int)(a), (*big.Int)(&tmp))
-	(*big.Int)(dst).Mod((*big.Int)(dst), &_modulus)
+	(*big.Int)(dst).Mod((*big.Int)(dst), &MODULUS)
 }
 
 func MulModFr(dst *Fr, a, b *Fr) {
 	(*big.Int)(dst).Mul((*big.Int)(a), (*big.Int)(b))
-	(*big.Int)(dst).Mod((*big.Int)(dst), &_modulus)
+	(*big.Int)(dst).Mod((*big.Int)(dst), &MODULUS)
 }
 
 func PowModFr(dst *Fr, a, b *Fr) {
-	(*big.Int)(dst).Exp((*big.Int)(a), (*big.Int)(b), &_modulus)
+	(*big.Int)(dst).Exp((*big.Int)(a), (*big.Int)(b), &MODULUS)
 }
 
 func InvModFr(dst *Fr, v *Fr) {
-	(*big.Int)(dst).ModInverse((*big.Int)(v), &_modulus)
+	(*big.Int)(dst).ModInverse((*big.Int)(v), &MODULUS)
 }
 
 //func sqrModFr(dst *Fr, v *Fr) {
-//	(*big.Int)(dst).ModSqrt((*big.Int)(v), &_modulus)
+//	(*big.Int)(dst).ModSqrt((*big.Int)(v), &MODULUS)
 //}
 
 func EvalPolyAt(dst *Fr, p []Fr, x *Fr) {
