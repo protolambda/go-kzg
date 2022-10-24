@@ -11,7 +11,7 @@ import (
 var _modulus big.Int
 
 func init() {
-	SetFr((*Fr)(&_modulus), "52435875175126190479447740508185965837690552500527637822603658699938581184513")
+	SetFr((*Fr)(&_modulus), ModulusStr)
 	initGlobals()
 }
 

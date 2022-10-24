@@ -13,7 +13,7 @@ import (
 var _modulus big.Int
 
 func init() {
-	if err := _modulus.UnmarshalText([]byte("52435875175126190479447740508185965837690552500527637822603658699938581184513")); err != nil {
+	if err := _modulus.UnmarshalText([]byte(ModulusStr)); err != nil {
 		panic(err)
 	}
 	hbls.Init(hbls.BLS12_381)
