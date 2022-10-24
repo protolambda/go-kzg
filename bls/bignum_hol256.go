@@ -5,8 +5,9 @@ package bls
 
 import (
 	"crypto/rand"
-	u256 "github.com/holiman/uint256"
 	"math/big"
+
+	u256 "github.com/holiman/uint256"
 )
 
 var _modulus u256.Int
@@ -119,6 +120,14 @@ func InvModFr(dst *Fr, v *Fr) {
 	var tmp big.Int
 	tmp.ModInverse((*u256.Int)(v).ToBig(), (&_modulus).ToBig())
 	(*u256.Int)(dst).SetFromBig(&tmp)
+}
+
+// BatchInvModFr computes the inverse for each input.
+// Warning: this does not actually batch, this is just here for compatibility with other BLS backends that do.
+func BatchInvModFr(f []Fr) {
+	for i := 0; i < len(f); i++ {
+		InvModFr(&f[i], &f[i])
+	}
 }
 
 //func SqrModFr(dst *Fr, v *Fr) {

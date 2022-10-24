@@ -111,6 +111,14 @@ func InvModFr(dst *Fr, v *Fr) {
 	(*big.Int)(dst).ModInverse((*big.Int)(v), &_modulus)
 }
 
+// BatchInvModFr computes the inverse for each input.
+// Warning: this does not actually batch, this is just here for compatibility with other BLS backends that do.
+func BatchInvModFr(f []Fr) {
+	for i := 0; i < len(f); i++ {
+		InvModFr(&f[i], &f[i])
+	}
+}
+
 //func sqrModFr(dst *Fr, v *Fr) {
 //	(*big.Int)(dst).ModSqrt((*big.Int)(v), &_modulus)
 //}

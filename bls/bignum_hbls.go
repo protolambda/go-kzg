@@ -4,8 +4,9 @@
 package bls
 
 import (
-	hbls "github.com/herumi/bls-eth-go-binary/bls"
 	"unsafe"
+
+	hbls "github.com/herumi/bls-eth-go-binary/bls"
 )
 
 func init() {
@@ -96,6 +97,14 @@ func MulModFr(dst *Fr, a, b *Fr) {
 
 func InvModFr(dst *Fr, v *Fr) {
 	hbls.FrInv((*hbls.Fr)(dst), (*hbls.Fr)(v))
+}
+
+// BatchInvModFr computes the inverse for each input.
+// Warning: this does not actually batch, this is just here for compatibility with other BLS backends that do.
+func BatchInvModFr(f []Fr) {
+	for i := 0; i < len(f); i++ {
+		hbls.FrInv((*hbls.Fr)(&f[i]), (*hbls.Fr)(&f[i]))
+	}
 }
 
 //func SqrModFr(dst *Fr, v *Fr) {
