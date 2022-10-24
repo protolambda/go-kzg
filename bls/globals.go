@@ -93,7 +93,10 @@ func EvalPolyAtUnoptimized(dst *Fr, coeffs []Fr, x *Fr) {
 
 // Evaluate a polynomial (in evaluation form) at an arbitrary point x using the barycentric formula:
 //
-//	f(x) = (1 - x**WIDTH) / WIDTH  *  sum_(i=0)^WIDTH  (f(DOMAIN[i]) * DOMAIN[i]) / (x - DOMAIN[i])
+//	f(x) = (x**WIDTH - 1) / WIDTH  *  sum_(i=0)^WIDTH  (f(DOMAIN[i]) * DOMAIN[i]) / (x - DOMAIN[i])
+//
+// See https://dankradfeist.de/ethereum/2021/06/18/pcs-multiproofs.html
+// "Evaluating a polynomial in evaluation form on a point outside the domain".
 //
 // Scale is used to indicate the power of 2 to use to stride through the domain values.
 // Note: scale == 0 when the roots of unity length matches the polynomial.
@@ -137,8 +140,8 @@ func EvaluatePolyInEvaluationForm(yFr *Fr, poly []Fr, x *Fr, rootsOfUnity []Fr, 
 	// (1 - x**WIDTH)
 	var powB Fr
 	ExpModFr(&powB, x, width)
-	SubModFr(&powB, &powB, &ONE) // TODO: prysm does x**width - 1, and it passes the test, but old spec comment says 1 - x**width ?
-	// (1 - x**WIDTH) / WIDTH
+	SubModFr(&powB, &powB, &ONE)
+	// (x**WIDTH - 1) / WIDTH
 	var tmp Fr
 	MulModFr(&tmp, &powB, &inverseWidth)
 
