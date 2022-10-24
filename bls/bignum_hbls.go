@@ -4,12 +4,18 @@
 package bls
 
 import (
+	"math/big"
 	"unsafe"
 
 	hbls "github.com/herumi/bls-eth-go-binary/bls"
 )
 
+var _modulus big.Int
+
 func init() {
+	if err := _modulus.UnmarshalText([]byte("52435875175126190479447740508185965837690552500527637822603658699938581184513")); err != nil {
+		panic(err)
+	}
 	hbls.Init(hbls.BLS12_381)
 	initGlobals()
 	ClearG1(&ZERO_G1)
@@ -119,4 +125,14 @@ func EvalPolyAt(dst *Fr, p []Fr, x *Fr) {
 	); err != nil {
 		panic(err) // TODO: why does the herumi API return an error? When coefficients are empty?
 	}
+}
+
+// ExpModFr computes v**e in Fr. Warning: this is a slow fallback on big int math.
+func ExpModFr(dst *Fr, v *Fr, e *big.Int) {
+	vBig, ok := new(big.Int).SetString(FrStr(v), 10)
+	if !ok {
+		panic("failed string hack")
+	}
+	res := new(big.Int).Exp(vBig, e, &_modulus)
+	SetFr(dst, res.String())
 }

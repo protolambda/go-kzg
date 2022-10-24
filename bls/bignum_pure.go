@@ -126,3 +126,8 @@ func BatchInvModFr(f []Fr) {
 func EvalPolyAt(dst *Fr, p []Fr, x *Fr) {
 	EvalPolyAtUnoptimized(dst, p, x)
 }
+
+// ExpModFr computes v**e in Fr.
+func ExpModFr(dst *Fr, v *Fr, e *big.Int) {
+	(*big.Int)(dst).Exp((*big.Int)(v), e, &_modulus)
+}
