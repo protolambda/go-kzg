@@ -139,7 +139,7 @@ func EvaluatePolyInEvaluationForm(yFr *Fr, poly []Fr, x *Fr, rootsOfUnity []Fr, 
 		CopyFr(&y, &tmp)
 	}
 
-	// (1 - x**WIDTH)
+	// (x**WIDTH - 1)
 	var powB Fr
 	ExpModFr(&powB, x, width)
 	SubModFr(&powB, &powB, &ONE)
@@ -147,6 +147,6 @@ func EvaluatePolyInEvaluationForm(yFr *Fr, poly []Fr, x *Fr, rootsOfUnity []Fr, 
 	var tmp Fr
 	MulModFr(&tmp, &powB, &inverseWidth)
 
-	// (1 - x**WIDTH) / WIDTH  *  sum_(i=0)^WIDTH  (f(DOMAIN[i]) * DOMAIN[i]) / (x - DOMAIN[i])
+	// (x**WIDTH - 1) / WIDTH  *  sum_(i=0)^WIDTH  (f(DOMAIN[i]) * DOMAIN[i]) / (x - DOMAIN[i])
 	MulModFr(yFr, &y, &tmp)
 }
