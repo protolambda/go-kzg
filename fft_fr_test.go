@@ -69,3 +69,31 @@ func TestInvFFT(t *testing.T) {
 		}
 	}
 }
+
+func TestEvaluatePolyInEvaluationForm(t *testing.T) {
+	fs := NewFFTSettings(4)
+	// coeffs
+	data := make([]bls.Fr, fs.MaxWidth, fs.MaxWidth)
+	for i := uint64(0); i < fs.MaxWidth; i++ {
+		data[i] = *bls.RandomFr()
+	}
+	// coefficients to eval form
+	res, err := fs.FFT(data, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for i := 0; i < 100; i++ {
+		x := bls.RandomFr()
+		var y1 bls.Fr
+		bls.EvalPolyAt(&y1, data, x)
+
+		var y2 bls.Fr
+		bls.EvaluatePolyInEvaluationForm(&y2, res, x, fs.ExpandedRootsOfUnity[:fs.MaxWidth], 0)
+
+		if !bls.EqualFr(&y1, &y2) {
+			debugFrs("y", []bls.Fr{y1, y2})
+			t.Fatal("expected to evaluate to the same value")
+		}
+	}
+}

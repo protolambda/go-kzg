@@ -1,5 +1,12 @@
 package bls
 
+import (
+	"fmt"
+	"math/big"
+)
+
+const ModulusStr = "52435875175126190479447740508185965837690552500527637822603658699938581184513"
+
 var Scale2RootOfUnity []Fr
 
 var ZERO, ONE, TWO Fr
@@ -84,4 +91,62 @@ func EvalPolyAtUnoptimized(dst *Fr, coeffs []Fr, x *Fr) {
 		AddModFr(&last, &tmp, &coeffs[i])
 	}
 	CopyFr(dst, &last)
+}
+
+// Evaluate a polynomial (in evaluation form) at an arbitrary point x using the barycentric formula:
+//
+//	f(x) = (x**WIDTH - 1) / WIDTH  *  sum_(i=0)^WIDTH  (f(DOMAIN[i]) * DOMAIN[i]) / (x - DOMAIN[i])
+//
+// See https://dankradfeist.de/ethereum/2021/06/18/pcs-multiproofs.html
+// "Evaluating a polynomial in evaluation form on a point outside the domain".
+//
+// Scale is used to indicate the power of 2 to use to stride through the domain values.
+// Note: scale == 0 when the roots of unity length matches the polynomial.
+func EvaluatePolyInEvaluationForm(yFr *Fr, poly []Fr, x *Fr, rootsOfUnity []Fr, scale uint8) {
+	if len(poly) != len(rootsOfUnity)>>scale {
+		panic(fmt.Errorf("expected roots of unity (len %d >> %d == %d) to match polynomial size (len %d)", len(rootsOfUnity), scale, len(rootsOfUnity)>>scale, len(poly)))
+	}
+
+	width := big.NewInt(int64(len(poly)))
+	var widthFr Fr
+	AsFr(&widthFr, uint64(len(poly)))
+	var inverseWidth Fr
+	InvModFr(&inverseWidth, &widthFr)
+
+	// Precomputing the mod inverses as a batch is alot faster
+	invDenom := make([]Fr, len(poly))
+	for i := range invDenom {
+		// (x - DOMAIN[i])
+		SubModFr(&invDenom[i], x, &rootsOfUnity[i<<scale])
+	}
+	// now each value becomes 1 / (x - DOMAIN[i])
+	BatchInvModFr(invDenom)
+
+	// sum_(i=0)^WIDTH  (f(DOMAIN[i]) * DOMAIN[i]) / (x - DOMAIN[i])
+	var y Fr
+	for i := 0; i < len(poly); i++ {
+		// f(DOMAIN[i]) * DOMAIN[i])
+		var num Fr
+		MulModFr(&num, &poly[i], &rootsOfUnity[i<<scale])
+
+		// (f(DOMAIN[i]) * DOMAIN[i]) / (x - DOMAIN[i])
+		var div Fr
+		MulModFr(&div, &num, &invDenom[i])
+
+		// sum
+		var tmp Fr
+		AddModFr(&tmp, &y, &div)
+		CopyFr(&y, &tmp)
+	}
+
+	// (x**WIDTH - 1)
+	var powB Fr
+	ExpModFr(&powB, x, width)
+	SubModFr(&powB, &powB, &ONE)
+	// (x**WIDTH - 1) / WIDTH
+	var tmp Fr
+	MulModFr(&tmp, &powB, &inverseWidth)
+
+	// (x**WIDTH - 1) / WIDTH  *  sum_(i=0)^WIDTH  (f(DOMAIN[i]) * DOMAIN[i]) / (x - DOMAIN[i])
+	MulModFr(yFr, &y, &tmp)
 }

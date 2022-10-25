@@ -11,7 +11,7 @@ import (
 var _modulus big.Int
 
 func init() {
-	SetFr((*Fr)(&_modulus), "52435875175126190479447740508185965837690552500527637822603658699938581184513")
+	SetFr((*Fr)(&_modulus), ModulusStr)
 	initGlobals()
 }
 
@@ -111,10 +111,23 @@ func InvModFr(dst *Fr, v *Fr) {
 	(*big.Int)(dst).ModInverse((*big.Int)(v), &_modulus)
 }
 
+// BatchInvModFr computes the inverse for each input.
+// Warning: this does not actually batch, this is just here for compatibility with other BLS backends that do.
+func BatchInvModFr(f []Fr) {
+	for i := 0; i < len(f); i++ {
+		InvModFr(&f[i], &f[i])
+	}
+}
+
 //func sqrModFr(dst *Fr, v *Fr) {
 //	(*big.Int)(dst).ModSqrt((*big.Int)(v), &_modulus)
 //}
 
 func EvalPolyAt(dst *Fr, p []Fr, x *Fr) {
 	EvalPolyAtUnoptimized(dst, p, x)
+}
+
+// ExpModFr computes v**e in Fr.
+func ExpModFr(dst *Fr, v *Fr, e *big.Int) {
+	(*big.Int)(dst).Exp((*big.Int)(v), e, &_modulus)
 }

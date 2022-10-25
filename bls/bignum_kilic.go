@@ -6,8 +6,10 @@ package bls
 import (
 	"crypto/rand"
 	"encoding/binary"
-	kbls "github.com/kilic/bls12-381"
 	"math/big"
+	"unsafe"
+
+	kbls "github.com/kilic/bls12-381"
 )
 
 func init() {
@@ -112,6 +114,10 @@ func InvModFr(dst *Fr, v *Fr) {
 	(*kbls.Fr)(dst).RedInverse((*kbls.Fr)(v))
 }
 
+func BatchInvModFr(f []Fr) {
+	kbls.RedInverseBatchFr(*(*[]kbls.Fr)(unsafe.Pointer(&f)))
+}
+
 //func SqrModFr(dst *Fr, v *Fr) {
 //	kbls.FrSqr((*kbls.Fr)(dst), (*kbls.Fr)(v))
 //}
@@ -119,4 +125,8 @@ func InvModFr(dst *Fr, v *Fr) {
 func EvalPolyAt(dst *Fr, p []Fr, x *Fr) {
 	// TODO: kilic BLS has no optimized evaluation function
 	EvalPolyAtUnoptimized(dst, p, x)
+}
+
+func ExpModFr(dst *Fr, v *Fr, e *big.Int) {
+	(*kbls.Fr)(dst).RedExp((*kbls.Fr)(v), e)
 }
