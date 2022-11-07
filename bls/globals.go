@@ -150,3 +150,15 @@ func EvaluatePolyInEvaluationForm(yFr *Fr, poly []Fr, x *Fr, rootsOfUnity []Fr, 
 	// (x**WIDTH - 1) / WIDTH  *  sum_(i=0)^WIDTH  (f(DOMAIN[i]) * DOMAIN[i]) / (x - DOMAIN[i])
 	MulModFr(yFr, &y, &tmp)
 }
+
+func PolyLinComb(vectors [][]Fr, scalars []Fr) []Fr {
+	r := make([]Fr, len(vectors[0]))
+	for i := 0; i < len(vectors); i++ {
+		var tmp Fr
+		for j := 0; j < len(r); j++ {
+			MulModFr(&tmp, &vectors[i][j], &scalars[i])
+			AddModFr(&r[j], &r[j], &tmp)
+		}
+	}
+	return r
+}
