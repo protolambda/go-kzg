@@ -160,14 +160,18 @@ func PolyLinComb(vectors [][]Fr, scalars []Fr) ([]Fr, error) {
 	if len(scalars) != l {
 		return nil, errors.New("scalars should have same length as input vectors")
 	}
-	r := make([]Fr, l)
-	for _, v := range vectors {
-		if len(v) != l {
+
+	vlen := len(vectors[0])
+	r := make([]Fr, vlen)
+
+	for j, v := range vectors {
+		if len(v) != vlen {
 			return nil, errors.New("input vectors should all be of identical length")
 		}
+		s := &scalars[j]
 		var tmp Fr
-		for i := 0; i < l; i++ {
-			MulModFr(&tmp, &v[i], &scalars[i])
+		for i := range v {
+			MulModFr(&tmp, s, &v[i])
 			AddModFr(&r[i], &r[i], &tmp)
 		}
 	}

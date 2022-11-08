@@ -65,3 +65,40 @@ func TestPointG2Marshalling(t *testing.T) {
 		t.Fatalf("G2 points did not match:\n%s\n%s", StrG2(&point), StrG2(&anotherPoint))
 	}
 }
+
+func TestPolyLincomb(t *testing.T) {
+	var x1, x2, x3, x4 Fr
+	SetFr(&x1, "1")
+	SetFr(&x2, "2")
+	SetFr(&x3, "3")
+	SetFr(&x4, "4")
+	vec := []Fr{x1, x2, x3, x4}
+
+	// Happy path: valid inputs
+	r, err := PolyLinComb([][]Fr{vec, vec, vec, vec}, vec)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(r) != 4 {
+		t.Fatalf("Expected result of length 4, got %v", len(r))
+	}
+
+	// Error path: empty input
+	r, err = PolyLinComb([][]Fr{}, []Fr{})
+	if err == nil {
+		t.Fatal("Expected error, got none")
+	}
+
+	// Error path: vectors not same length
+	shortVec := []Fr{x1, x2, x3}
+	r, err = PolyLinComb([][]Fr{vec, vec, shortVec, vec}, vec)
+	if err == nil {
+		t.Fatal("Expected error, got none")
+	}
+
+	// Error path: Scalar vector size doesn't match
+	r, err = PolyLinComb([][]Fr{vec, vec, vec, vec}, shortVec)
+	if err == nil {
+		t.Fatal("Expected error, got none")
+	}
+}
