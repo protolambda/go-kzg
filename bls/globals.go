@@ -1,6 +1,7 @@
 package bls
 
 import (
+	"errors"
 	"fmt"
 	"math/big"
 )
@@ -149,4 +150,26 @@ func EvaluatePolyInEvaluationForm(yFr *Fr, poly []Fr, x *Fr, rootsOfUnity []Fr, 
 
 	// (x**WIDTH - 1) / WIDTH  *  sum_(i=0)^WIDTH  (f(DOMAIN[i]) * DOMAIN[i]) / (x - DOMAIN[i])
 	MulModFr(yFr, &y, &tmp)
+}
+
+func PolyLinComb(vectors [][]Fr, scalars []Fr) ([]Fr, error) {
+	l := len(vectors)
+	if l == 0 {
+		return nil, errors.New("input vectors can't be empty")
+	}
+	if len(scalars) != l {
+		return nil, errors.New("scalars should have same length as input vectors")
+	}
+	r := make([]Fr, l)
+	for _, v := range vectors {
+		if len(v) != l {
+			return nil, errors.New("input vectors should all be of identical length")
+		}
+		var tmp Fr
+		for i := 0; i < l; i++ {
+			MulModFr(&tmp, &v[i], &scalars[i])
+			AddModFr(&r[i], &r[i], &tmp)
+		}
+	}
+	return r, nil
 }
