@@ -93,7 +93,7 @@ func RandomFr() *Fr {
 }
 
 func SubModFr(dst *Fr, a, b *Fr) {
-	if (*u256.Int)(dst).SubOverflow((*u256.Int)(a), (*u256.Int)(b)) {
+	if _, underflow := (*u256.Int)(dst).SubOverflow((*u256.Int)(a), (*u256.Int)(b)); underflow {
 		var tmp u256.Int // hacky
 		tmp.Sub(new(u256.Int), (*u256.Int)(dst))
 		(*u256.Int)(dst).Sub(&_modulus, &tmp)

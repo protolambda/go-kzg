@@ -1,3 +1,6 @@
+//go:build !bignum_pure && !bignum_hol256
+// +build !bignum_pure,!bignum_hol256
+
 // Package eth implements the various EIP-4844 function specifications as defined
 // in the EIP-4844 proposal and the EIP-4844 consensus specs:
 //
