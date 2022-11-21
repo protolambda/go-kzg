@@ -19,5 +19,4 @@ logs
 *.sock
 *.log
 *.csv
-*.json
 *.err
