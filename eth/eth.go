@@ -1,17 +1,17 @@
 // Package eth implements the various EIP-4844 function specifications as defined
 // in the EIP-4844 proposal and the EIP-4844 consensus specs:
-//   https://eips.ethereum.org/EIPS/eip-4844
-//   https://github.com/roberto-bayardo/consensus-specs/blob/dev/specs/eip4844/polynomial-commitments.md
+//
+//	https://eips.ethereum.org/EIPS/eip-4844
+//	https://github.com/roberto-bayardo/consensus-specs/blob/dev/specs/eip4844/polynomial-commitments.md
 package eth
 
 import (
-	"bytes"
 	"crypto/sha256"
+	"encoding/binary"
 	"errors"
 	"fmt"
 
 	"github.com/protolambda/go-kzg/bls"
-	"github.com/protolambda/ztyp/codec"
 )
 
 const (
@@ -62,9 +62,7 @@ func (s KZGCommitmentSequenceImpl) Len() int {
 const (
 	BlobTxType                = 5
 	PrecompileInputLength     = 192
-	BlobVersionedHashesOffset = 258 // offset the versioned_hash_offset in a serialized blob tx
-
-	blobMessageLen = 192 // size in bytes of "message" within the serialized blob tx
+	BlobVersionedHashesOffset = 258 // position of blob_versioned_hashes offset in a serialized blob tx, see TxPeekBlobVersionedHashes
 )
 
 var (
@@ -209,53 +207,46 @@ func ValidateBlobsSidecar(slot Slot, beaconBlockRoot Root, expectedKZGCommitment
 // https://github.com/ethereum/consensus-specs/blob/dev/specs/eip4844/beacon-chain.md#tx_peek_blob_versioned_hashes
 //
 // Format of the blob tx relevant to this function is as follows:
-//   0: type (value should always be BlobTxType, 1 byte)
-//   1: message offset (value should always be 69, 4 bytes)
-//   5: ECDSA signature (65 bytes)
-//   70: start of "message" (192 bytes)
-//     258: start of the versioned hash offset within "message"  (4 bytes)
-//   262-: rest of the tx following message
+//
+//		0: type (value should always be BlobTxType)
+//		1: message offset: 4 bytes
+//		5: ECDSA signature: 65 bytes
+//		70: start of "message": 192 bytes
+//			70: chain_id: 32 bytes
+//			102: nonce: 8 bytes
+//			110: priority_fee_per_gas: 32 bytes
+//			142: max_basefee_per_gas: 32 bytes
+//			174: gas: 8 bytes
+//			182: to: 4 bytes - offset (relative to "message")
+//			186: value: 32 bytes
+//			218: data: 4 bytes - offset (relative to "message")
+//			222: access_list: 4 bytes - offset (relative to "message")
+//			226: max_fee_per_data_gas: 32 bytes
+//			258: blob_versioned_hashes: 4 bytes - offset (relative to "message")
+//	     262: start of dynamic data of "message"
+//
+// This function does not fully verify the encoding of the provided tx, but will sanity-check the tx type,
+// and will never panic on malformed inputs.
 func TxPeekBlobVersionedHashes(tx []byte) ([]VersionedHash, error) {
 	// we start our reader at the versioned hash offset within the serialized tx
-	if len(tx) < BlobVersionedHashesOffset {
+	if len(tx) < BlobVersionedHashesOffset+4 {
 		return nil, errors.New("blob tx invalid: too short")
 	}
 	if tx[0] != BlobTxType {
 		return nil, errors.New("invalid blob tx type")
 	}
-	dr := codec.NewDecodingReader(bytes.NewReader(tx[BlobVersionedHashesOffset:]), uint64(len(tx)-BlobVersionedHashesOffset))
-
-	// read the offset to the versioned hashes
-	var offset uint32
-	offset, err := dr.ReadOffset()
-	if err != nil {
-		return nil, fmt.Errorf("could not read versioned hashes offset: %v", err)
+	offset := binary.LittleEndian.Uint32(tx[BlobVersionedHashesOffset : BlobVersionedHashesOffset+4])
+	if uint64(offset) > uint64(len(tx)) {
+		return nil, errors.New("offset to versioned hashes is out of bounds")
 	}
-
-	// Advance dr to the versioned hash list. We subtract blobMessageLen from the offset here to
-	// account for the fact that the offset is relative to the position of "message" (70) and we
-	// are currently positioned at the end of it (262).
-	skip := uint64(offset) - blobMessageLen
-	skipped, err := dr.Skip(skip)
-	if err != nil {
-		return nil, fmt.Errorf("could not skip to versioned hashes: %v", err)
+	hashBytesLen := uint64(len(tx)) - uint64(offset)
+	if hashBytesLen%32 != 0 {
+		return nil, errors.New("expected trailing data starting at versioned-hashes offset to be a multiple of 32 bytes")
 	}
-	if skip != uint64(skipped) {
-		return nil, fmt.Errorf("did not skip to versioned hashes. want %v got %v", skip, skipped)
+	hashes := make([]VersionedHash, hashBytesLen/32)
+	for i := uint64(offset); i < uint64(len(tx)); i += 32 {
+		copy(hashes[i][:], tx[i:i+32])
 	}
-
-	// read the list of hashes one by one until we hit the end of the data
-	hashes := []VersionedHash{}
-	tmp := make([]byte, 32)
-	for dr.Scope() > 0 {
-		if _, err = dr.Read(tmp); err != nil {
-			return nil, fmt.Errorf("could not read versioned hashes: %v", err)
-		}
-		var h VersionedHash
-		copy(h[:], tmp)
-		hashes = append(hashes, h)
-	}
-
 	return hashes, nil
 }
 
