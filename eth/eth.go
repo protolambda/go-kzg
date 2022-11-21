@@ -238,16 +238,16 @@ func TxPeekBlobVersionedHashes(tx []byte) ([]VersionedHash, error) {
 	if tx[0] != BlobTxType {
 		return nil, errors.New("invalid blob tx type")
 	}
-	offset := binary.LittleEndian.Uint32(tx[BlobVersionedHashesOffset : BlobVersionedHashesOffset+4])
-	if uint64(offset) > uint64(len(tx)) {
+	offset := uint64(binary.LittleEndian.Uint32(tx[BlobVersionedHashesOffset:BlobVersionedHashesOffset+4])) + 70
+	if offset > uint64(len(tx)) {
 		return nil, errors.New("offset to versioned hashes is out of bounds")
 	}
-	hashBytesLen := uint64(len(tx)) - uint64(offset)
+	hashBytesLen := uint64(len(tx)) - offset
 	if hashBytesLen%32 != 0 {
 		return nil, errors.New("expected trailing data starting at versioned-hashes offset to be a multiple of 32 bytes")
 	}
 	hashes := make([]VersionedHash, hashBytesLen/32)
-	for i := uint64(offset); i < uint64(len(tx)); i += 32 {
+	for i := offset; i < uint64(len(tx)); i += 32 {
 		copy(hashes[i][:], tx[i:i+32])
 	}
 	return hashes, nil
