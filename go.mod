@@ -1,6 +1,6 @@
 module github.com/protolambda/go-kzg
 
-go 1.15
+go 1.18
 
 require (
 	github.com/herumi/bls-eth-go-binary v1.28.1
