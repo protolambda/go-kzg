@@ -247,8 +247,9 @@ func TxPeekBlobVersionedHashes(tx []byte) ([]VersionedHash, error) {
 		return nil, errors.New("expected trailing data starting at versioned-hashes offset to be a multiple of 32 bytes")
 	}
 	hashes := make([]VersionedHash, hashBytesLen/32)
-	for i := offset; i < uint64(len(tx)); i += 32 {
-		copy(hashes[i][:], tx[i:i+32])
+	for i := range hashes {
+		copy(hashes[i][:], tx[offset:offset+32])
+		offset += 32
 	}
 	return hashes, nil
 }
