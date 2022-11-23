@@ -152,20 +152,19 @@ func EvaluatePolyInEvaluationForm(yFr *Fr, poly []Fr, x *Fr, rootsOfUnity []Fr, 
 	MulModFr(yFr, &y, &tmp)
 }
 
-func PolyLinComb(vectors [][]Fr, scalars []Fr) ([]Fr, error) {
+func PolyLinComb(vectors [][]Fr, scalars []Fr, polyDegree int) ([]Fr, error) {
 	l := len(vectors)
 	if l == 0 {
-		return nil, errors.New("input vectors can't be empty")
+		return make([]Fr, polyDegree), nil
 	}
 	if len(scalars) != l {
 		return nil, errors.New("scalars should have same length as input vectors")
 	}
 
-	vlen := len(vectors[0])
-	r := make([]Fr, vlen)
+	r := make([]Fr, polyDegree)
 
 	for j, v := range vectors {
-		if len(v) != vlen {
+		if len(v) != polyDegree {
 			return nil, errors.New("input vectors should all be of identical length")
 		}
 		s := &scalars[j]
