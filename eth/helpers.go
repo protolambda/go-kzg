@@ -267,41 +267,26 @@ func hashPolysComms(polys Polynomials, comms KZGCommitmentSequence) ([32]byte, e
 	sha := sha256.New()
 	var hash [32]byte
 
-	_, err := sha.Write([]byte(FIAT_SHAMIR_PROTOCOL_DOMAIN))
-	if err != nil {
-		return hash, err
-	}
+	sha.Write([]byte(FIAT_SHAMIR_PROTOCOL_DOMAIN))
 
 	bytes := make([]byte, 8)
 	binary.LittleEndian.PutUint64(bytes, uint64(FieldElementsPerBlob))
-	_, err = sha.Write(bytes)
-	if err != nil {
-		return hash, err
-	}
+	sha.Write(bytes)
 
 	bytes = make([]byte, 8)
 	binary.LittleEndian.PutUint64(bytes, uint64(len(polys)))
-	_, err = sha.Write(bytes)
-	if err != nil {
-		return hash, err
-	}
+	sha.Write(bytes)
 
 	for _, poly := range polys {
 		for _, fe := range poly {
 			b32 := bls.FrTo32(&fe)
-			_, err := sha.Write(b32[:])
-			if err != nil {
-				return hash, err
-			}
+			sha.Write(b32[:])
 		}
 	}
 	l := comms.Len()
 	for i := 0; i < l; i++ {
 		c := comms.At(i)
-		_, err := sha.Write(c[:])
-		if err != nil {
-			return hash, err
-		}
+		sha.Write(c[:])
 	}
 	copy(hash[:], sha.Sum(nil))
 	return hash, nil
