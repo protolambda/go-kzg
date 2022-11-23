@@ -231,6 +231,8 @@ func EvaluatePolynomialInEvaluationForm(poly []bls.Fr, x *bls.Fr) *bls.Fr {
 	return &result
 }
 
+// ComputeChallenges implements compute_challenges from the EIP-4844 consensus spec:
+// https://github.com/ethereum/consensus-specs/blob/dev/specs/eip4844/polynomial-commitments.md#compute_challenges
 func ComputeChallenges(polys Polynomials, comms KZGCommitmentSequence) ([]bls.Fr, *bls.Fr, error) {
 	hash, err := hashPolysComms(polys, comms)
 	if err != nil {
