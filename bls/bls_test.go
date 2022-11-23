@@ -66,6 +66,16 @@ func TestPointG2Marshalling(t *testing.T) {
 	}
 }
 
+func TestEmptyG1Lincomb(t *testing.T) {
+	out := LinCombG1([]G1Point{}, []Fr{})
+	if out == nil {
+		t.Fatal("got nil, expected result when given 0 points and 0 scalars should be the zero group element")
+	}
+
+	if !EqualG1(out, &ZeroG1) {
+		t.Fatalf("Expected zero group element, got:\n%s", StrG1(out))
+	}
+}
 func TestPolyLincomb(t *testing.T) {
 	var x1, x2, x3, x4 Fr
 	SetFr(&x1, "1")
@@ -73,31 +83,37 @@ func TestPolyLincomb(t *testing.T) {
 	SetFr(&x3, "3")
 	SetFr(&x4, "4")
 	vec := []Fr{x1, x2, x3, x4}
+	degree := len(vec)
 
 	// Happy path: valid inputs
-	r, err := PolyLinComb([][]Fr{vec, vec, vec, vec}, vec)
+	r, err := PolyLinComb([][]Fr{vec, vec, vec, vec}, vec, degree)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(r) != 4 {
-		t.Fatalf("Expected result of length 4, got %v", len(r))
+	if len(r) != degree {
+		t.Fatalf("Expected result of length %v, got %v", degree, len(r))
 	}
 
 	// Error path: empty input
-	r, err = PolyLinComb([][]Fr{}, []Fr{})
-	if err == nil {
-		t.Fatal("Expected error, got none")
+	r, err = PolyLinComb([][]Fr{}, []Fr{}, degree)
+	if err != nil {
+		t.Fatalf("Expected the zero polynomial of degree %v \ngot an error: %v", degree, err)
+	}
+	for i := 0; i < degree; i++ {
+		if !EqualFr(&r[i], &ZERO) {
+			t.Fatal("Expected the zero polynomial")
+		}
 	}
 
 	// Error path: vectors not same length
 	shortVec := []Fr{x1, x2, x3}
-	r, err = PolyLinComb([][]Fr{vec, vec, shortVec, vec}, vec)
+	_, err = PolyLinComb([][]Fr{vec, vec, shortVec, vec}, vec, degree)
 	if err == nil {
 		t.Fatal("Expected error, got none")
 	}
 
 	// Error path: Scalar vector size doesn't match
-	r, err = PolyLinComb([][]Fr{vec, vec, vec, vec}, shortVec)
+	_, err = PolyLinComb([][]Fr{vec, vec, vec, vec}, shortVec, degree)
 	if err == nil {
 		t.Fatal("Expected error, got none")
 	}
