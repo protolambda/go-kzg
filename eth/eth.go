@@ -13,6 +13,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"math/big"
 
 	"github.com/protolambda/go-kzg/bls"
 )
@@ -69,8 +70,16 @@ const (
 )
 
 var (
+	precompileReturnValue [64]byte
+
 	invalidKZGProofError = errors.New("invalid kzg proof")
 )
+
+func init() {
+	// initialize the 64 bytes of precompile return data: field elements per blob, field modulus (big-endian uint256)
+	new(big.Int).SetUint64(FieldElementsPerBlob).FillBytes(precompileReturnValue[:32])
+	BLSModulus.FillBytes(precompileReturnValue[32:])
+}
 
 // PointEvaluationPrecompile implements point_evaluation_precompile from EIP-4844
 func PointEvaluationPrecompile(input []byte) ([]byte, error) {
@@ -105,7 +114,8 @@ func PointEvaluationPrecompile(input []byte) ([]byte, error) {
 	if !ok {
 		return nil, invalidKZGProofError
 	}
-	return []byte{}, nil
+	result := precompileReturnValue // copy the value
+	return result[:], nil
 }
 
 // VerifyKZGProof implements verify_kzg_proof from the EIP-4844 consensus spec:
