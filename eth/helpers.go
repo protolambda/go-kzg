@@ -156,21 +156,14 @@ func BytesToBLSField(h [32]byte) *bls.Fr {
 // ComputeAggregatedPolyAndcommitment implements compute_aggregated_poly_and_commitment from the EIP-4844 consensus spec:
 // https://github.com/ethereum/consensus-specs/blob/dev/specs/eip4844/polynomial-commitments.md#compute_aggregated_poly_and_commitment
 func ComputeAggregatedPolyAndCommitment(blobs Polynomials, commitments KZGCommitmentSequence) ([]bls.Fr, *bls.G1Point, *bls.Fr, error) {
-	// create challenges
-	r, err := HashToBLSField(blobs, commitments)
-	if err != nil {
-		return nil, nil, nil, err
+	if len(blobs) != commitments.Len() {
+		return nil, nil, nil,
+			fmt.Errorf("blobs and commitments lengths don't match: %v vs %v", len(blobs), commitments.Len())
 	}
 
-	powers := ComputePowers(r, len(blobs))
-	if len(powers) == 0 {
-		return nil, nil, nil, errors.New("powers can't be 0 length")
-	}
+	powers, evaluationChallenge := ComputeChallenges(blobs, commitments)
 
-	var evaluationChallenge bls.Fr
-	bls.MulModFr(&evaluationChallenge, r, &powers[len(powers)-1])
-
-	aggregatedPoly, err := bls.PolyLinComb(blobs, powers)
+	aggregatedPoly, err := PolyLincomb(blobs, powers)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -185,8 +178,8 @@ func ComputeAggregatedPolyAndCommitment(blobs Polynomials, commitments KZGCommit
 		}
 		bls.CopyG1(&commitmentsG1[i], p)
 	}
-	aggregatedCommitmentG1 := bls.LinCombG1(commitmentsG1, powers)
-	return aggregatedPoly, aggregatedCommitmentG1, &evaluationChallenge, nil
+	aggregatedPolyCommitment := bls.LinCombG1(commitmentsG1, powers)
+	return aggregatedPoly, aggregatedPolyCommitment, evaluationChallenge, nil
 }
 
 // ComputeAggregateKZGProofFromPolynomials implements compute_aggregate_kzg_proof from the EIP-4844
@@ -239,50 +232,51 @@ func EvaluatePolynomialInEvaluationForm(poly []bls.Fr, x *bls.Fr) *bls.Fr {
 	return &result
 }
 
-// HashToBLSField implements hash_to_bls_field from the EIP-4844 consensus specs:
-// https://github.com/ethereum/consensus-specs/blob/dev/specs/eip4844/polynomial-commitments.md#hash_to_bls_field
-func HashToBLSField(polys Polynomials, comms KZGCommitmentSequence) (*bls.Fr, error) {
+// ComputeChallenges implements compute_challenges from the EIP-4844 consensus specs:
+// https://github.com/ethereum/consensus-specs/blob/dev/specs/eip4844/polynomial-commitments.md#compute_challenges
+func ComputeChallenges(polynomials Polynomials, commitments KZGCommitmentSequence) ([]bls.Fr, *bls.Fr) {
 	sha := sha256.New()
 
-	_, err := sha.Write([]byte(FIAT_SHAMIR_PROTOCOL_DOMAIN))
-	if err != nil {
-		return nil, err
-	}
+	sha.Write([]byte(FIAT_SHAMIR_PROTOCOL_DOMAIN))
 
 	bytes := make([]byte, 8)
 	binary.LittleEndian.PutUint64(bytes, uint64(FieldElementsPerBlob))
-	_, err = sha.Write(bytes)
-	if err != nil {
-		return nil, err
-	}
+	sha.Write(bytes)
 
 	bytes = make([]byte, 8)
-	binary.LittleEndian.PutUint64(bytes, uint64(len(polys)))
-	_, err = sha.Write(bytes)
-	if err != nil {
-		return nil, err
-	}
+	binary.LittleEndian.PutUint64(bytes, uint64(len(polynomials)))
+	sha.Write(bytes)
 
-	for _, poly := range polys {
+	for _, poly := range polynomials {
 		for _, fe := range poly {
 			b32 := bls.FrTo32(&fe)
-			_, err := sha.Write(b32[:])
-			if err != nil {
-				return nil, err
-			}
+			sha.Write(b32[:])
 		}
 	}
-	l := comms.Len()
+	l := commitments.Len()
 	for i := 0; i < l; i++ {
-		c := comms.At(i)
-		_, err := sha.Write(c[:])
-		if err != nil {
-			return nil, err
-		}
+		c := commitments.At(i)
+		sha.Write(c[:])
 	}
-	var hash [32]byte
-	copy(hash[:], sha.Sum(nil))
-	return BytesToBLSField(hash), nil
+
+	// Transcript prepared: time to create the challenges
+	var hashedData [32]byte
+	copy(hashedData[:], sha.Sum(nil))
+
+	sha.Reset()
+	sha.Write(hashedData[:])
+	sha.Write([]byte{0x00})
+	var r [32]byte
+	copy(r[:], sha.Sum(nil))
+	rPowers := ComputePowers(BytesToBLSField(r), commitments.Len())
+
+	sha.Reset()
+	sha.Write(hashedData[:])
+	sha.Write([]byte{0x01})
+	var evalChallenge [32]byte
+	copy(evalChallenge[:], sha.Sum(nil))
+
+	return rPowers, BytesToBLSField(evalChallenge)
 }
 
 func BlobToPolynomial(b Blob) (Polynomial, bool) {
@@ -290,7 +284,7 @@ func BlobToPolynomial(b Blob) (Polynomial, bool) {
 	frs := make(Polynomial, l)
 	for i := 0; i < l; i++ {
 		if !bls.FrFrom32(&frs[i], b.At(i)) {
-			return []bls.Fr{}, false
+			return nil, false
 		}
 	}
 	return frs, true
@@ -328,4 +322,23 @@ func bigToFr(out *bls.Fr, in *big.Int) bool {
 		b[31-i], b[i] = b[i], b[31-i]
 	}
 	return bls.FrFrom32(out, b)
+}
+
+// PolyLincomb implements poly_lincomb from the EIP-4844 consensus spec:
+// https://github.com/ethereum/consensus-specs/blob/dev/specs/eip4844/polynomial-commitments.md#poly_lincomb
+func PolyLincomb(polys [][]bls.Fr, scalars []bls.Fr) ([]bls.Fr, error) {
+	if len(polys) != len(scalars) {
+		return nil, fmt.Errorf("polys and scalars lengths don't match: %v vs %v", len(polys), len(scalars))
+	}
+	result := make([]bls.Fr, FieldElementsPerBlob)
+
+	for j, v := range polys {
+		s := &scalars[j]
+		var tmp bls.Fr
+		for i := range v {
+			bls.MulModFr(&tmp, s, &v[i])
+			bls.AddModFr(&result[i], &result[i], &tmp)
+		}
+	}
+	return result, nil
 }
