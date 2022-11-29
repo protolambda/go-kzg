@@ -5,9 +5,7 @@ package eth
 
 import (
 	"crypto/sha256"
-	_ "embed"
 	"encoding/binary"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"math/big"
@@ -22,41 +20,6 @@ const (
 
 type Polynomial []bls.Fr
 type Polynomials [][]bls.Fr
-
-var (
-	// KZG CRS for G2
-	kzgSetupG2 []bls.G2Point
-
-	// KZG CRS for commitment computation
-	kzgSetupLagrange []bls.G1Point
-
-	// KZG CRS for G1 (only used in tests (for proof creation))
-	KzgSetupG1 []bls.G1Point
-
-	//go:embed trusted_setup.json
-	kzgSetupStr string
-)
-
-type JSONTrustedSetup struct {
-	SetupG1       []bls.G1Point `json:"setup_G1"`
-	SetupG2       []bls.G2Point `json:"setup_G2"`
-	SetupLagrange []bls.G1Point `json:"setup_G1_lagrange"`
-}
-
-// Initialize KZG subsystem (load the trusted setup data)
-func init() {
-	var parsedSetup = JSONTrustedSetup{}
-
-	err := json.Unmarshal([]byte(kzgSetupStr), &parsedSetup)
-	if err != nil {
-		panic(err)
-	}
-	kzgSetupG2 = parsedSetup.SetupG2
-	kzgSetupLagrange = bitReversalPermutation(parsedSetup.SetupLagrange)
-	KzgSetupG1 = parsedSetup.SetupG1
-
-	initDomain()
-}
 
 // Bit-reversal permutation helper functions
 
