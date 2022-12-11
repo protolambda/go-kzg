@@ -290,9 +290,7 @@ func bigToFr(out *bls.Fr, in *big.Int) bool {
 	inb := in.Bytes()
 	copy(b[32-len(inb):], inb)
 	// again, we have to double convert as go-kzg only accepts little-endian
-	for i := 0; i < 16; i++ {
-		b[31-i], b[i] = b[i], b[31-i]
-	}
+	reverseArr32(&b)
 	return bls.FrFrom32(out, b)
 }
 
