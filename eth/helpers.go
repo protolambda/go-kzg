@@ -286,11 +286,18 @@ func BlobsToPolynomials(blobs BlobSequence) ([][]bls.Fr, bool) {
 }
 
 func bigToFr(out *bls.Fr, in *big.Int) bool {
+	// Convert big.Int to a 32 byte array
+	// Note that this function will panic if the
+	// big Integer needs more than 32 bytes to represent
+	// the integer.
 	var b [32]byte
 	inb := in.Bytes()
 	copy(b[32-len(inb):], inb)
-	// again, we have to double convert as go-kzg only accepts little-endian
+
+	// The byte array `b` is an integer in big endian format.
+	// We therefore need to reverse it as go-kzg expects little-endian
 	reverseArr32(&b)
+
 	return bls.FrFrom32(out, b)
 }
 
