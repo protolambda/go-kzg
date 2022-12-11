@@ -69,7 +69,7 @@ const (
 )
 
 var (
-	invalidKZGProofError = errors.New("invalid kzg proof")
+	errInvalidKZGProof = errors.New("invalid kzg proof")
 )
 
 // PointEvaluationPrecompile implements point_evaluation_precompile from EIP-4844
@@ -103,7 +103,7 @@ func PointEvaluationPrecompile(input []byte) ([]byte, error) {
 		return nil, fmt.Errorf("verify_kzg_proof error: %v", err)
 	}
 	if !ok {
-		return nil, invalidKZGProofError
+		return nil, errInvalidKZGProof
 	}
 	result := precompileReturnValue // copy the value
 	return result[:], nil
@@ -114,11 +114,11 @@ func PointEvaluationPrecompile(input []byte) ([]byte, error) {
 func VerifyKZGProof(polynomialKZG KZGCommitment, z, y [32]byte, kzgProof KZGProof) (bool, error) {
 	// successfully converting z and y to bls.Fr confirms they are < MODULUS per the spec
 	var zFr, yFr bls.Fr
-	ok := bls.FrFrom32(&zFr, z)
+	ok := bytesToBLSField(&zFr, z)
 	if !ok {
 		return false, errors.New("invalid evaluation point")
 	}
-	ok = bls.FrFrom32(&yFr, y)
+	ok = bytesToBLSField(&yFr, y)
 	if !ok {
 		return false, errors.New("invalid expected output")
 	}
@@ -202,7 +202,7 @@ func ValidateBlobsSidecar(slot Slot, beaconBlockRoot Root, expectedKZGCommitment
 		return fmt.Errorf("verify_aggregate_kzg_proof error: %v", err)
 	}
 	if !ok {
-		return invalidKZGProofError
+		return errInvalidKZGProof
 	}
 	return nil
 }

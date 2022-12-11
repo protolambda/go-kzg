@@ -102,15 +102,31 @@ func PolynomialToKZGCommitment(eval Polynomial) KZGCommitment {
 	return out
 }
 
-// BytesToBLSField implements bytes_to_bls_field from the EIP-4844 consensus spec:
+// bytesToBLSField implements bytes_to_bls_field from the EIP-4844 consensus spec:
 // https://github.com/ethereum/consensus-specs/blob/dev/specs/eip4844/polynomial-commitments.md#bytes_to_bls_field
-func BytesToBLSField(h [32]byte) *bls.Fr {
-	// re-interpret as little-endian
-	var b [32]byte = h
-	for i := 0; i < 16; i++ {
-		b[31-i], b[i] = b[i], b[31-i]
-	}
-	zB := new(big.Int).Mod(new(big.Int).SetBytes(b[:]), BLSModulus)
+func bytesToBLSField(element *bls.Fr, bytes32 [32]byte) bool {
+	return bls.FrFrom32(element, bytes32)
+}
+
+// hashToBytesField implements hash_to_bls_field from the EIP-4844 consensus spec:
+// https://github.com/ethereum/consensus-specs/blob/dev/specs/eip4844/polynomial-commitments.md#hash_to_bls_field
+func hashToBLSField(input []byte) *bls.Fr {
+	// First hash the input -- For the fiat-shamir protocol this
+	// will be the compressed state with a challenge index appended
+	// to it.
+
+	sha := sha256.New()
+	sha.Write(input[:])
+
+	var hash32 [32]byte
+	copy(hash32[:], sha.Sum(nil))
+
+	// Then interpret the hash digest as a little-endian integer
+	// modulo the bls field modulus
+	reverseArr32(&hash32)
+	zB := new(big.Int).Mod(new(big.Int).SetBytes(hash32[:]), BLSModulus)
+
+	// Convert the big integer into a field element.
 	out := new(bls.Fr)
 	bigToFr(out, zB)
 	return out
@@ -205,18 +221,8 @@ func ComputeChallenges(polys Polynomials, comms KZGCommitmentSequence) ([]bls.Fr
 	var linCombChallengeTranscript = append(hash[:], 0)
 	var evalChallengeTranscript = append(hash[:], 1)
 
-	shaHashToField := func(input []byte) *bls.Fr {
-		sha := sha256.New()
-		sha.Write(input)
-
-		var hash32 [32]byte
-		copy(hash32[:], sha.Sum(nil))
-
-		return BytesToBLSField(hash32)
-	}
-
-	linCombChallenge := shaHashToField(linCombChallengeTranscript)
-	evalChallenge := shaHashToField(evalChallengeTranscript)
+	linCombChallenge := hashToBLSField(linCombChallengeTranscript)
+	evalChallenge := hashToBLSField(evalChallengeTranscript)
 
 	rPowers := ComputePowers(linCombChallenge, len(polys))
 
@@ -259,7 +265,7 @@ func BlobToPolynomial(b Blob) (Polynomial, bool) {
 	l := b.Len()
 	frs := make(Polynomial, l)
 	for i := 0; i < l; i++ {
-		if !bls.FrFrom32(&frs[i], b.At(i)) {
+		if !bytesToBLSField(&frs[i], b.At(i)) {
 			return []bls.Fr{}, false
 		}
 	}
@@ -279,23 +285,24 @@ func BlobsToPolynomials(blobs BlobSequence) ([][]bls.Fr, bool) {
 	return out, true
 }
 
-func frToBig(b *big.Int, val *bls.Fr) {
-	//b.SetBytes((*kilicbls.Fr)(val).RedToBytes())
-	// silly double conversion
-	v := bls.FrTo32(val)
-	for i := 0; i < 16; i++ {
-		v[31-i], v[i] = v[i], v[31-i]
-	}
-	b.SetBytes(v[:])
-}
-
 func bigToFr(out *bls.Fr, in *big.Int) bool {
+	// Convert big.Int to a 32 byte array
+	// Note that this function will panic if the
+	// big Integer needs more than 32 bytes to represent
+	// the integer.
 	var b [32]byte
 	inb := in.Bytes()
 	copy(b[32-len(inb):], inb)
-	// again, we have to double convert as go-kzg only accepts little-endian
-	for i := 0; i < 16; i++ {
-		b[31-i], b[i] = b[i], b[31-i]
-	}
+
+	// The byte array `b` is an integer in big endian format.
+	// We therefore need to reverse it as go-kzg expects little-endian
+	reverseArr32(&b)
+
 	return bls.FrFrom32(out, b)
+}
+
+func reverseArr32(input *[32]byte) {
+	for i := 0; i < 16; i++ {
+		input[31-i], input[i] = input[i], input[31-i]
+	}
 }
