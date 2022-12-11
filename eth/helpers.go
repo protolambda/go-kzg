@@ -102,15 +102,31 @@ func PolynomialToKZGCommitment(eval Polynomial) KZGCommitment {
 	return out
 }
 
-// BytesToBLSField implements bytes_to_bls_field from the EIP-4844 consensus spec:
-// https://github.com/ethereum/consensus-specs/blob/dev/specs/eip4844/polynomial-commitments.md#bytes_to_bls_field
-func BytesToBLSField(h [32]byte) *bls.Fr {
-	// re-interpret as little-endian
-	var b [32]byte = h
-	for i := 0; i < 16; i++ {
-		b[31-i], b[i] = b[i], b[31-i]
-	}
-	zB := new(big.Int).Mod(new(big.Int).SetBytes(b[:]), BLSModulus)
+// bytesToBLSField implements bytes_to_bls_field from the EIP-4844 consensus spec:
+// https://github.com/ethereum/consensus-specs/blob/dev/specs/eip4844/polynomial-commitments.md#hash_to_bls_field
+func bytesToBLSField(element *bls.Fr, bytes32 [32]byte) bool {
+	return bls.FrFrom32(element, bytes32)
+}
+
+// hashToBytesField implements hash_to_bls_field from the EIP-4844 consensus spec:
+// https://github.com/ethereum/consensus-specs/blob/dev/specs/eip4844/polynomial-commitments.md#hash_to_bls_field
+func hashToBLSField(input []byte) *bls.Fr {
+	// First hash the input -- For the fiat-shamir protocol this
+	// will be the compressed state with a challenge index appended
+	// to it.
+
+	sha := sha256.New()
+	sha.Write(input[:])
+
+	var hash32 [32]byte
+	copy(hash32[:], sha.Sum(nil))
+
+	// Then interpret the hash digest as a little-endian integer
+	// modulo the bls field modulus
+	reverseArr32(&hash32)
+	zB := new(big.Int).Mod(new(big.Int).SetBytes(hash32[:]), BLSModulus)
+
+	// Convert the big integer into a field element.
 	out := new(bls.Fr)
 	bigToFr(out, zB)
 	return out
@@ -205,18 +221,8 @@ func ComputeChallenges(polys Polynomials, comms KZGCommitmentSequence) ([]bls.Fr
 	var linCombChallengeTranscript = append(hash[:], 0)
 	var evalChallengeTranscript = append(hash[:], 1)
 
-	shaHashToField := func(input []byte) *bls.Fr {
-		sha := sha256.New()
-		sha.Write(input)
-
-		var hash32 [32]byte
-		copy(hash32[:], sha.Sum(nil))
-
-		return BytesToBLSField(hash32)
-	}
-
-	linCombChallenge := shaHashToField(linCombChallengeTranscript)
-	evalChallenge := shaHashToField(evalChallengeTranscript)
+	linCombChallenge := hashToBLSField(linCombChallengeTranscript)
+	evalChallenge := hashToBLSField(evalChallengeTranscript)
 
 	rPowers := ComputePowers(linCombChallenge, len(polys))
 
@@ -298,4 +304,10 @@ func bigToFr(out *bls.Fr, in *big.Int) bool {
 		b[31-i], b[i] = b[i], b[31-i]
 	}
 	return bls.FrFrom32(out, b)
+}
+
+func reverseArr32(input *[32]byte) {
+	for i := 0; i < 16; i++ {
+		input[31-i], input[i] = input[i], input[31-i]
+	}
 }
