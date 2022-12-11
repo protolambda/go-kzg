@@ -285,16 +285,6 @@ func BlobsToPolynomials(blobs BlobSequence) ([][]bls.Fr, bool) {
 	return out, true
 }
 
-func frToBig(b *big.Int, val *bls.Fr) {
-	//b.SetBytes((*kilicbls.Fr)(val).RedToBytes())
-	// silly double conversion
-	v := bls.FrTo32(val)
-	for i := 0; i < 16; i++ {
-		v[31-i], v[i] = v[i], v[31-i]
-	}
-	b.SetBytes(v[:])
-}
-
 func bigToFr(out *bls.Fr, in *big.Int) bool {
 	var b [32]byte
 	inb := in.Bytes()
