@@ -103,7 +103,7 @@ func PolynomialToKZGCommitment(eval Polynomial) KZGCommitment {
 }
 
 // bytesToBLSField implements bytes_to_bls_field from the EIP-4844 consensus spec:
-// https://github.com/ethereum/consensus-specs/blob/dev/specs/eip4844/polynomial-commitments.md#hash_to_bls_field
+// https://github.com/ethereum/consensus-specs/blob/dev/specs/eip4844/polynomial-commitments.md#bytes_to_bls_field
 func bytesToBLSField(element *bls.Fr, bytes32 [32]byte) bool {
 	return bls.FrFrom32(element, bytes32)
 }
