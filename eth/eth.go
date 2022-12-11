@@ -69,7 +69,7 @@ const (
 )
 
 var (
-	invalidKZGProofError = errors.New("invalid kzg proof")
+	errInvalidKZGProof = errors.New("invalid kzg proof")
 )
 
 // PointEvaluationPrecompile implements point_evaluation_precompile from EIP-4844
@@ -103,7 +103,7 @@ func PointEvaluationPrecompile(input []byte) ([]byte, error) {
 		return nil, fmt.Errorf("verify_kzg_proof error: %v", err)
 	}
 	if !ok {
-		return nil, invalidKZGProofError
+		return nil, errInvalidKZGProof
 	}
 	result := precompileReturnValue // copy the value
 	return result[:], nil
@@ -202,7 +202,7 @@ func ValidateBlobsSidecar(slot Slot, beaconBlockRoot Root, expectedKZGCommitment
 		return fmt.Errorf("verify_aggregate_kzg_proof error: %v", err)
 	}
 	if !ok {
-		return invalidKZGProofError
+		return errInvalidKZGProof
 	}
 	return nil
 }
