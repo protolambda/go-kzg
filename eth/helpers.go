@@ -265,7 +265,7 @@ func BlobToPolynomial(b Blob) (Polynomial, bool) {
 	l := b.Len()
 	frs := make(Polynomial, l)
 	for i := 0; i < l; i++ {
-		if !bls.FrFrom32(&frs[i], b.At(i)) {
+		if !bytesToBLSField(&frs[i], b.At(i)) {
 			return []bls.Fr{}, false
 		}
 	}
