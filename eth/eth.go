@@ -137,7 +137,7 @@ func VerifyKZGProof(polynomialKZG KZGCommitment, z, y [32]byte, kzgProof KZGProo
 func KZGToVersionedHash(kzg KZGCommitment) VersionedHash {
 	h := sha256.Sum256(kzg[:])
 	h[0] = BlobCommitmentVersionKZG
-	return VersionedHash([32]byte(h))
+	return VersionedHash(h)
 }
 
 // BlobToKZGCommitment implements blob_to_kzg_commitment from the EIP-4844 consensus spec:
