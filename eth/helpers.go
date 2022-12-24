@@ -50,7 +50,7 @@ func bitReversalPermutation(l []bls.G1Point) []bls.G1Point {
 	return out
 }
 
-// VerifyKZGProof implements verify_kzg_proof from the EIP-4844 consensus spec,
+// VerifyKZGProofFromPoints implements verify_kzg_proof from the EIP-4844 consensus spec,
 // only with the byte inputs already parsed into points & field elements.
 func VerifyKZGProofFromPoints(polynomialKZG *bls.G1Point, z *bls.Fr, y *bls.Fr, kzgProof *bls.G1Point) bool {
 	var zG2 bls.G2Point
@@ -66,7 +66,7 @@ func VerifyKZGProofFromPoints(polynomialKZG *bls.G1Point, z *bls.Fr, y *bls.Fr, 
 	return bls.PairingsVerify(&pMinusY, &bls.GenG2, kzgProof, &xMinusZ)
 }
 
-// VerifyAggregateKZGProof implements verify_aggregate_kzg_proof from the EIP-4844 consensus spec,
+// VerifyAggregateKZGProofFromPolynomials implements verify_aggregate_kzg_proof from the EIP-4844 consensus spec,
 // only operating on blobs that have already been converted into polynomials.
 func VerifyAggregateKZGProofFromPolynomials(blobs Polynomials, expectedKZGCommitments KZGCommitmentSequence, kzgAggregatedProof KZGProof) (bool, error) {
 	aggregatedPoly, aggregatedPolyCommitment, evaluationChallenge, err :=
@@ -132,7 +132,7 @@ func hashToBLSField(input []byte) *bls.Fr {
 	return out
 }
 
-// ComputeAggregatedPolyAndcommitment implements compute_aggregated_poly_and_commitment from the EIP-4844 consensus spec:
+// ComputeAggregatedPolyAndCommitment implements compute_aggregated_poly_and_commitment from the EIP-4844 consensus spec:
 // https://github.com/ethereum/consensus-specs/blob/dev/specs/eip4844/polynomial-commitments.md#compute_aggregated_poly_and_commitment
 func ComputeAggregatedPolyAndCommitment(blobs Polynomials, commitments KZGCommitmentSequence) ([]bls.Fr, *bls.G1Point, *bls.Fr, error) {
 	// create challenges
@@ -174,7 +174,7 @@ func ComputeAggregateKZGProofFromPolynomials(blobs Polynomials) (KZGProof, error
 	return ComputeKZGProof(aggregatedPoly, evaluationChallenge)
 }
 
-// ComputeAggregateKZGProof implements compute_kzg_proof from the EIP-4844 consensus spec:
+// ComputeKZGProof implements compute_kzg_proof from the EIP-4844 consensus spec:
 // https://github.com/ethereum/consensus-specs/blob/dev/specs/eip4844/polynomial-commitments.md#compute_kzg_proof
 func ComputeKZGProof(polynomial []bls.Fr, z *bls.Fr) (KZGProof, error) {
 	y := EvaluatePolynomialInEvaluationForm(polynomial, z)
