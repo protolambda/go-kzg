@@ -6,6 +6,7 @@ package bls
 import (
 	"crypto/rand"
 	"math/big"
+        "errors"
 )
 
 var _modulus big.Int
@@ -91,11 +92,15 @@ func AddModFr(dst *Fr, a, b *Fr) {
 	(*big.Int)(dst).Mod((*big.Int)(dst), &_modulus)
 }
 
-func DivModFr(dst *Fr, a, b *Fr) {
+func DivModFr(dst *Fr, a, b *Fr) error {
+	if EqualZero(b) {
+		return errors.New("division by zero")
+	}
 	var tmp Fr
 	InvModFr(&tmp, b)
 	(*big.Int)(dst).Mul((*big.Int)(a), (*big.Int)(&tmp))
 	(*big.Int)(dst).Mod((*big.Int)(dst), &_modulus)
+	return nil
 }
 
 func MulModFr(dst *Fr, a, b *Fr) {
