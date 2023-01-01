@@ -92,15 +92,11 @@ func AddModFr(dst *Fr, a, b *Fr) {
 	(*big.Int)(dst).Mod((*big.Int)(dst), &_modulus)
 }
 
-func DivModFr(dst *Fr, a, b *Fr) error {
-	if EqualZero(b) {
-		return errors.New("division by zero")
-	}
+func DivModFr(dst *Fr, a, b *Fr) {
 	var tmp Fr
 	InvModFr(&tmp, b)
 	(*big.Int)(dst).Mul((*big.Int)(a), (*big.Int)(&tmp))
 	(*big.Int)(dst).Mod((*big.Int)(dst), &_modulus)
-	return nil
 }
 
 func MulModFr(dst *Fr, a, b *Fr) {
@@ -114,6 +110,14 @@ func PowModFr(dst *Fr, a, b *Fr) {
 
 func InvModFr(dst *Fr, v *Fr) {
 	(*big.Int)(dst).ModInverse((*big.Int)(v), &_modulus)
+}
+
+func InvModFr(dst *Fr, v *Fr) error {
+	if EqualZero(v) {
+		return errors.New("division by zero")
+	}
+	(*big.Int)(dst).ModInverse((*big.Int)(v), &_modulus)
+	return nil
 }
 
 // BatchInvModFr computes the inverse for each input.
