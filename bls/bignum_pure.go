@@ -108,10 +108,6 @@ func PowModFr(dst *Fr, a, b *Fr) {
 	(*big.Int)(dst).Exp((*big.Int)(a), (*big.Int)(b), &_modulus)
 }
 
-func InvModFr(dst *Fr, v *Fr) {
-	(*big.Int)(dst).ModInverse((*big.Int)(v), &_modulus)
-}
-
 func InvModFr(dst *Fr, v *Fr) error {
 	if EqualZero(v) {
 		return errors.New("division by zero")
