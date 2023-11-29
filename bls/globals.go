@@ -70,7 +70,7 @@ func initGlobals() {
 }
 
 func IsPowerOfTwo(v uint64) bool {
-	return v&(v-1) == 0
+	return v != 0 && v&(v-1) == 0
 }
 
 func EvalPolyAtUnoptimized(dst *Fr, coeffs []Fr, x *Fr) {
